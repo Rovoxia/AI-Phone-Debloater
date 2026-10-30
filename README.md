@@ -186,10 +186,12 @@ You can debloat any Android phone completely wirelessly over your local Wi-Fi ne
 3. Tap **"Pair device with pairing code"**. You will see:
    - Wi-Fi pairing code (e.g. `123456`)
    - IP address & Port (e.g. `192.168.1.50:37123`)
-4. Connect using any of these 3 easy methods:
+4. Connect using any of these easy methods:
 
-- **Via Interactive Menu (Easiest):**
-  Run `debloat.bat` (Windows) or `./debloat.sh` (Mac/Linux), press **`w`**, choose **`2`**, and enter the pairing IP:Port and 6-digit code.
+- **Automatic Auto-Discovery (Zero-Config):**
+  If your phone has Wireless Debugging enabled, run `debloat.bat` or `python scripts/debloat-engine.py scan` — the engine automatically discovers your phone on Wi-Fi via mDNS and connects!
+- **Via Interactive Menu:**
+  Run `debloat.bat` (Windows) or `./debloat.sh` (Mac/Linux), press **`w`**, and pick option **`1`** (Auto-discover) or **`3`** (Pair with code).
 - **Via CLI Command:**
   ```bash
   python scripts/debloat-engine.py wireless 192.168.1.50:37123 --pair 123456

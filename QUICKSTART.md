@@ -79,13 +79,15 @@ From the interactive menu:
 
 ## 📶 Option C: Wireless ADB Debloating (No USB Cable • Wi-Fi)
 
-1. Make sure phone and PC are connected to the same Wi-Fi.
-2. On phone: **Settings → Developer Options → Wireless Debugging** (turn ON).
-3. Tap **"Pair device with pairing code"** to view the IP:Port and 6-digit code.
-4. Run launcher, press **`w`**, select **`2`**, and enter the details. Or run:
-   ```bash
-   python scripts/debloat-engine.py wireless <ip>:<port> --pair <code>
-   ```
+- **Automatic Discovery:** If Wireless Debugging is active on your phone, the engine automatically detects it via mDNS and auto-connects — no IP address typing needed!
+- **First-Time Pairing (Android 11+):**
+  1. Make sure phone and PC are connected to the same Wi-Fi.
+  2. On phone: **Settings → Developer Options → Wireless Debugging** (turn ON).
+  3. Tap **"Pair device with pairing code"** to view the IP:Port and 6-digit code.
+  4. Run launcher, press **`w`**, select **`3`** to pair (or option **`1`** to auto-discover). Or run:
+     ```bash
+     python scripts/debloat-engine.py wireless <ip>:<port> --pair <code>
+     ```
 
 ---
 

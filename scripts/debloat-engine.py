@@ -840,6 +840,45 @@ class DebloatEngine:
         self._confirmed = False
 
     # -- wireless -----------------------------------------------------------
+    def discover_wireless(self) -> List[Dict[str, str]]:
+        """Discover wireless devices via ADB mDNS/Bonjour (Android 11+)."""
+        self.logger.info("Searching for wireless ADB devices via mDNS/Bonjour...")
+        rc, out, err = run_cmd([self.adb_path, "mdns", "services"], timeout=self.timeout)
+        devices = []
+        for line in out.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            # Parse mDNS discovery output: "device_name (ip:port)" or just "ip:port"
+            parts = line.replace("(", " ").replace(")", " ").split()
+            if len(parts) >= 2:
+                addr = parts[-1]
+                if ":" in addr and addr.count(".") >= 3:
+                    devices.append({"serial": addr, "state": "device", "name": parts[0]})
+        return devices
+
+    def auto_discover(self) -> Optional[str]:
+        """Automatically discover and return connection address.
+        Tries mDNS discovery first, then falls back to user input."""
+        # Try mDNS/Bonjour discovery first (Android 11+ wireless debugging)
+        try:
+            w_devices = self.discover_wireless()
+            if w_devices:
+                self.logger.info(f"Found {len(w_devices)} wireless device(s) via mDNS/Bonjour:")
+                for i, d in enumerate(w_devices, 1):
+                    print(f"  [{i}] {d.get('name', d['serial'])} @ {d['serial']}")
+                if len(w_devices) == 1:
+                    return w_devices[0]["serial"]
+                choice = input("Select wireless device number (Enter for first): ").strip()
+                if not choice:
+                    return w_devices[0]["serial"]
+                idx = int(choice) - 1
+                if 0 <= idx < len(w_devices):
+                    return w_devices[idx]["serial"]
+        except Exception:
+            pass
+        return None
+
     def connect_wireless(self, address: str) -> bool:
         self.logger.info(f"Connecting to wireless ADB device at {address}...")
         rc, out, err = self.adb.connect_wireless(address)
@@ -864,6 +903,10 @@ class DebloatEngine:
         self.logger.header("ADB Discovery & Device Detection")
         with Progress(self.logger, "Searching for connected ADB devices"):
             devices = self.adb.devices()
+        if not devices:
+            w_addr = self.auto_discover()
+            if w_addr and self.connect_wireless(w_addr):
+                devices = self.adb.devices()
         if not devices:
             raise AdbError(
                 "No ADB devices found. Connect via USB (enable USB debugging) or over Wi-Fi (adb connect <ip>:<port> or use 'w' in menu)."
@@ -1303,17 +1346,28 @@ class DebloatEngine:
                     self.restore_pkg(pkg)
                 elif choice.lower() == "w":
                     print("\nWireless ADB (Wi-Fi) Setup:")
-                    print("  1) Connect to known IP:Port (e.g. 192.168.1.50:5555)")
-                    print("  2) Pair Android 11+ Wireless Debugging (IP:Port + Pairing Code)")
-                    print("  3) Switch connected USB phone to Wi-Fi mode (adb tcpip 5555)")
-                    subc = input("\nSelect (1/2/3): ").strip()
+                    print("  1) Auto-discover via mDNS (searches Wi-Fi automatically)")
+                    print("  2) Connect to known IP:Port (e.g. 192.168.1.50:5555)")
+                    print("  3) Pair Android 11+ Wireless Debugging (IP:Port + Pairing Code)")
+                    print("  4) Switch connected USB phone to Wi-Fi mode (adb tcpip 5555)")
+                    subc = input("\nSelect (1/2/3/4): ").strip()
                     if subc == "1":
+                        w_addr = self.auto_discover()
+                        if w_addr:
+                            self.logger.ok(f"Found wireless device: {w_addr}")
+                            if self.connect_wireless(w_addr):
+                                self.connect()
+                                self.load_rules()
+                        else:
+                            self.logger.warn("No wireless devices detected via mDNS.")
+                            self.logger.info("Tip: Ensure Wireless debugging is turned ON in Developer options.")
+                    elif subc == "2":
                         addr = input("Device IP:Port (e.g. 192.168.1.50:5555): ").strip()
                         if addr:
                             if self.connect_wireless(addr):
                                 self.connect()
                                 self.load_rules()
-                    elif subc == "2":
+                    elif subc == "3":
                         p_addr = input("Pairing IP:Port (from phone Wireless debugging screen): ").strip()
                         p_code = input("6-digit Pairing Code: ").strip()
                         if p_addr and p_code:
@@ -1323,10 +1377,10 @@ class DebloatEngine:
                                     if self.connect_wireless(c_addr):
                                         self.connect()
                                         self.load_rules()
-                    elif subc == "3":
+                    elif subc == "4":
                         rc, out, err = self.adb.tcpip(5555)
                         if rc == 0:
-                            self.logger.ok("TCPIP port 5555 enabled. Disconnect USB cable, then select option 1 to connect via Wi-Fi.")
+                            self.logger.ok("TCPIP port 5555 enabled. Disconnect USB cable, then select option 1 or 2 to connect via Wi-Fi.")
                         else:
                             self.logger.error(f"Failed to enable TCPIP: {out or err}")
                 elif choice == "0":
@@ -1357,6 +1411,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-q", "--quiet", action="store_true", help="Suppress informational output")
     p.add_argument("-v", "--verbose", action="store_true", help="Verbose debug output")
     p.add_argument("--wireless", "-w", help="Connect to wireless ADB device address (e.g. 192.168.1.50:5555)")
+    p.add_argument("--auto-discover", action="store_true", help="Automatically discover wireless ADB devices via mDNS/Bonjour")
     p.add_argument("--dry-run", action="store_true", help="Simulate operations without executing")
     p.add_argument("--interactive", "-i", action="store_true", help="Launch interactive terminal menu")
     p.add_argument("--scan", "-s", action="store_true", help="Scan device and classify packages into safety tiers")
@@ -1416,6 +1471,18 @@ def main(argv: Optional[List[str]] = None) -> int:
 
         if getattr(args, "wireless", None):
             engine.connect_wireless(args.wireless)
+
+        if getattr(args, "auto_discover", False):
+            w_addr = engine.auto_discover()
+            if w_addr:
+                engine.logger.ok(f"Auto-discovered wireless device: {w_addr}")
+                engine.connect_wireless(w_addr)
+                engine.connect()
+                engine.load_rules()
+                engine.logger.ok(f"Device ready: {engine.device.summary()}")
+                return 0
+            engine.logger.error("No wireless devices found via mDNS/Bonjour discovery.")
+            return 1
 
         if args.command == "wireless":
             if args.pair:
