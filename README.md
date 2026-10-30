@@ -201,7 +201,7 @@ The engine operates strictly using `pm uninstall -k --user 0 <package>` or `pm d
 **No.** Debloating via ADB does NOT unlock the bootloader and does NOT root your phone. Knox counter remains 0x0 (void: 0), SafetyNet / Play Integrity API continues to pass, and banking apps / Google Pay continue to work without issue.
 
 ### What Android versions are supported?
-Any device running **Android 5.0 (Lollipop) through Android 15+** is fully supported.
+Any device running **Android 8.0 (Oreo) through Android 15+** is fully supported, because `pm disable-user --user 0` and `pm uninstall -k --user 0` are standard package-manager commands available from Android 8.0 onward.
 
 ---
 
