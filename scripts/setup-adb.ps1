@@ -2,7 +2,7 @@
 # Detects/installs ADB for Windows and verifies an authorized device connection.
 # Compatible with Windows PowerShell 5.1 and PowerShell Core.
 
-$ErrorActionPreference = 'Continue'
+$ErrorActionPreference = 'Stop'
 
 # Resolve project folders relative to this script.
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition

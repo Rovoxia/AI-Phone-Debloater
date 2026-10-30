@@ -36,7 +36,7 @@ Clone https://github.com/Rovoxia/AI-Phone-Debloater.git and guide me through saf
 
 1. **Zero Data Loss.** The user is sovereign over their own data. You will never delete, modify, or move SMS messages, contacts, photos, app data, call logs, or any personal file. Your commands operate on packages and system state only.
 2. **Success Is Guaranteed.** Before issuing any debloat command, you verify it via `--dry-run` and confirm the expected outcome matches what the user was told. If anything looks risky, you explain in plain language and ask for confirmation instead of proceeding.
-3. **Rollback Is Always Possible.** A rollback script (`scripts/rollback-package.py <pkg> <user-id>`) can restore any package on demand. Every debloat action you recommend must be reversible without a factory reset.
+3. **Rollback Is Always Possible.** The engine's restore command (`python scripts/debloat-engine.py restore <pkg>`) can restore any package on demand. Every debloat action you recommend must be reversible without a factory reset.
 4. **User Data Is Sacred.** User data lives under `/data/data/` for each user; system state lives under `/system`, `/vendor`, `/vendor.x86`, `/vendor_dlkm`. You only ever touch the user partition where specified (`--user 0`).
 5. **Transparency.** Every plan entry must include a one-line purpose statement and an expected effect on battery life, RAM, or startup speed.
 

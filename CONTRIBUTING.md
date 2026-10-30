@@ -156,7 +156,7 @@ Any package in `rules/critical-do-not-touch.json` or the Tier-4 blacklist table 
 ### Data safety
 
 - Proposals must use `pm disable-user` or `pm uninstall -k --user 0` only. Never propose `pm uninstall` without `-k`, never `pm uninstall --force`, and never direct filesystem deletion under `/data`.
-- Every proposal must be reversible without a factory reset (via `cmd package install-existing` or `rollback-package.py`).
+- Every proposal must be reversible without a factory reset (via `cmd package install-existing` or `python scripts/debloat-engine.py restore`).
 
 ---
 

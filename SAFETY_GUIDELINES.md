@@ -161,9 +161,9 @@ adb shell pm list packages -U 0
 python scripts/debloat-engine.py --restore <package>
 ```
 
-### Rollback script
+### Rollback command
 
-The project also provides `scripts/rollback-package.py <pkg> <user-id>` to restore any package on demand without a factory reset. Every debloat action recommended by an AI agent must be reversible using this path.
+The engine provides `python scripts/debloat-engine.py restore <package>` (or `restore <snapshot>`) to restore any package on demand without a factory reset. Every debloat action recommended by an AI agent must be reversible using this path.
 
 ---
 

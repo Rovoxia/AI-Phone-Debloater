@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # setup-adb.sh
 # Detects/installs ADB on macOS and Linux and verifies an authorized device connection.
-set -u
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
