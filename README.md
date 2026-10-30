@@ -91,7 +91,21 @@ Safety boundary: the engine refuses any package on the critical blacklist (see `
 
 ## Quickstart Guide
 
-### Step 1 — Enable Developer Options & USB Debugging on your phone
+### ⚡ Method 1: Autonomous AI Agent (1-Prompt Auto Debloat)
+
+Copy and paste this prompt into **Claude Code CLI**, **ChatGPT**, **Cursor**, or **Gemini**:
+
+```text
+Clone https://github.com/<YOUR-USERNAME>/AI-Phone-Debloater.git and safely debloat my connected Android phone at Tier 1. First run 'python scripts/debloat-engine.py scan', show me the device breakdown, simulate with dry-run, take an auto-snapshot, and execute safe debloat preserving all personal data.
+```
+
+The AI agent will detect your phone, audit packages against the 61-package critical blacklist, simulate with dry-run, and execute Tier 1 removal with full data preservation.
+
+---
+
+### 💻 Method 2: Manual 1-Click Launchers (No AI Required)
+
+#### Step 1 — Enable Developer Options & USB Debugging on your phone
 
 Brand-by-brand instructions (the steps are the same on essentially every Android device; only the menu names differ slightly):
 

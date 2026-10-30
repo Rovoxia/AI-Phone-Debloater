@@ -57,7 +57,10 @@ RULES_DIR_CANDIDATES = [
 BACKUPS_DIR = PROJECT_ROOT / "backups"
 DEFAULT_ADB_PATH_CANDIDATES: List[str] = [
     "adb",  # PATH
+    str(PROJECT_ROOT / "tools" / "platform-tools" / "adb.exe"),
+    str(PROJECT_ROOT / "tools" / "platform-tools" / "adb"),
     r"C:\platform-tools\adb.exe",
+    str(Path.cwd() / "tools" / "platform-tools" / "adb.exe"),
     str(Path.cwd() / "platform-tools" / "adb"),
     str(Path.cwd() / "platform-tools" / "adb.exe"),
     str(Path.home() / "Library" / "Android" / "sdk" / "platform-tools" / "adb"),

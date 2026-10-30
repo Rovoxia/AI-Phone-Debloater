@@ -54,8 +54,16 @@ foreach ($loc in $standardLocations) {
 Write-Host "ADB (adb.exe) was not found in PATH or standard locations." -ForegroundColor Yellow
 Write-Host "Official download: https://dl.google.com/android/repository/platform-tools-latest-windows.zip" -ForegroundColor Cyan
 Write-Host
-$download = Read-Host "Download and install platform-tools to ./tools/platform-tools now? [Y/n]"
-if ($download -and $download -notmatch '^[Yy]$') {
+
+$download = "Y"
+try {
+    $input = Read-Host "Download and install platform-tools to ./tools/platform-tools now? [Y/n]"
+    if ($input) { $download = $input }
+} catch {
+    $download = "Y"
+}
+
+if ($download -notmatch '^[Yy]$') {
     Write-Host "Aborted. Install ADB manually and re-run this script." -ForegroundColor Red
     exit 1
 }

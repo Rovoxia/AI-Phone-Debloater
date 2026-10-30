@@ -1,8 +1,22 @@
-# 🚀 Quickstart Cheat Sheet (3 Steps)
+# 🚀 Quickstart Guide
 
-Get your Android phone debloated at the maximum safe level in under 2 minutes with **zero personal data loss**.
+Debloat your Android phone at the maximum safe level in under 2 minutes with **zero personal data loss**.
 
 ---
+
+## ⚡ Option A: 1-Click AI Agent Execution (Recommended)
+
+Just copy & paste this single prompt into **Claude Code CLI**, **ChatGPT**, **Cursor**, or **Gemini**:
+
+```text
+Clone https://github.com/<YOUR-USERNAME>/AI-Phone-Debloater.git and safely debloat my connected Android phone at Tier 1. First run 'python scripts/debloat-engine.py scan', show me the device breakdown, simulate with dry-run, take an auto-snapshot, and execute safe debloat preserving all personal data.
+```
+
+The AI agent will detect your phone, verify safety guardrails (0 collisions with critical system packages), simulate the run, and safely debloat your device with an automatic backup snapshot.
+
+---
+
+## 🛠️ Option B: Manual 3-Step Execution (No AI Required)
 
 ### Step 1: Enable USB Debugging on Your Phone
 1. Go to **Settings** > **About Phone**.
