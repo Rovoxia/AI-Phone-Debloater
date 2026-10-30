@@ -268,17 +268,17 @@ class Logger:
 
 
 class Progress:
-    """Tiny spinner for long-running ADB calls."""
+    """Clean animated spinner loader for long-running operations."""
 
     def __init__(self, logger: Logger, label: str = "working") -> None:
         self.logger = logger
         self.label = label
         self._stop = threading.Event()
         self._thread: Optional[threading.Thread] = None
-        self._chars = "/-\\|"
+        self._chars = ["|", "/", "-", "\\"] if sys.platform == "win32" else ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 
     def __enter__(self) -> "Progress":
-        if USE_COLOR and not self.logger.quiet and sys.stdout.isatty():
+        if not self.logger.quiet and sys.stdout.isatty():
             self._stop.clear()
             self._thread = threading.Thread(target=self._spin, daemon=True)
             self._thread.start()
@@ -290,15 +290,15 @@ class Progress:
             ch = self._chars[i % len(self._chars)]
             sys.stdout.write(f"\r  {cyan(bold(ch))} {self.label}...")
             sys.stdout.flush()
-            time.sleep(0.1)
+            time.sleep(0.08)
             i += 1
-        sys.stdout.write("\r" + " " * (len(self.label) + 12) + "\r")
+        sys.stdout.write("\r" + " " * (len(self.label) + 20) + "\r")
         sys.stdout.flush()
 
     def __exit__(self, *exc: object) -> None:
         self._stop.set()
         if self._thread:
-            self._thread.join(timeout=0.5)
+            self._thread.join(timeout=0.4)
 
 
 # ---------------------------------------------------------------------------
@@ -812,7 +812,8 @@ class DebloatEngine:
     # -- lifecycle ----------------------------------------------------------
     def connect(self) -> None:
         self.logger.header("ADB Discovery & Device Detection")
-        devices = self.adb.devices()
+        with Progress(self.logger, "Searching for connected ADB devices"):
+            devices = self.adb.devices()
         if not devices:
             raise AdbError(
                 "No ADB devices found. Enable USB debugging and connect a device."
@@ -845,14 +846,16 @@ class DebloatEngine:
                 raise AdbError(
                     f"Device {self.device.serial} is not ready (state={self.device.state}). Expected 'device'."
                 )
-        self.device.populate()
+        with Progress(self.logger, f"Querying hardware parameters for {self.device.serial}"):
+            self.device.populate()
         self.logger.ok(f"Connected: {self.device.summary()}")
 
     def load_rules(self, manufacturer: Optional[str] = None) -> None:
         mfr = manufacturer or (
             self.device.manufacturer if self.device.manufacturer != "unknown" else None
         )
-        self.rules.load(rules_dir=None, manufacturer=mfr)
+        with Progress(self.logger, "Loading OEM debloat rule databases"):
+            self.rules.load(rules_dir=None, manufacturer=mfr)
         self.logger.ok(f"Rules loaded ({len(self.rules.loaded_files)} file(s))")
         for f in self.rules.loaded_files:
             self.logger.verbose_log(f"  rule file: {f}")
@@ -860,13 +863,17 @@ class DebloatEngine:
     # -- scan ---------------------------------------------------------------
     def scan(self) -> List[Dict[str, Any]]:
         self.logger.section("Scanning installed packages")
-        raw = self.adb.pm_list_packages(user=0)
-        self.logger.info(f"Found {len(raw)} packages for user 0")
+        with Progress(self.logger, "Querying package manager and enabled states"):
+            raw = self.adb.pm_list_packages(user=0)
+            enabled_set = set(self.adb.pm_list_packages(user=0, enabled=True))
+            all_system_set = set(self.adb.pm_list_packages())
+
+        self.logger.info(f"Found {len(raw)} packages for user 0 ({len(enabled_set)} enabled)")
         results: List[Dict[str, Any]] = []
         for name in raw:
             tier, reason, source = self.rules.classify(name)
-            enabled = self.adb.is_enabled(name)
-            installed = self.adb.is_installed_any_user(name)
+            enabled = name in enabled_set
+            installed = name in all_system_set
             results.append(
                 {
                     "name": name,
