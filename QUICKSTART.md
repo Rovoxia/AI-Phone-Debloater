@@ -1,6 +1,6 @@
-# 🚀 Quickstart Guide
+# 🚀 Quickstart Guide — Clean Your Phone with the Universal Phone Debloater
 
-Debloat your Android phone at the maximum safe level in under 2 minutes with **zero personal data loss**.
+Clean your phone and debloat OEM bloatware at the maximum safe level with this powerful phone debloater in under 2 minutes with **zero personal data loss**.
 
 ---
 
