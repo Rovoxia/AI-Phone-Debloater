@@ -73,6 +73,19 @@ def main() -> int:
         return 1
 
     print(f"Validated {len(rules)} JSON rule files successfully. Zero collisions.")
+
+    # Validate VERSION file
+    vfile = repo_root / "VERSION"
+    if not vfile.is_file():
+        print("ERROR: Missing root VERSION file!")
+        return 1
+    version = vfile.read_text(encoding="utf-8").strip()
+    import re
+    if not re.match(r"^\d+\.\d+\.\d+", version):
+        print(f"ERROR: VERSION '{version}' is not valid SemVer (e.g. 1.0.0)!")
+        return 1
+    print(f"Verified VERSION file: v{version}")
+
     return 0
 
 if __name__ == "__main__":

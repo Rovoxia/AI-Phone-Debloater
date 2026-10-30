@@ -36,5 +36,9 @@ if ! command -v adb >/dev/null 2>&1; then
 fi
 
 # Launch the debloat engine.
-echo "Launching AI-Phone-Debloater..."
+APP_VERSION="1.0.0"
+if [ -f "$SCRIPT_DIR/VERSION" ]; then
+    APP_VERSION=$(tr -d '\r\n' < "$SCRIPT_DIR/VERSION")
+fi
+echo "Launching AI-Phone-Debloater v$APP_VERSION..."
 "$PY" "$SCRIPT_DIR/scripts/debloat-engine.py" --interactive

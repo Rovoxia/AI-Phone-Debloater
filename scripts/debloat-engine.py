@@ -48,6 +48,21 @@ if hasattr(sys.stderr, "reconfigure"):
 # ---------------------------------------------------------------------------
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
+
+def load_version() -> str:
+    """Read version from root VERSION file, fallback to 1.0.0."""
+    vfile = PROJECT_ROOT / "VERSION"
+    if vfile.is_file():
+        try:
+            val = vfile.read_text(encoding="utf-8").strip()
+            if val:
+                return val
+        except Exception:
+            pass
+    return "1.0.0"
+
+__version__ = load_version()
+
 RULES_DIR_CANDIDATES = [
     PROJECT_ROOT / "rules",
     Path.cwd() / "rules",
@@ -1195,7 +1210,7 @@ class DebloatEngine:
 
     # -- interactive --------------------------------------------------------
     def interactive(self) -> None:
-        self.logger.header("Interactive Mode")
+        self.logger.header(f"AI-Phone-Debloater v{__version__} — Interactive Mode")
         self.connect()
         self.load_rules()
         while True:
@@ -1256,6 +1271,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="debloat-engine.py",
         description="AI-Phone-Debloater core engine — safe Android debloating via ADB.",
     )
+    p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     p.add_argument("--adb-path", help="Path to adb executable (default: auto-discover)")
     p.add_argument("--serial", help="ADB device serial (for multi-device setups)")
     p.add_argument("--rules-dir", type=Path, help="Directory containing rule JSON files")

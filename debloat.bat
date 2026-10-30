@@ -5,10 +5,17 @@ setlocal EnableExtensions
 set "SCRIPT_DIR=%~dp0"
 cd /d "%SCRIPT_DIR%"
 
-title AI-Phone-Debloater
+:: Read version from VERSION file
+set "APP_VERSION="
+if exist "%SCRIPT_DIR%VERSION" (
+    set /p APP_VERSION=<"%SCRIPT_DIR%VERSION"
+)
+if not defined APP_VERSION set "APP_VERSION=1.0.0"
+
+title AI-Phone-Debloater v%APP_VERSION%
 
 echo ========================================================
-echo   AI-Phone-Debloater Launcher (No Root - Safe Debloat)
+echo   AI-Phone-Debloater v%APP_VERSION% (No Root - Safe Debloat)
 echo ========================================================
 echo.
 

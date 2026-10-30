@@ -1,5 +1,6 @@
 # AI-Phone-Debloater — Universal Android ADB Debloater & Bloatware Removal Tool (No Root • Auto-Snapshot • Zero Data Loss)
 
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](VERSION)
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg?logo=python)](https://www.python.org/)
 [![Android ADB](https://img.shields.io/badge/Android-ADB-green.svg?logo=android)](https://developer.android.com/tools/releases/platform-tools)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
