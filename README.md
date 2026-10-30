@@ -173,35 +173,38 @@ Every debloat action is preceded by a `--dry-run` so you can review exactly what
 
 ## How to use with Claude Code / AI Agents
 
-AI-Phone-Debloater ships with a master prompt you give to any AI agent so it can build a device-specific debloat plan for you.
+AI-Phone-Debloater is designed from the ground up to pair seamlessly with AI coding agents (**Claude Code CLI**, **ChatGPT**, **Cursor**, **Codex**, and **Gemini**).
 
-### Step-by-step
+### 🤖 1-Click AI Agent Execution Prompt
 
-1. **Collect your device profile** (run these on your computer with the phone connected):
-   ```bash
-   adb shell pm list packages -U > scan.txt
-   adb shell getprop ro.product.manufacturer ro.product.brand ro.product.model ro.build.fingerprint
-   ```
+Simply copy and paste this exact prompt into your AI agent:
 
-2. **Open the master prompt** at `prompts/ai-debloat-system-prompt.md` and copy its contents.
+```text
+Clone https://github.com/Rovoxia/AI-Phone-Debloater.git and guide me through safely debloating my connected Android phone. Execute the workflow strictly in the following order:
 
-3. **Paste the prompt + your scan into your AI agent** (Claude Code, ChatGPT, Codex, Gemini, or DeepSeek), e.g.:
-   > "Here is my phone's package dump and build profile. Using the attached AI-Phone-Debloater master prompt, produce a debloat plan JSON classifying every package into the 4 safety tiers, then tell me which packages are safe to disable/uninstall and which are blacklisted."
+1. Clone & Verify Connection:
+   - Clone the repository and enter the directory.
+   - Verify that my Android device is connected and authorized via ADB.
 
-4. **Review the AI's JSON plan.** Every entry must include a `reason`, an `action` (`disable` or `uninstall-keep-data`), and estimated battery/RAM gains. Tier-4 packages must be marked `dangerous: true`.
+2. Device Scan & Breakdown:
+   - Run `python scripts/debloat-engine.py scan`.
+   - Present a clear summary of my device information and detected bloatware packages.
 
-5. **Apply the plan** with the engine:
-   ```bash
-   python scripts/debloat-engine.py --dry-run        # verify first
-   python scripts/debloat-engine.py --debloat        # then apply
-   ```
+3. Tier & Dry-Run Prompt (Interactive Check):
+   - Clearly ask me which debloat tier I want to use (defaulting to Tier 1 — Safe if I don't specify).
+   - Ask if I would like to run a `dry-run` simulation first before making actual changes:
+     * If YES: Run the dry-run for the selected tier, show the exact packages that would be removed, and wait for my confirmation to proceed.
+     * If NO: Proceed directly to step 4.
 
-6. **Restore anything** you change your mind about:
-   ```bash
-   python scripts/debloat-engine.py --restore <package>
-   ```
+4. Auto-Snapshot & Safe Execution:
+   - Take an automatic snapshot of the current package states so changes can be easily rolled back.
+   - Execute the debloat for the selected tier while ensuring all personal data, app data, and user files remain 100% intact.
+   - Show a final summary of the completed actions and where the backup snapshot is saved.
+```
 
-The full prompt contract (workflow, JSON schema, 4 tiers, blacklist table, output contract) lives in `prompts/ai-debloat-system-prompt.md`.
+The AI agent will detect your device, run pre-flight safety checks against the 61-package critical OS blacklist, take an automated rollback snapshot, and debloat your phone safely without root.
+
+For detailed custom prompt files and rules, see `prompts/claude-code-prompt.md` and `prompts/ai-debloat-system-prompt.md`.
 
 ---
 
