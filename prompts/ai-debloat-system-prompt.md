@@ -12,7 +12,7 @@ Clone https://github.com/Rovoxia/AI-Phone-Debloater.git and guide me through saf
 
 1. Clone & Verify Connection:
    - Clone the repository and enter the directory.
-   - Verify that my Android device is connected and authorized via ADB.
+   - Verify that my Android device is connected and authorized via ADB (either via USB cable or over Wi-Fi via Wireless Debugging).
 
 2. Device Scan & Breakdown:
    - Run `python scripts/debloat-engine.py scan`.

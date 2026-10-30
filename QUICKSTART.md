@@ -65,11 +65,27 @@ The AI agent will detect your phone, verify safety guardrails (0 collisions with
 
 From the interactive menu:
 - Press **`1`** to **Scan & Audit** your phone (lists all apps into Safety Tiers).
-- Press **`2`** to **Dry-Run Simulate** (shows what will be removed without touching anything).
+- Press **`2`** to **Dry-Run Simulate Tier 1** (shows what will be removed without touching anything).
 - Press **`3`** to **Safely Debloat Tier 1** (removes carrier junk, preloaded bloatware, and ad telemetry).
 - Press **`4`** to **Deep Debloat Tier 2** (removes Bixby/assistants, OEM cloud sync, and digital wellbeing).
-- Press **`5`** to **Export for AI** (creates a profile to feed Claude, ChatGPT, or Codex).
-- Press **`6`** to **Restore / Revert** (1-click snapshot rollback bringing back any app).
+- Press **`5`** to **Extreme Debloat Tier 3** (removes non-essential system utilities).
+- Press **`6`** to **Export for AI** (creates a profile to feed Claude, ChatGPT, or Codex).
+- Press **`7`** to **List Backups** (shows all timestamped snapshot archives).
+- Press **`8`** to **Restore from Backup** (1-click snapshot rollback bringing back any app).
+- Press **`9`** to **Restore Single Package** (re-enables/reinstalls any single app).
+- Press **`w`** to **Connect via Wireless ADB (Wi-Fi)** (debloat without USB cable).
+
+---
+
+## 📶 Option C: Wireless ADB Debloating (No USB Cable • Wi-Fi)
+
+1. Make sure phone and PC are connected to the same Wi-Fi.
+2. On phone: **Settings → Developer Options → Wireless Debugging** (turn ON).
+3. Tap **"Pair device with pairing code"** to view the IP:Port and 6-digit code.
+4. Run launcher, press **`w`**, select **`2`**, and enter the details. Or run:
+   ```bash
+   python scripts/debloat-engine.py wireless <ip>:<port> --pair <code>
+   ```
 
 ---
 

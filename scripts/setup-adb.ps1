@@ -127,10 +127,14 @@ if ($devices -match '\tunauthorized') {
 } else {
     Write-Host
     Write-Host "No authorized device found." -ForegroundColor Yellow
-    Write-Host "To connect:" -ForegroundColor Cyan
+    Write-Host "To connect via USB:" -ForegroundColor Cyan
     Write-Host "  1. Enable Developer Options on your phone (tap Build Number 7 times in Settings)." -ForegroundColor Cyan
     Write-Host "  2. Enable USB debugging in Developer Options." -ForegroundColor Cyan
     Write-Host "  3. Connect the phone via USB." -ForegroundColor Cyan
     Write-Host "  4. Accept the 'Allow USB debugging?' RSA prompt on the phone screen." -ForegroundColor Cyan
     Write-Host "  5. Re-run this script." -ForegroundColor Cyan
+    Write-Host "To connect Wirelessly (Wi-Fi, Android 11+):" -ForegroundColor Cyan
+    Write-Host "  1. Enable Developer Options > Wireless debugging on phone." -ForegroundColor Cyan
+    Write-Host "  2. Run: adb pair <ip>:<port> <pairing-code>" -ForegroundColor Cyan
+    Write-Host "  3. Run: adb connect <ip>:<port>" -ForegroundColor Cyan -ForegroundColor Cyan
 }

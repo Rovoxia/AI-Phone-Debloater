@@ -166,10 +166,14 @@ elif "$ADB_BIN" devices | grep -q '\tdevice'; then
 else
     echo
     echo "No authorized device found."
-    echo "To connect:"
+    echo "To connect via USB:"
     echo "  1. Enable Developer Options on your phone (tap Build Number 7 times in Settings)."
     echo "  2. Enable USB debugging in Developer Options."
     echo "  3. Connect the phone via USB."
     echo "  4. Accept the 'Allow USB debugging?' RSA prompt on the phone screen."
     echo "  5. Re-run this script."
+    echo "To connect Wirelessly (Wi-Fi, Android 11+):"
+    echo "  1. Enable Developer Options > Wireless debugging on phone."
+    echo "  2. Run: adb pair <ip>:<port> <pairing-code>"
+    echo "  3. Run: adb connect <ip>:<port>"
 fi

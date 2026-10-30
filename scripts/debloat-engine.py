@@ -426,6 +426,21 @@ class Adb:
             devices.append(info)
         return devices
 
+    def connect_wireless(self, address: str) -> Tuple[int, str, str]:
+        """Connect to device over Wi-Fi (e.g. 192.168.1.50:5555)."""
+        cmd = [self.adb_path, "connect", address]
+        return run_cmd(cmd, timeout=self.timeout)
+
+    def pair_wireless(self, address: str, code: str) -> Tuple[int, str, str]:
+        """Pair with device using Android 11+ pairing code (e.g. 192.168.1.50:port, code)."""
+        cmd = [self.adb_path, "pair", address, code]
+        return run_cmd(cmd, timeout=self.timeout)
+
+    def tcpip(self, port: int = 5555) -> Tuple[int, str, str]:
+        """Switch connected USB device to wireless ADB port (adb tcpip 5555)."""
+        cmd = self._base() + ["tcpip", str(port)]
+        return run_cmd(cmd, timeout=self.timeout)
+
     def getprop(self, prop: str, timeout: Optional[float] = None) -> str:
         rc, out, err = self.shell(f"getprop {prop}", timeout=timeout)
         if rc != 0:
@@ -824,6 +839,26 @@ class DebloatEngine:
         self.snapshot_mgr = SnapshotManager(backups_dir, self.logger)
         self._confirmed = False
 
+    # -- wireless -----------------------------------------------------------
+    def connect_wireless(self, address: str) -> bool:
+        self.logger.info(f"Connecting to wireless ADB device at {address}...")
+        rc, out, err = self.adb.connect_wireless(address)
+        if rc == 0 and ("connected to" in out.lower() or "already connected" in out.lower()):
+            self.logger.ok(f"Connected to wireless ADB: {address}")
+            self.adb.serial = address
+            return True
+        self.logger.error(f"Wireless connection failed: {out.strip() or err.strip()}")
+        return False
+
+    def pair_wireless(self, address: str, code: str) -> bool:
+        self.logger.info(f"Pairing with wireless device {address} using code...")
+        rc, out, err = self.adb.pair_wireless(address, code)
+        if rc == 0 and "successfully paired" in out.lower():
+            self.logger.ok(f"Successfully paired with {address}")
+            return True
+        self.logger.error(f"Wireless pairing failed: {out.strip() or err.strip()}")
+        return False
+
     # -- lifecycle ----------------------------------------------------------
     def connect(self) -> None:
         self.logger.header("ADB Discovery & Device Detection")
@@ -831,7 +866,7 @@ class DebloatEngine:
             devices = self.adb.devices()
         if not devices:
             raise AdbError(
-                "No ADB devices found. Enable USB debugging and connect a device."
+                "No ADB devices found. Connect via USB (enable USB debugging) or over Wi-Fi (adb connect <ip>:<port> or use 'w' in menu)."
             )
         if len(devices) == 1:
             dev = devices[0]
@@ -1211,8 +1246,13 @@ class DebloatEngine:
     # -- interactive --------------------------------------------------------
     def interactive(self) -> None:
         self.logger.header(f"AI-Phone-Debloater v{__version__} — Interactive Mode")
-        self.connect()
-        self.load_rules()
+        try:
+            self.connect()
+            self.load_rules()
+        except AdbError as exc:
+            self.logger.warn(f"Initial connection: {exc}")
+            self.logger.info("Tip: If using Wi-Fi without USB, select 'w' below to connect wirelessly.")
+
         while True:
             print()
             print(f"{bold('1')}  Scan device & show tiers")
@@ -1224,16 +1264,25 @@ class DebloatEngine:
             print(f"{bold('7')}  List backups")
             print(f"{bold('8')}  Restore from backup")
             print(f"{bold('9')}  Restore single package")
+            print(f"{bold('w')}  Wireless ADB connect / pair (Wi-Fi)")
             print(f"{bold('0')}  Exit")
             choice = input("\nSelect: ").strip()
             try:
                 if choice == "1":
                     self.scan()
                 elif choice == "2":
-                    self.logger.info("Use --dry-run CLI flag for dry-run simulation.")
-                elif choice in ("3", "4", "5"):
-                    tier = int(choice)
-                    self.debloat_tier(tier, action="disable", require_confirm=True, auto_snapshot=True)
+                    old_dry = self.dry_run
+                    self.dry_run = True
+                    try:
+                        self.debloat_tier(1, action="disable", require_confirm=False, auto_snapshot=False)
+                    finally:
+                        self.dry_run = old_dry
+                elif choice == "3":
+                    self.debloat_tier(1, action="disable", require_confirm=True, auto_snapshot=True)
+                elif choice == "4":
+                    self.debloat_tier(2, action="disable", require_confirm=True, auto_snapshot=True)
+                elif choice == "5":
+                    self.debloat_tier(3, action="disable", require_confirm=True, auto_snapshot=True)
                 elif choice == "6":
                     self.export_for_ai()
                 elif choice == "7":
@@ -1252,6 +1301,34 @@ class DebloatEngine:
                 elif choice == "9":
                     pkg = input("Package name: ").strip()
                     self.restore_pkg(pkg)
+                elif choice.lower() == "w":
+                    print("\nWireless ADB (Wi-Fi) Setup:")
+                    print("  1) Connect to known IP:Port (e.g. 192.168.1.50:5555)")
+                    print("  2) Pair Android 11+ Wireless Debugging (IP:Port + Pairing Code)")
+                    print("  3) Switch connected USB phone to Wi-Fi mode (adb tcpip 5555)")
+                    subc = input("\nSelect (1/2/3): ").strip()
+                    if subc == "1":
+                        addr = input("Device IP:Port (e.g. 192.168.1.50:5555): ").strip()
+                        if addr:
+                            if self.connect_wireless(addr):
+                                self.connect()
+                                self.load_rules()
+                    elif subc == "2":
+                        p_addr = input("Pairing IP:Port (from phone Wireless debugging screen): ").strip()
+                        p_code = input("6-digit Pairing Code: ").strip()
+                        if p_addr and p_code:
+                            if self.pair_wireless(p_addr, p_code):
+                                c_addr = input("Connect IP:Port (from main Wireless debugging screen): ").strip()
+                                if c_addr:
+                                    if self.connect_wireless(c_addr):
+                                        self.connect()
+                                        self.load_rules()
+                    elif subc == "3":
+                        rc, out, err = self.adb.tcpip(5555)
+                        if rc == 0:
+                            self.logger.ok("TCPIP port 5555 enabled. Disconnect USB cable, then select option 1 to connect via Wi-Fi.")
+                        else:
+                            self.logger.error(f"Failed to enable TCPIP: {out or err}")
                 elif choice == "0":
                     break
                 else:
@@ -1279,6 +1356,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--timeout", type=float, default=30.0, help="ADB command timeout in seconds")
     p.add_argument("-q", "--quiet", action="store_true", help="Suppress informational output")
     p.add_argument("-v", "--verbose", action="store_true", help="Verbose debug output")
+    p.add_argument("--wireless", "-w", help="Connect to wireless ADB device address (e.g. 192.168.1.50:5555)")
     p.add_argument("--dry-run", action="store_true", help="Simulate operations without executing")
     p.add_argument("--interactive", "-i", action="store_true", help="Launch interactive terminal menu")
     p.add_argument("--scan", "-s", action="store_true", help="Scan device and classify packages into safety tiers")
@@ -1287,10 +1365,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub = p.add_subparsers(dest="command", required=False)
 
+    wl = sub.add_parser("wireless", help="Connect or pair with wireless ADB device over Wi-Fi")
+    wl.add_argument("address", help="Device IP and port (e.g. 192.168.1.50:5555)")
+    wl.add_argument("--pair", help="6-digit pairing code for Android 11+ Wireless Debugging")
+    wl.add_argument("--tcpip", action="store_true", help="Enable TCPIP mode on USB device first")
+
     sub.add_parser("scan", help="Scan device and classify packages into safety tiers")
 
     dry = sub.add_parser("dry-run", help="Simulate debloat operations (show what would run)")
-    dry.add_argument("--tier", type=int, choices=[1, 2, 3], required=True, help="Tier to simulate")
+    dry.add_argument("--tier", type=int, choices=[1, 2, 3], default=1, help="Tier to simulate (default: 1)")
 
     deb = sub.add_parser("debloat", help="Execute debloat for a tier")
     deb.add_argument("--tier", type=int, choices=[1, 2, 3], required=True, help="Tier to debloat")
@@ -1331,12 +1414,25 @@ def main(argv: Optional[List[str]] = None) -> int:
             timeout=args.timeout,
         )
 
-        if args.command == "scan" or getattr(args, "scan", False):
+        if getattr(args, "wireless", None):
+            engine.connect_wireless(args.wireless)
+
+        if args.command == "wireless":
+            if args.pair:
+                if not engine.pair_wireless(args.address, args.pair):
+                    return 1
+            if engine.connect_wireless(args.address):
+                engine.connect()
+                engine.load_rules()
+                return 0
+            return 1
+        elif args.command == "scan" or getattr(args, "scan", False):
             engine.connect()
             engine.load_rules()
             engine.scan()
         elif args.command == "dry-run":
-            engine.debloat_tier(args.tier, action="disable", require_confirm=True, auto_snapshot=True)
+            engine.dry_run = True
+            engine.debloat_tier(args.tier, action="disable", require_confirm=False, auto_snapshot=False)
         elif args.command == "debloat":
             engine._confirmed = bool(args.yes)
             engine.debloat_tier(args.tier, action=args.action, require_confirm=not args.yes, auto_snapshot=True)

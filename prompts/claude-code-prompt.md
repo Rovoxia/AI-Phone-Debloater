@@ -12,7 +12,7 @@ Clone https://github.com/Rovoxia/AI-Phone-Debloater.git and guide me through saf
 
 1. Clone & Verify Connection:
    - Clone the repository and enter the directory.
-   - Verify that my Android device is connected and authorized via ADB.
+   - Verify that my Android device is connected and authorized via ADB (either via USB cable or over Wi-Fi via Wireless Debugging).
 
 2. Device Scan & Breakdown:
    - Run `python scripts/debloat-engine.py scan`.
@@ -68,6 +68,10 @@ AI-Phone-Debloater/
 ## Step-by-Step Execution Flow for Claude Code
 
 ### Step 1: Verify Connection & Scan Device
+Connect via USB or wirelessly over Wi-Fi:
+- **USB:** Connect cable, ensure USB debugging is enabled on phone.
+- **Wireless (Wi-Fi, Android 11+):** `python scripts/debloat-engine.py wireless <ip>:<port> --pair <code>`
+
 Run the scanner to discover the connected phone and classify all packages:
 
 ```bash

@@ -27,6 +27,7 @@ AI-Phone-Debloater is a powerful universal phone debloater and Universal Android
 | ⚡ **4-Tier Safety Framework** | Safe → Advanced → Extreme → Critical Blacklist. Every package is classified before anything is touched. |
 | 🔄 **Instant Rollback / Restore** | One-click snapshot restore brings any app back. No factory reset ever required. |
 | 📱 **Cross-OEM Support** | Samsung (One UI), Google (Pixel), Xiaomi (MIUI/HyperOS), OnePlus (OxygenOS), Oppo/Vivo/Realme, Motorola, and Transsion. |
+| 📶 **Wireless ADB (Wi-Fi)** | Debloat without a USB cable! Native support for Android 11+ Wireless Debugging and legacy ADB TCPIP. |
 | 💻 **1-Click Launchers** | `debloat.bat` on Windows (auto-bootstraps portable Python if needed), `./debloat.sh` on macOS/Linux. |
 
 ---
@@ -40,6 +41,7 @@ Why **AI-Phone-Debloater** is the safest, most flexible alternative to Universal
 | **Root Required?** | ❌ **No (Rootless)** | ❌ No | ❌ No | ❌ No |
 | **Personal Data Preserved (`-k`)** | ✅ **100% Guaranteed** | ⚠️ Partial | ❌ No | ⚠️ Only if manual flag typed |
 | **AI Agent Integration** | ✅ **Claude, GPT, Gemini** | ❌ None | ❌ None | ❌ None |
+| **Wireless ADB (No Cable)** | ✅ **Native (Pair & Connect)** | ⚠️ Manual CLI only | ⚠️ Partial | ⚠️ Manual commands |
 | **Automated Pre-Snapshots** | ✅ **Automatic JSON** | ⚠️ Manual export | ⚠️ Pro license only | ❌ None |
 | **1-Click Rollback / Restore** | ✅ **Instant 1-Click** | ⚠️ Package by package | ⚠️ Manual | ❌ Manual reinstall |
 | **OEM Coverage** | ✅ **320+ Curated Rules** | ✅ Community list | ⚠️ Basic | ❌ None |
@@ -167,8 +169,47 @@ When the engine starts, pick one of:
 | **Scan** | Dumps all packages on the device (`pm list packages -U`) and classifies them by tier. |
 | **Debloat** | Applies a debloat plan (after a mandatory `--dry-run` confirmation). |
 | **AI Agent export / apply** | Exports a JSON plan for an AI agent, or applies a plan an AI agent produced. |
+| **Wireless ADB (Wi-Fi)** | Connect or pair over Wi-Fi without needing a USB cable. |
 
 Every debloat action is preceded by a `--dry-run` so you can review exactly what will happen before anything runs.
+
+---
+
+### 📶 Method 3: Wireless ADB Debloating (No USB Cable Required • Wi-Fi)
+
+You can debloat any Android phone completely wirelessly over your local Wi-Fi network without plugging in a USB cable!
+
+#### Option A: Android 11, 12, 13, 14, 15+ (Native Wireless Debugging)
+
+1. Connect your phone and PC to the **same Wi-Fi network**.
+2. On your phone: Open **Settings → Developer options → Wireless debugging** and toggle it **ON**.
+3. Tap **"Pair device with pairing code"**. You will see:
+   - Wi-Fi pairing code (e.g. `123456`)
+   - IP address & Port (e.g. `192.168.1.50:37123`)
+4. Connect using any of these 3 easy methods:
+
+- **Via Interactive Menu (Easiest):**
+  Run `debloat.bat` (Windows) or `./debloat.sh` (Mac/Linux), press **`w`**, choose **`2`**, and enter the pairing IP:Port and 6-digit code.
+- **Via CLI Command:**
+  ```bash
+  python scripts/debloat-engine.py wireless 192.168.1.50:37123 --pair 123456
+  ```
+- **Via Standard ADB:**
+  ```bash
+  adb pair 192.168.1.50:37123 123456
+  adb connect 192.168.1.50:42155
+  ```
+
+#### Option B: Android 5.0 to 10 (Legacy ADB TCPIP)
+
+1. Connect your phone via USB cable once.
+2. In the interactive launcher, press **`w`** and select **`3`** (or run `adb tcpip 5555`).
+3. Disconnect the USB cable.
+4. Find your phone's Wi-Fi IP address in **Settings → About phone → Status information → IP address**.
+5. Connect wirelessly:
+   ```bash
+   python scripts/debloat-engine.py wireless 192.168.1.50:5555
+   ```
 
 ---
 
@@ -227,6 +268,14 @@ Any device running **Android 8.0 (Oreo) through Android 15+** is fully supported
 - Re-run `scripts/setup-adb.ps1` (Windows) or `scripts/setup-adb.sh` (Mac/Linux) to confirm ADB is installed and the server is running.
 </details>
 
+<details>
+<summary><b>Can I debloat my phone wirelessly over Wi-Fi without a USB cable?</b></summary>
+
+> **Yes! 100% wireless debloating is fully supported.**
+- **Android 11 to 15+:** Enable **Wireless debugging** in Developer options, tap "Pair device with pairing code", then run `python scripts/debloat-engine.py wireless <ip>:<port> --pair <code>` or press **`w`** in the interactive menu.
+- **Android 5 to 10:** Run `adb tcpip 5555` once via USB, unplug, then run `python scripts/debloat-engine.py wireless <phone-ip>:5555`.
+</details>
+
 ---
 
 ## 🔍 Supported OEMs & Systems
@@ -274,7 +323,7 @@ Unlike legacy tools that require manual package selection or complex installatio
 
 ## 🏷️ Keywords & Search Topics
 
-`phone debloater` • `universal phone debloater` • `powerful phone debloater` • `clean your phone` • `clean android phone` • `speed up android phone` • `universal android debloater` • `android debloater` • `uad alternative` • `remove bloatware android no root` • `debloat phone without losing data` • `uninstall system apps android adb` • `debloat samsung one ui` • `debloat xiaomi hyperos` • `debloat oneplus oxygenos` • `best android debloater 2026` • `remove glance lockscreen ads` • `disable bixby samsung` • `android battery optimizer` • `ai phone debloater` • `claude code debloat`
+`phone debloater` • `universal phone debloater` • `powerful phone debloater` • `clean your phone` • `clean android phone` • `speed up android phone` • `universal android debloater` • `android debloater` • `uad alternative` • `remove bloatware android no root` • `debloat phone without losing data` • `uninstall system apps android adb` • `debloat samsung one ui` • `debloat xiaomi hyperos` • `debloat oneplus oxygenos` • `wireless adb debloater` • `adb wireless android` • `debloat phone over wifi` • `wireless android debloater no root` • `best android debloater 2026` • `remove glance lockscreen ads` • `disable bixby samsung` • `android battery optimizer` • `ai phone debloater` • `claude code debloat`
 
 ---
 
