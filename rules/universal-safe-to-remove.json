@@ -1,0 +1,737 @@
+{
+  "manufacturer": "Universal (All OEMs)",
+  "version": "1.0.0",
+  "description": "Cross-brand bloatware present on multiple OEM devices, including Meta/Facebook preloads, Microsoft preloads, Netflix, Amazon, diagnostic loggers, telemetry trackers, and carrier bloatware.",
+  "rule": "universal-safe-to-remove",
+  "rules": [
+    {
+      "package": "com.facebook.katana",
+      "name": "Facebook",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Facebook client app. Reinstallable anytime from Google Play Store if needed.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.facebook.orca",
+      "name": "Facebook Messenger",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Messenger client app. Reinstallable from Google Play Store.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.facebook.system",
+      "name": "Meta App Installer",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Background service that silently downloads, installs, and updates Meta apps without user consent.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.facebook.appmanager",
+      "name": "Meta App Manager",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Tracks Meta app metrics and analytics in background. Disabling stops continuous background CPU wakeup.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.facebook.services",
+      "name": "Meta Services",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Persistent background service tracking user telemetry and device analytics for the Meta ad network.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.instagram.android",
+      "name": "Instagram",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Instagram social client. Reinstallable from Google Play Store.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.microsoft.office.officehubrow",
+      "name": "Microsoft 365 (Office)",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Microsoft 365 Office mobile hub app.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.microsoft.office.word",
+      "name": "Microsoft Word",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Microsoft Word document editor.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.microsoft.office.excel",
+      "name": "Microsoft Excel",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Microsoft Excel spreadsheet editor.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.microsoft.office.powerpoint",
+      "name": "Microsoft PowerPoint",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Microsoft PowerPoint presentation editor.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.microsoft.office.outlook",
+      "name": "Microsoft Outlook",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Microsoft Outlook email and calendar client.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.microsoft.office.onenote",
+      "name": "Microsoft OneNote",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Microsoft OneNote digital notebook.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.microsoft.skydrive",
+      "name": "Microsoft OneDrive",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Microsoft OneDrive cloud storage client.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.microsoft.teams",
+      "name": "Microsoft Teams",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Microsoft Teams workplace chat client.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.microsoft.bing",
+      "name": "Microsoft Bing",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Microsoft Bing search engine and reward tracker.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.microsoft.appmanager",
+      "name": "Link to Windows Service",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Preloaded Link to Windows companion service for PC synchronization.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.linkedin.android",
+      "name": "LinkedIn",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded LinkedIn professional networking app.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.skype.raider",
+      "name": "Skype",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Skype calling and messaging app.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.swiftkey.swiftkeyconfigurator",
+      "name": "SwiftKey Factory Configurator",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "OEM preloaded configuration stub for Microsoft SwiftKey keyboard.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.netflix.mediaclient",
+      "name": "Netflix",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Netflix streaming client. Reinstallable from Google Play Store.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.netflix.partner.activation",
+      "name": "Netflix Partner Activation",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "OEM partner activation stub for Netflix device provisioning.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.netflix.activation",
+      "name": "Netflix Activation Service",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Carrier and OEM activation daemon for promotional Netflix bundles.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.amazon.mShop.android.shopping",
+      "name": "Amazon Shopping",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Amazon e-commerce shopping application.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.amazon.appmanager",
+      "name": "Amazon App Manager",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Amazon background package installer and analytics daemon.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.amazon.avod.thirdpartyclient",
+      "name": "Amazon Prime Video",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Amazon Prime Video streaming media player.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.amazon.kindle",
+      "name": "Amazon Kindle",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Amazon Kindle e-book reader application.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.amazon.mp3",
+      "name": "Amazon Music",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Amazon Music audio streaming player.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.amazon.venezia",
+      "name": "Amazon Appstore",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Amazon Appstore marketplace client.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.spotify.music",
+      "name": "Spotify",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Spotify music streaming app. Reinstallable from Google Play Store.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.booking",
+      "name": "Booking.com",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded hotel reservation travel client.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.ebay.mobile",
+      "name": "eBay",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded eBay marketplace online shopping app.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.zhiliaoapp.musically",
+      "name": "TikTok",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded TikTok short-video social application.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.snapchat.android",
+      "name": "Snapchat",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Snapchat messaging and camera app.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.glance.internet",
+      "name": "Glance Lockscreen Platform",
+      "tier": 1,
+      "category": "adware",
+      "description": "Adware lockscreen platform serving commercial stories, clickbait wallpapers, and sponsored games.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.opera.browser",
+      "name": "Opera Browser",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Opera web browser client.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.opera.preinstall",
+      "name": "Opera Preinstall",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Factory installer stub for Opera browser and partner bookmarks.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.yandex.browser",
+      "name": "Yandex Browser",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Yandex search browser bundled on regional OEM devices.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.qualcomm.qti.qmmi",
+      "name": "Qualcomm MMI Diagnostics",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Factory hardware test and automated diagnostic daemon.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.qualcomm.qti.qms.service.telemetry",
+      "name": "Qualcomm Telemetry Service",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Chipset diagnostic reporting and performance logging service.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.qualcomm.atfwd",
+      "name": "Qualcomm AT Forwarding Service",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Modem AT command router and diagnostic bridge.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.google.android.feedback",
+      "name": "Google Feedback",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Crash log collector and diagnostic report sender for Google Play services.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.google.android.partnersetup",
+      "name": "Google Partner Setup",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "OEM partner customization configuration for Google suite preloads.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.google.android.apps.carrier.carrierwifi",
+      "name": "Google Carrier Wi-Fi Provisioner",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Auto-connects device to carrier-sponsored public Wi-Fi hotspots and logs network telemetry.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.android.traceur",
+      "name": "System Tracing",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Developer systrace capture utility. Safe to disable for normal day-to-day phone usage.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.android.egg",
+      "name": "Android Easter Egg",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Android OS Easter egg mini-game hidden inside Android version settings.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.android.dreams.basic",
+      "name": "Basic Daydreams",
+      "tier": 1,
+      "category": "optional_feature",
+      "description": "Legacy screen saver animations (Colors, Photo Frame).",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.android.dreams.phototable",
+      "name": "Photo Table Daydream",
+      "tier": 1,
+      "category": "optional_feature",
+      "description": "Photo slideshow screensaver shown when docked or charging.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.android.printservice.recommendation",
+      "name": "Print Service Recommendation Service",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Monitors local network to recommend proprietary printer manufacturer plugins.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.android.bips",
+      "name": "Default Print Service",
+      "tier": 1,
+      "category": "optional_feature",
+      "description": "Built-in Mopria network print service. Safe to disable if you do not print from your phone.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.android.bookmarkprovider",
+      "name": "Bookmark Provider",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Obsolete bookmark sync provider for legacy stock AOSP browser.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.att.myWireless",
+      "name": "myAT&T",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Carrier billing, account management, and promotional upgrade portal for AT&T.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.att.dh",
+      "name": "AT&T Device Help",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Carrier diagnostic and troubleshooting bloatware from AT&T.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.att.callprotect",
+      "name": "AT&T ActiveArmor",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Carrier subscription spam blocker and VPN telemetry agent.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.asurion.android.mobilerecovery.att",
+      "name": "AT&T ProTech",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Carrier device insurance diagnostic and support app.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.att.mobilesecurity",
+      "name": "AT&T Mobile Security",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Carrier subscription antivirus and Wi-Fi scanner from AT&T.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.att.tv",
+      "name": "DirecTV Stream (AT&T TV)",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Carrier video streaming service preloaded on AT&T branded devices.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.vzw.hss.myverizon",
+      "name": "My Verizon",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Verizon carrier billing, data tracker, and upgrade store app.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.telecomsys.directedsms.android.SCG",
+      "name": "Verizon Cloud",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Verizon cloud storage backup and subscription prompt client.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.vzw.apnlib",
+      "name": "Verizon APN Library",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Carrier profile updater for Verizon network services.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.verizon.mips.services",
+      "name": "Verizon Location Agent",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Carrier location tracking telemetry daemon.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.vcast.mediamanager",
+      "name": "Verizon Media Manager",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Carrier multimedia cloud sync and storage assistant.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.customermobile.preload.vzw",
+      "name": "Verizon App Selector",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Silent carrier app downloader that pushes sponsored games and apps after setup.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.logia.did",
+      "name": "Verizon Digital Secure",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Carrier security and ad blocker upsell tool.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.tmobile.pr.mytmobile",
+      "name": "T-Mobile",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Carrier plan billing, usage monitoring, and add-on store.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.tmobile.pr.adapt",
+      "name": "T-Mobile Play (AppEdge)",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Promotional news feed, game recommendations, and sponsored app installer.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.tmobile.services.nameid",
+      "name": "T-Mobile Scam Shield",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Carrier caller ID lookup and spam screening service.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.tmobile.echolocate",
+      "name": "T-Mobile Diagnostics Telemetry",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Carrier network coverage logging, dropped call telemetry, and ping collector.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.sprint.ms.cdm",
+      "name": "Sprint Zone",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Legacy Sprint carrier account and app portal.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.sprint.w.ret",
+      "name": "Sprint Visual Voicemail",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Sprint visual voicemail client with carrier advertising.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.sprint.ms.smf.services",
+      "name": "Sprint Framework Services",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Carrier analytics, network performance daemon, and diagnostic reporter.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.vodafone.vodafoneplay",
+      "name": "Vodafone Play",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Carrier streaming movies, live TV, and music hub for Vodafone subscribers.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.mizmowired.vodafone",
+      "name": "My Vodafone",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Carrier plan management and top-up portal for Vodafone.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.vodafone.mysuggestions",
+      "name": "Vodafone Start Suggestions",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Sponsored app discovery widget preloaded on Vodafone carrier handsets.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.jio.myjio",
+      "name": "MyJio",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Super-app from Reliance Jio bundled with ads, mini-apps, and promotional banners.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.jio.media.ondemand",
+      "name": "JioCinema",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Carrier movie and sports streaming client from Reliance Jio.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.jio.media.jiobeats",
+      "name": "JioSaavn",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Carrier music streaming player with pop-up subscription ads.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.jio.join",
+      "name": "JioChat",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Carrier messaging client bundled on Jio network devices.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.jio.jioplay.tv",
+      "name": "JioTV",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Live television broadcast player preloaded on Jio handsets.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.myairtelapp",
+      "name": "Airtel Thanks",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Carrier bill payment, loan offers, and shopping ads from Bharti Airtel.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.bsb.hike",
+      "name": "Airtel Xstream",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Carrier OTT video aggregator preloaded on Airtel carrier handsets.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.wynk.music",
+      "name": "Wynk Music",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Carrier music streaming player with caller-tune upselling from Airtel.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    }
+  ]
+}

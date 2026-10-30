@@ -1,0 +1,215 @@
+{
+  "manufacturer": "BBK (Oppo, Vivo, Realme)",
+  "version": "1.0.0",
+  "description": "Comprehensive debloat rules for BBK Electronics smartphone brands: Oppo (ColorOS), Vivo (FuntouchOS/OriginOS), and Realme (Realme UI).",
+  "rule": "bbk-oppo-vivo-realme",
+  "rules": [
+    {
+      "package": "com.heytap.market",
+      "name": "Oppo / Realme App Market",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Secondary app market with aggressive ad notifications, recommended app popups, and auto-downloading bloatware.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.vivo.appstore",
+      "name": "Vivo V-Appstore",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Vivo proprietary app store. Safe to disable when using Google Play Store.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.heytap.browser",
+      "name": "HeyTap Browser",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded web browser filled with sponsored bookmarks, trending video ads, and search tracking.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.vivo.browser",
+      "name": "Vivo Browser",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded Vivo web browser with trending news advertisements and sponsored search engines.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.heytap.themestore",
+      "name": "HeyTap Theme Store",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Storefront for purchasing wallpapers, lockscreens, and system fonts.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.bbk.theme",
+      "name": "iTheme (Vivo Themes)",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Vivo theme marketplace client.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.heytap.quicksearchbox",
+      "name": "HeyTap Global Search",
+      "tier": 1,
+      "category": "adware",
+      "description": "Swipe-down search widget featuring trending app ads and web suggestions.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.vivo.globalsearch",
+      "name": "Vivo Global Search",
+      "tier": 1,
+      "category": "adware",
+      "description": "System search bar pushing sponsored search queries and promotional apps.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.heytap.yoli",
+      "name": "HeyTap Video",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Online video aggregator with banner ads preloaded on Oppo and Realme devices.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.heytap.music",
+      "name": "HeyTap Music",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Music player with commercial audio streaming promotions.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.vivo.assistant",
+      "name": "Jovi Voice Assistant",
+      "tier": 1,
+      "category": "voice_assistant",
+      "description": "Vivo proprietary voice assistant. Safe to disable if using Google Assistant or no assistant.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.vivo.hiboard",
+      "name": "Jovi Home (HiBoard)",
+      "tier": 1,
+      "category": "adware",
+      "description": "Negative-one home screen feed pushing sponsored news, shortcuts, and promotional cards.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.vivo.imanager",
+      "name": "Vivo iManager Telemetry",
+      "tier": 2,
+      "category": "telemetry",
+      "description": "Background system manager known for aggressive RAM killing, security scanning, and battery stats logging.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.coloros.phonemanager",
+      "name": "ColorOS Phone Manager",
+      "tier": 2,
+      "category": "telemetry",
+      "description": "System cleaner and storage scanner bundled on ColorOS and Realme UI.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.coloros.gamespace",
+      "name": "ColorOS Game Space",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Gaming overlay with community ads and network acceleration promos.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.vivo.game",
+      "name": "Vivo Game Center",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Game store and floating in-game overlay from Vivo.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.coloros.assistantscreen",
+      "name": "Smart Assistant (Breeno Feed)",
+      "tier": 1,
+      "category": "adware",
+      "description": "ColorOS leftmost smart widget screen displaying sponsored cards and quick apps.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.glance.internet",
+      "name": "Glance Lockscreen Platform",
+      "tier": 1,
+      "category": "adware",
+      "description": "Sponsored lockscreen news stories, ad wallpapers, and video teasers. Major battery consumer.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.coloros.pictorial",
+      "name": "ColorOS Lockscreen Magazine",
+      "tier": 1,
+      "category": "adware",
+      "description": "Lockscreen wallpaper carousel displaying promotional commercial images.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.vivo.magazine",
+      "name": "Vivo Lockscreen Poster",
+      "tier": 1,
+      "category": "adware",
+      "description": "Lockscreen dynamic wallpapers with advertising headlines.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.vivo.easyshare",
+      "name": "Vivo EasyShare",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "File transfer utility for copying data between Vivo phones.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.oppo.roaming",
+      "name": "Oppo Roaming",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Virtual SIM international data roaming market.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.redteamobile.roaming",
+      "name": "Redtea Mobile Roaming",
+      "tier": 1,
+      "category": "carrier",
+      "description": "eSIM data roaming marketplace preloaded on BBK handsets.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    }
+  ]
+}

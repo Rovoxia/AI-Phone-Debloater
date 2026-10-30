@@ -1,0 +1,143 @@
+{
+  "manufacturer": "Motorola",
+  "version": "1.0.0",
+  "description": "Safe debloat rules for Motorola smartphones running My UX and Hello UI.",
+  "rule": "motorola",
+  "rules": [
+    {
+      "package": "com.motorola.ccc.notification",
+      "name": "Motorola Notifications",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Sends customer satisfaction surveys, feedback questionnaires, and promotional product marketing notifications.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.motorola.genie",
+      "name": "Hello You (Moto Discover)",
+      "tier": 1,
+      "category": "adware",
+      "description": "Preloaded discovery hub displaying trending commercial news feeds, sponsored games, and promotional articles.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.motorola.help",
+      "name": "Moto Device Help",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Device troubleshooting guides and hardware diagnostic tests. Safe to remove if not needing hardware diagnostics.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.motorola.motocare",
+      "name": "Moto Care Telemetry",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Diagnostic telemetry service collecting battery statistics, app crashes, and hardware usage data.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.motorola.motocare.internal",
+      "name": "Moto Care Internal Diagnostics",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Internal diagnostic monitor tracking system performance and transmitting crash dumps to Lenovo/Motorola servers.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.motorola.gamemode",
+      "name": "Moto Gametime",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Gaming overlay providing game-specific shortcuts, screen capture, and notification blocking.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.motorola.brapps",
+      "name": "Apps Brasil (Partner App Installer)",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Regional partner app installer that silently downloads sponsored apps during initial setup on Latin America carrier models.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.motorola.carriersetup",
+      "name": "Motorola Carrier Setup",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Carrier customization stub pushing carrier-specific bloatware and initial boot configurations.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.motorola.mobkit",
+      "name": "Motorola Mobile Kit",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Support framework for Motorola diagnostic and partner tools.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.motorola.motosignature.app",
+      "name": "Moto Signature",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Motorola device branding watermark and promotional sticker generator.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.motorola.audiomonitor",
+      "name": "Motorola Audio Monitor",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Audio environment analysis daemon used for automated profile switching.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.motorola.motodisplay",
+      "name": "Moto Display (Peek Display)",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Interactive ambient lockscreen showing notifications on motion detection. Safe to disable if using standard AOD or standard lockscreen.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.motorola.gesture",
+      "name": "Moto Actions (Gestures)",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Hardware sensor gesture service (chop twice for flashlight, twist for quick capture camera). Keep if using Moto gestures.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.motorola.spaces",
+      "name": "Moto Family Space",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Sandboxed space for kids or guest users restricting access to selected apps.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.motorola.android.fmradio",
+      "name": "Motorola FM Radio",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Built-in analog FM radio player. Safe to remove if using streaming music apps or if headphone jack is unused.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    }
+  ]
+}

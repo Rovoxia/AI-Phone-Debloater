@@ -1,0 +1,260 @@
+{
+  "manufacturer": "Xiaomi",
+  "version": "1.0.0",
+  "description": "Exhaustive debloat rules for Xiaomi, Redmi, and POCO smartphones running MIUI or HyperOS, targeting ad daemons, tracking telemetry, and duplicate OEM services.",
+  "rule": "xiaomi-miui-hyperos",
+  "rules": [
+    {
+      "package": "com.miui.msa.global",
+      "name": "MIUI System Ads (MSA Global)",
+      "tier": 1,
+      "category": "adware",
+      "description": "Core ad-serving background daemon responsible for displaying popups and banners inside System Apps (Themes, Security, File Manager). Disabling this eliminates most system ads.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.miui.analytics",
+      "name": "MIUI Analytics",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Continuous telemetry service monitoring device behavior, screen time, network usage, and app launches.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.miui.daemon",
+      "name": "MIUI Background Daemon",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Silent diagnostic background daemon periodically uploading device performance and system logs to Xiaomi servers.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.xiaomi.joyose",
+      "name": "Joyose Performance Service",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Aggressive background performance throttling engine. Disabling often improves game frame-rates, reduces stutter, and stops telemetry reports.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.xiaomi.payment",
+      "name": "Mi Pay",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Proprietary payment service bundled on Xiaomi devices.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.mipay.wallet.in",
+      "name": "Mi Pay India Wallet",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Regional UPI wallet and credit card integration from Xiaomi with promotional notifications.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.micredit.in",
+      "name": "Mi Credit",
+      "tier": 1,
+      "category": "adware",
+      "description": "Preloaded instant loan solicitation app sending high-interest credit push ads.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.miui.yellowpage",
+      "name": "Yellow Pages Directory",
+      "tier": 1,
+      "category": "adware",
+      "description": "Caller ID service and local vendor ad directory that displays sponsored merchant listings.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.xiaomi.mipicks",
+      "name": "GetApps (Mi Picks)",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Xiaomi secondary app marketplace with aggressive daily app recommendations and auto-update prompts.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.mi.globalbrowser",
+      "name": "Mi Browser Global",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Preloaded browser loaded with trending news feeds, clickbait stories, and data collection.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.android.browser",
+      "name": "Mi Browser (AOSP)",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "MIUI modified default browser with sponsored search bars.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.miui.videoplayer",
+      "name": "Mi Video",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Bundled video player with heavy online streaming recommendations, short clips, and banner ads.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.miui.player",
+      "name": "Mi Music",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Music player loaded with streaming promotions and banner advertisements.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.miui.cloudservice",
+      "name": "Xiaomi Cloud Service",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Xiaomi proprietary cloud storage backup. Safe to remove if using Google Drive/Photos.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.miui.cloudservice.syspack",
+      "name": "Xiaomi Cloud System Package",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "System service package supporting Xiaomi Cloud synchronization.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.miui.cloudbackup",
+      "name": "Xiaomi Cloud Backup",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Scheduled cloud backup agent for photos, contacts, and messages to Mi Cloud.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.miui.micloudsync",
+      "name": "Mi Cloud Sync",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Sync adapter for gallery, notes, and browser bookmarks to Xiaomi servers.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.xiaomi.midrop",
+      "name": "ShareMe (Mi Drop)",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "P2P file transfer client with push ads. Reinstallable from Play Store.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.miui.cleanmaster",
+      "name": "Clean Master Engine",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Third-party Cheetah Mobile cleaner engine bundled inside MIUI Security with ads and background memory scanning.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.miui.bugreport",
+      "name": "Mi Bug Report",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Automatic crash log uploader transmitting diagnostic memory dumps.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.miui.miservice",
+      "name": "Services and Feedback",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Feedback collection utility with persistent background logging.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.miui.hybrid",
+      "name": "Quick Apps",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Instant mini-app execution engine known for deep tracking and loading sponsored web apps without user confirmation.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.miui.hybrid.accessory",
+      "name": "Quick Apps Accessory",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Support daemon for Quick Apps runtime.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.mfashiongallery.emag",
+      "name": "Wallpaper Carousel (Glance for Xiaomi)",
+      "tier": 1,
+      "category": "adware",
+      "description": "Dynamic lockscreen wallpapers mixed with promotional news stories and commercial clickbait ads.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.miui.weather2",
+      "name": "Mi Weather",
+      "tier": 1,
+      "category": "adware",
+      "description": "Pre-installed weather app displaying promotional articles and ads at the bottom of forecasts.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.xiaomi.scanner",
+      "name": "Mi Scanner",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Document and QR code scanner with sponsored shopping search results.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.miui.compass",
+      "name": "Mi Compass",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Stock digital compass utility. Safe to remove.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.miui.notes",
+      "name": "Mi Notes",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Default note-taking app. Safe to remove if using Google Keep, Notion, or Obsidian.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    }
+  ]
+}

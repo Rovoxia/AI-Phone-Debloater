@@ -1,0 +1,557 @@
+{
+  "manufacturer": "Android (all OEMs)",
+  "version": "1.0.0",
+  "description": "Critical Android system core packages that MUST NEVER be removed or disabled. Touching these packages risks a bootloop, hard brick, or loss of core functionality including telephony, Wi-Fi, Bluetooth, settings, package management, security keystore, biometrics, lockscreen, media/storage access, or Google Play Services boot dependencies.",
+  "rule": "critical-do-not-touch",
+  "rules": [
+    {
+      "package": "android",
+      "name": "Android Framework",
+      "category": "framework_core",
+      "description": "Core Android framework package required by essentially every system operation and app.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.systemui",
+      "name": "Android System UI",
+      "category": "systemui_navigation",
+      "description": "Renders the status bar, navigation bar, notification shade, quick settings, and system dialogs. Removal causes loss of all UI shell and can cause bootloop.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.server",
+      "name": "System Server",
+      "category": "framework_core",
+      "description": "Hosts core system services (activity manager, window manager, package manager, power manager, input, display, audio). The device cannot boot or function without it.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.server.activitymanager",
+      "name": "Activity Manager Service",
+      "category": "framework_core",
+      "description": "Manages application lifecycle, activities, and process management. Required for all apps to run.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.server.input",
+      "name": "Input Service",
+      "category": "framework_core",
+      "description": "Dispatches touch, keyboard, pointer, and gesture input events. Required for all user input.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.server.display",
+      "name": "Display Service",
+      "category": "framework_core",
+      "description": "Manages display configuration, brightness, and screen state. Required for screen output.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.server.power",
+      "name": "Power Manager Service",
+      "category": "framework_core",
+      "description": "Manages device sleep/wake, power states, and battery optimization. Required for power management.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.server.audio",
+      "name": "Audio Service",
+      "category": "framework_core",
+      "description": "Handles system audio routing, volume, and sound policy. Required for sound output.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.server.pm",
+      "name": "Package Manager Service",
+      "category": "package_management_permissions",
+      "description": "System package manager used to install, query, update, and remove applications. Required to manage packages.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.server.appops",
+      "name": "AppOps Service",
+      "category": "package_management_permissions",
+      "description": "Tracks per-app operation usage (camera, microphone, location, permissions). Required for permission enforcement.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.server.backup",
+      "name": "Backup Service",
+      "category": "settings_providers",
+      "description": "System backup and restore service used for data migration and factory reset restore.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.server.account",
+      "name": "Account Manager Service",
+      "category": "settings_providers",
+      "description": "Manages system accounts and account sync. Required for account functionality.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.server.location",
+      "name": "Location Service",
+      "category": "wifi_bluetooth_network",
+      "description": "Fused location provider combining GPS, Wi-Fi, and cell signals. Required for location services.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.server.wifi",
+      "name": "Wi-Fi Service",
+      "category": "wifi_bluetooth_network",
+      "description": "Manages Wi-Fi connectivity, scanning, and association. Required for wireless networking.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.wifi.service",
+      "name": "Wi-Fi Service HAL",
+      "category": "wifi_bluetooth_network",
+      "description": "Wi-Fi HAL/service glue required for Wi-Fi firmware, scanning, and connectivity.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.bluetooth",
+      "name": "Bluetooth",
+      "category": "wifi_bluetooth_network",
+      "description": "Bluetooth stack and service required for Bluetooth devices and features.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.server.bluetooth",
+      "name": "Bluetooth Server",
+      "category": "wifi_bluetooth_network",
+      "description": "Bluetooth system service. Required for Bluetooth operation.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.nfc",
+      "name": "NFC",
+      "category": "wifi_bluetooth_network",
+      "description": "Near Field Communication service required for NFC tags and contactless payment.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.server.nfc",
+      "name": "NFC Server",
+      "category": "wifi_bluetooth_network",
+      "description": "NFC system service required for NFC operation.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.telephony",
+      "name": "Telephony Provider",
+      "category": "telephony_radio_emergency",
+      "description": "Provides telephony data (SIM, SMS, call state) to the system. Required for mobile network and emergency calls.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.server.telecom",
+      "name": "Telecom Service",
+      "category": "telephony_radio_emergency",
+      "description": "Manages calls (incoming, outgoing, emergency) and the in-call screen. Required for the dialer and telephony.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.phone",
+      "name": "Phone Telephony",
+      "category": "telephony_radio_emergency",
+      "description": "Legacy telephony phone app used by the framework for call handling and emergency services.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.cellbroadcastreceiver",
+      "name": "Cell Broadcast Receiver",
+      "category": "telephony_radio_emergency",
+      "description": "Receives emergency alerts (AMBER, severe weather, presidential alerts). Required for emergency alert delivery.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.server.telephony",
+      "name": "Telephony Radio Service",
+      "category": "telephony_radio_emergency",
+      "description": "RIL and telephony radio backend. Required for cellular network connectivity.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.settings",
+      "name": "Settings",
+      "category": "settings_providers",
+      "description": "The system Settings app used to configure the device, manage apps, accounts, network, and security.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.providers.settings",
+      "name": "Settings Provider",
+      "category": "settings_providers",
+      "description": "Stores system, secure, and global settings. Required by the Settings app and many system services.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.providers.contacts",
+      "name": "Contacts Provider",
+      "category": "settings_providers",
+      "description": "Central contacts storage used by dialer, contacts, and messaging apps.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.packageinstaller",
+      "name": "Package Installer",
+      "category": "package_management_permissions",
+      "description": "Handles app installation, updates, permissions, and uninstallation. Required to manage packages.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.documentsui",
+      "name": "Documents UI",
+      "category": "media_storage_core",
+      "description": "Storage Access Framework UI used to pick files and folders. Required by file managers and apps accessing storage.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.providers.media",
+      "name": "Media Provider",
+      "category": "media_storage_core",
+      "description": "Indexes and provides access to media files (photos, video, audio). Required by gallery and media apps.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.externalstorage",
+      "name": "External Storage",
+      "category": "media_storage_core",
+      "description": "Mounts and manages external/USB storage. Required for SD card and USB OTG access.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.keychain",
+      "name": "KeyChain",
+      "category": "security_keystore",
+      "description": "Provides apps access to system credentials and private keys stored in the keystore. Required for VPN, Wi-Fi enterprise, and secure apps.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.biometrics",
+      "name": "Biometrics",
+      "category": "security_keystore",
+      "description": "System biometric framework. Required for fingerprint/face unlock and biometric-backed keystore access.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.locksettings",
+      "name": "Lock Settings",
+      "category": "security_keystore",
+      "description": "Manages screen lock (PIN/pattern/password) and credential storage. Required to unlock and secure the device.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.fingerprint",
+      "name": "Fingerprint Service",
+      "category": "biometrics_lockscreen",
+      "description": "Fingerprint hardware abstraction and enrollment service. Required for fingerprint unlock.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.keyguard",
+      "name": "Keyguard Lockscreen",
+      "category": "biometrics_lockscreen",
+      "description": "The secure lockscreen that protects the device when locked.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.systemui.navbar",
+      "name": "System UI Navigation",
+      "category": "systemui_navigation",
+      "description": "Navigation bar component of System UI. Removing can break on-screen navigation.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.launcher3",
+      "name": "Default Launcher",
+      "category": "systemui_navigation",
+      "description": "Default home launcher. Required unless a third-party launcher is installed and set as default.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.google.android.gsf",
+      "name": "Google Services Framework",
+      "category": "google_play_services",
+      "description": "Core Google services framework required by Play Services and many Google apps; needed for boot stability on GMS devices.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.google.android.gms",
+      "name": "Google Play Services",
+      "category": "google_play_services",
+      "description": "Google Play Services provides APIs and background services required by the OS and Google apps; removing can prevent boot or break core functions.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.google.android.gms.auth",
+      "name": "Google Play Services Auth",
+      "category": "google_play_services",
+      "description": "Google account authentication used by Play Services and system account sync.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.google.android.gms.account",
+      "name": "Google Play Services Account",
+      "category": "google_play_services",
+      "description": "Google account management service required for GMS boot and sync.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.google.android.ext.services",
+      "name": "Google Extended Services",
+      "category": "google_play_services",
+      "description": "Google extended services framework required for GMS functionality on many devices.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.networkstack",
+      "name": "Network Stack",
+      "category": "wifi_bluetooth_network",
+      "description": "Core Android network stack implementation. Required for all IP connectivity.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.ipsec",
+      "name": "IPsec",
+      "category": "wifi_bluetooth_network",
+      "description": "IPsec stack required for VPN and secure network tunnels.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.vpn",
+      "name": "VPN Services",
+      "category": "wifi_bluetooth_network",
+      "description": "VPN service required for virtual private network connectivity.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.ims",
+      "name": "IP Multimedia Subsystem",
+      "category": "telephony_radio_emergency",
+      "description": "IMS service for VoLTE/ViLTE/RCS over IP. Required for carrier voice and video services.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.ims.rcsservice",
+      "name": "RCS Service",
+      "category": "telephony_radio_emergency",
+      "description": "RCS (Rich Communication Services) messaging service required by carriers.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.carrierconfig",
+      "name": "Carrier Config",
+      "category": "telephony_radio_emergency",
+      "description": "Carrier-specific configuration profiles required for correct mobile network operation.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.stk",
+      "name": "SIM Toolkit",
+      "category": "telephony_radio_emergency",
+      "description": "SIM Application Toolkit required by carriers for SIM-based services.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.incallui",
+      "name": "In-Call UI",
+      "category": "telephony_radio_emergency",
+      "description": "In-call screen UI. Required for active call handling.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.messaging",
+      "name": "SMS/Messaging",
+      "category": "telephony_radio_emergency",
+      "description": "System SMS/MMS app required for carrier messaging.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.smspush",
+      "name": "SMS Push",
+      "category": "telephony_radio_emergency",
+      "description": "SMS push service required for carrier SMS delivery.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.emergency",
+      "name": "Emergency Services",
+      "category": "telephony_radio_emergency",
+      "description": "Emergency services dialing and routing. Required for emergency call access.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.sharedstoragebackup",
+      "name": "Shared Storage Backup",
+      "category": "settings_providers",
+      "description": "Shared storage backup and restore service required for data migration.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.onetimeinitializer",
+      "name": "One Time Initializer",
+      "category": "settings_providers",
+      "description": "OTA setup and one-time initialization service required for system setup.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.partnercustomization",
+      "name": "Partner Customization",
+      "category": "settings_providers",
+      "description": "Partner/customization service required for OEM-carrier device configuration.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.shell",
+      "name": "Android Shell",
+      "category": "framework_core",
+      "description": "ADB shell itself. Required for ADB access to the device.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.webview",
+      "name": "Android System WebView",
+      "category": "framework_core",
+      "description": "System WebView used by apps to render web content. Required for many system and third-party apps.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.vending.licensing",
+      "name": "Play Licensing",
+      "category": "google_play_services",
+      "description": "Google Play licensing service required by Play Store and paid apps.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.inputdevices",
+      "name": "Input Devices",
+      "category": "framework_core",
+      "description": "Input device service required for keyboard, mouse, and gamepad input.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    }
+  ]
+}

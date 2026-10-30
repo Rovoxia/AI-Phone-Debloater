@@ -1,0 +1,34 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local user snapshots and backups (Prevent accidental upload of personal phone dumps)
+backups/*
+!backups/.gitkeep
+
+# Device scan exports & AI plans
+*.txt
+scan.txt
+*device-profile*.json
+*device-profile*.md
+debloat-plan.json
+my-plan.json
+
+# Local ADB platform-tools binaries & embeddable Python
+tools/
+tools/python/
+platform-tools/
+*.zip
+*.log
+*.err
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Virtual environments
+env/
+venv/
+.venv/

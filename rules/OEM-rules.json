@@ -1,0 +1,45 @@
+{
+  "name": "Huawei & Carrier Debloat Rules",
+  "manufacturer": "huawei",
+  "version": "1.0.0",
+  "description": "Safe debloat rules for Huawei (EMUI) and telecom preloads.",
+  "rule": "oem-rules",
+  "rules": [
+    {
+      "package": "com.huawei.sysappcontrol",
+      "name": "Huawei System App Controller",
+      "tier": 2,
+      "category": "bloatware",
+      "safe_to_remove": true,
+      "recommended_action": "disable",
+      "description": "Huawei system app controller and OEM background service."
+    },
+    {
+      "package": "com.huawei.allshare",
+      "name": "Huawei AllShare",
+      "tier": 2,
+      "category": "bloatware",
+      "safe_to_remove": true,
+      "recommended_action": "disable",
+      "description": "Huawei proprietary media and screen sharing."
+    },
+    {
+      "package": "com.huawei.pushservice",
+      "name": "Huawei Push Service",
+      "tier": 2,
+      "category": "telemetry",
+      "safe_to_remove": true,
+      "recommended_action": "disable",
+      "description": "Huawei push notification daemon."
+    },
+    {
+      "package": "com.huawei.assist",
+      "name": "Huawei AI Voice Assistant",
+      "tier": 2,
+      "category": "voice_assistant",
+      "safe_to_remove": true,
+      "recommended_action": "disable",
+      "description": "Voice assistant listener and telemetry service."
+    }
+  ]
+}

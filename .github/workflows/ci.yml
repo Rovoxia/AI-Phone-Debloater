@@ -1,0 +1,121 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate Rule JSON Files
+        run: |
+          python - <<'PY'
+          import json, glob, sys, os
+
+          rules = glob.glob("rules/*.json")
+          if not rules:
+              print("No rule files found!")
+              sys.exit(1)
+
+          critical_file = "rules/critical-do-not-touch.json"
+          if not os.path.exists(critical_file):
+              print(f"Missing critical blacklist file: {critical_file}")
+              sys.exit(1)
+
+          with open(critical_file, "r", encoding="utf-8") as f:
+              crit_data = json.load(f)
+
+          crit_pkgs = set()
+          entries = crit_data.get("rules", []) or crit_data.get("packages", [])
+          for e in entries:
+              if isinstance(e, dict) and "package" in e:
+                  crit_pkgs.add(e["package"])
+
+          print(f"Protected Critical Core Packages: {len(crit_pkgs)}")
+          if len(crit_pkgs) == 0:
+              print("ERROR: Critical blacklist must not be empty!")
+              sys.exit(1)
+
+          errors = []
+          for r in rules:
+              try:
+                  with open(r, "r", encoding="utf-8") as f:
+                      data = json.load(f)
+              except Exception as exc:
+                  errors.append(f"Invalid JSON in {r}: {exc}")
+                  continue
+
+              if not ("name" in data or "description" in data):
+                  errors.append(f"{r}: Missing top-level 'name' or 'description'")
+
+              rule_entries = data.get("rules", []) or data.get("packages", [])
+              if not rule_entries:
+                  errors.append(f"{r}: Must have a non-empty 'rules' list")
+
+              for idx, entry in enumerate(rule_entries):
+                  if not isinstance(entry, dict):
+                      errors.append(f"{r}[{idx}]: Entry must be an object")
+                      continue
+                  if "package" not in entry:
+                      errors.append(f"{r}[{idx}]: Missing 'package' field")
+
+                  pkg = entry.get("package")
+                  if r != critical_file and pkg in crit_pkgs:
+                      errors.append(f"SAFETY COLLISION: {pkg} in {r} is also in critical-do-not-touch!")
+
+          if errors:
+              print("Validation errors encountered:")
+              for err in errors:
+                  print(f"  - {err}")
+              sys.exit(1)
+
+          print(f"Validated {len(rules)} JSON rule files successfully. Zero collisions.")
+          PY
+
+      - name: Verify Debloat Engine CLI Syntax & Help
+        run: |
+          python scripts/debloat-engine.py --help
+          echo "Engine CLI help command succeeded."
+
+      - name: Lint Shell Scripts (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          bash -n scripts/setup-adb.sh
+          bash -n debloat.sh
+          echo "Bash scripts syntax OK."
+
+      - name: Lint PowerShell Scripts (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $files = Get-ChildItem scripts/*.ps1 -ErrorAction SilentlyContinue
+          foreach ($f in $files) {
+            $errors = $null
+            $null = [System.Management.Automation.Language.Parser]::ParseFile($f.FullName, [ref] $null, [ref] $errors)
+            if ($errors) {
+              Write-Host "Parse errors in $($f.Name):"
+              $errors | ForEach-Object { Write-Host "  $($_.Message)" }
+              exit 1
+            }
+          }
+          Write-Host "PowerShell syntax verified OK."

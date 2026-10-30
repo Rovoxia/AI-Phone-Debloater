@@ -1,0 +1,269 @@
+{
+  "manufacturer": "Transsion (Tecno, Infinix, Itel)",
+  "version": "1.0.0",
+  "description": "Comprehensive debloat rules for Transsion smartphone brands: Tecno (HiOS), Infinix (XOS), and Itel. Covers Palm Store, AHA Games, Carlcare, Hi Party, lockscreen ads, app recommendations, telemetry, browsers, themes, and other HiOS/XOS bloatware.",
+  "rule": "transsion-tecno-infinix",
+  "rules": [
+    {
+      "package": "com.transsion.phonestore",
+      "name": "Palm Store (Transsion Phone Store)",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Transsion's proprietary app store (Palm Store). Preloaded with ads and auto-downloaded app recommendations. Safe to disable when using Google Play Store.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.transsion.palmstore",
+      "name": "Palm Store (alternate package)",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Alternate package name for the Transsion Palm Store app store.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.transsion.ahagames",
+      "name": "AHA Games",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Transsion AHA Games preloaded game service with promotional content and ad recommendations.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.transsion.carlcare",
+      "name": "Carlcare",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Transsion official service / repair centre app (Carlcare). Optional; keep if you use Transsion warranty service.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.transsion.hiparty",
+      "name": "Hi Party",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Transsion Hi Party social/party feature. Optional preloaded OEM app.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.transsion.lockscreenmagazine",
+      "name": "Lockscreen Magazine",
+      "tier": 1,
+      "category": "ad",
+      "description": "Aggressive lockscreen ad/promo service that pushes ads and sponsored content to the lockscreen.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.transsion.theme",
+      "name": "Transsion Theme Service",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Transsion theme/wallpaper service bundled with promotional wallpapers and ads.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.transsion.safe",
+      "name": "Phone Master / Security",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Transsion phone manager/security app with ad notifications and app recommendations.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.transsion.recommendation",
+      "name": "App Recommendation Service",
+      "tier": 1,
+      "category": "ad",
+      "description": "System service that pushes recommended app install notifications and promotional popups.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.transsion.ads",
+      "name": "Transsion Ads Framework",
+      "tier": 1,
+      "category": "ad",
+      "description": "Transsion advertising framework delivering system-level ads and promos across HiOS/XOS.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.transsion.telemetry",
+      "name": "Transsion Telemetry",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Transsion telemetry / usage-data collection service reporting device and app usage.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.transsion.browser",
+      "name": "Transsion Browser",
+      "tier": 1,
+      "category": "browser",
+      "description": "Preloaded Transsion web browser with sponsored bookmarks, trending content ads, and search tracking.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.transsion.themestore",
+      "name": "Transsion Theme Store",
+      "tier": 2,
+      "category": "theme_store",
+      "description": "Storefront for purchasing wallpapers, ringtones, lockscreens, and system fonts. Optional.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.transsion.phonemanager",
+      "name": "Phone Manager",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Transsion phone cleaner/manager app bundled with promotional notifications.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.transsion.gameassistant",
+      "name": "Game Assistant",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Transsion gaming mode / game assistant overlay. Optional feature.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.transsion.notepad",
+      "name": "Transsion Notepad",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Preloaded Transsion notes app. Optional; safe to remove if using another notes app.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.transsion.recorder",
+      "name": "Transsion Recorder",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Preloaded Transsion voice recorder app. Optional feature.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.transsion.calendar",
+      "name": "Transsion Calendar",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "OEM calendar app bundled with promotional content. Optional if using Google Calendar.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.transsion.filemanager",
+      "name": "Transsion File Manager",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Transsion file manager app. Optional; safe to remove if using Google Files.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.transsion.music",
+      "name": "Transsion Music",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Preloaded Transsion music player with ads and promotional content.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.transsion.weather",
+      "name": "Transsion Weather",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "OEM weather app bundled with ads and location-based promotions.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.itel.smartpanel",
+      "name": "Itel Smart Panel",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Itel OEM smart panel/assistant app bundled with recommendations and ads.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.infinix.adservice",
+      "name": "Infinix Ad Service",
+      "tier": 1,
+      "category": "ad",
+      "description": "Infinix XOS ad delivery service pushing promotional notifications.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.tecno.hioscenter",
+      "name": "Tecno HiOS Center",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Tecno HiOS system center/feature app. Optional OEM preload.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.transsion.otaupdate",
+      "name": "Transsion OTA Update",
+      "tier": 3,
+      "category": "bloatware",
+      "description": "Transsion system OTA update client. Extreme removal only — disabling prevents system updates.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.transsion.global",
+      "name": "Transsion Global Service",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Transsion global framework service associated with regional telemetry and promos.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.transsion.kbmanager",
+      "name": "Keyboard Manager",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Transsion keyboard manager bundled with promotional content and ad suggestions.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.transsion.vassistant",
+      "name": "Transsion Voice Assistant",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "OEM voice assistant feature. Optional preload.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.transsion.wallet",
+      "name": "Transsion Wallet",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Transsion wallet/payment app. Optional OEM financial feature.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    }
+  ]
+}

@@ -1,0 +1,233 @@
+{
+  "manufacturer": "Google",
+  "version": "1.0.0",
+  "description": "Debloat and optional services rules for Google Pixel smartphones running Pixel UI / stock Android.",
+  "rule": "google-pixel",
+  "rules": [
+    {
+      "package": "com.google.android.ambientindication",
+      "name": "Pixel Ambient Services (Now Playing)",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Background lockscreen music identification and contextual song recognition. Disabling prevents continuous low-power DSP microphone polling.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.google.android.apps.tips",
+      "name": "Pixel Tips",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Onboarding feature showcase app displaying tips and tricks after Pixel Feature Drops.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.google.android.apps.turbo",
+      "name": "Device Health Services",
+      "tier": 2,
+      "category": "telemetry",
+      "description": "Calculates personalized battery percentage estimates and adaptive screen brightness machine learning models.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.google.android.feedback",
+      "name": "Google Feedback",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "User feedback uploader and crash log dispatcher for Google Play Services and system apps.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.google.android.accessibility.soundamplifier",
+      "name": "Sound Amplifier",
+      "tier": 1,
+      "category": "optional_feature",
+      "description": "Headphone audio enhancement accessibility tool that amplifies quiet sounds and filters ambient noise.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.google.pixel.livewallpaper",
+      "name": "Pixel Live Wallpapers",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Animated live wallpaper backgrounds. Disabling frees up RAM and GPU rendering overhead.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.google.android.wallpaper.effects",
+      "name": "Cinematic Wallpaper Effects",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "On-device 3D parallax depth effect generator for static home screen wallpapers.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.google.android.apps.wallpaper",
+      "name": "Google Wallpapers",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Wallpaper picker app with daily wallpaper downloads and curated photo collections.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.google.android.partnersetup",
+      "name": "Google Partner Setup",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Carrier and OEM partner configuration tool used during initial device setup.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.google.android.projection.gearhead",
+      "name": "Android Auto",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "In-car infotainment display projection for navigation, calls, and audio. Safe to disable if you do not use your phone with a car dashboard.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.google.android.videos",
+      "name": "Google TV (Play Movies & TV)",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Movie rental store, streaming aggregator, and virtual remote app.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.google.android.apps.magazines",
+      "name": "Google News",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "News headline feed and publication subscription reader.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.google.android.apps.subscriptions.red",
+      "name": "YouTube Music Stub",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "System preload registration stub for YouTube Music streaming client.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.google.android.apps.youtube.music",
+      "name": "YouTube Music",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Official YouTube Music streaming app. Reinstallable from Google Play Store if desired.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.google.android.apps.wellbeing",
+      "name": "Digital Wellbeing",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Constantly logs app foreground usage, notification counts, and unlock frequencies. Disabling noticeably saves battery and CPU cycles.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.google.android.apps.walletnfcrel",
+      "name": "Google Wallet (Quick Access Wallet)",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "NFC payment pass and loyalty card hub accessible from lockscreen and quick settings. Safe to disable if not using mobile contactless pay.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.google.android.apps.safetyhub",
+      "name": "Personal Safety",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Pixel car crash detection, safety check countdown, and emergency sharing. Keep enabled if relying on vehicle crash dispatch.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.google.audio.hearing.visualization.accessibility.scribe",
+      "name": "Live Transcribe",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Real-time speech-to-text accessibility transcription service.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.google.android.marvin.talkback",
+      "name": "Android Accessibility Suite (TalkBack)",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Screen reader for visually impaired users. Safe to disable if you do not use screen reader spoken feedback.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.google.android.apps.recorder",
+      "name": "Pixel Recorder",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Audio voice recorder with on-device speech transcription and speaker labeling.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.google.android.apps.nbu.files",
+      "name": "Files by Google",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Default Google file manager and junk cleaner. Reinstallable from Play Store.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.google.android.apps.fitness",
+      "name": "Google Fit",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Activity tracking and step counter application.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.google.android.apps.docs",
+      "name": "Google Drive",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Google Drive cloud document viewer and backup client.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.google.android.apps.tachyon",
+      "name": "Google Meet",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Video conferencing and calling app. Safe to remove if using WhatsApp, Telegram, or Zoom.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.google.android.apps.podcasts",
+      "name": "Google Podcasts",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Deprecated podcast player application.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    }
+  ]
+}

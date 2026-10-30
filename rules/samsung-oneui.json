@@ -1,0 +1,413 @@
+{
+  "manufacturer": "Samsung",
+  "version": "1.0.0",
+  "description": "Comprehensive bloatware rules for Samsung Galaxy smartphones and tablets running One UI.",
+  "rule": "samsung-oneui",
+  "rules": [
+    {
+      "package": "com.samsung.android.bixby.agent",
+      "name": "Bixby Voice Agent",
+      "tier": 1,
+      "category": "voice_assistant",
+      "description": "Primary Bixby voice assistant background service that consumes CPU cycles listening for voice commands.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.bixby.wakeup",
+      "name": "Bixby Voice Wakeup",
+      "tier": 1,
+      "category": "voice_assistant",
+      "description": "Always-listening hotword microphone detector for 'Hi Bixby'. Disabling saves significant battery life.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.bixby.service",
+      "name": "Bixby Service",
+      "tier": 1,
+      "category": "voice_assistant",
+      "description": "System integration backbone for Bixby AI features across One UI.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.app.settings.bixby",
+      "name": "Bixby Settings Integration",
+      "tier": 1,
+      "category": "voice_assistant",
+      "description": "Settings menu preferences for configuring Bixby hardware button remaps and voice settings.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.bixbyvision.framework",
+      "name": "Bixby Vision",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Visual camera shopping, image search, and OCR text translation integration in Samsung Camera.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.systemui.bixby2",
+      "name": "SystemUI Bixby2 Module",
+      "tier": 1,
+      "category": "voice_assistant",
+      "description": "Hooks Bixby trigger gestures and hardware side-key actions into System UI.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.app.routines",
+      "name": "Modes and Routines (Bixby Routines)",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Contextual automation trigger engine based on location and time. Safe to disable if not using automation routines.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.arzone",
+      "name": "AR Zone",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Augmented reality camera hub containing AR Doodle, Deco Pic, Quick Measure, and AR Emoji.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.samsung.android.aremoji",
+      "name": "AR Emoji Studio",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "3D animated avatar generation and cartoon selfie styling studio.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.samsung.android.aremojieditor",
+      "name": "AR Emoji Editor",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Customization editor for designing virtual outfits and hairstyle accessories for AR avatars.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.sec.android.mimage.avatarstickers",
+      "name": "AR Emoji Stickers",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Generates animated sticker packs from your AR Emoji for keyboard sharing.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.samsung.android.livestickers",
+      "name": "Live Stickers",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Animated camera face filters and animal sticker overlays.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.samsung.android.app.spage",
+      "name": "Samsung Free / Samsung News",
+      "tier": 1,
+      "category": "adware",
+      "description": "Ad-supported news aggregator, sponsored instant games, and podcast feed on the leftmost home screen panel.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.ipsgeofence",
+      "name": "Samsung Visit In",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Geofencing marketing daemon that triggers targeted commercial notifications when entering partner shopping malls and stores.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.voc",
+      "name": "Samsung Members",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Community forum client, hardware diagnostics, and promotional trade-in banner service.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.sec.android.diagmonagent",
+      "name": "Samsung Diagnostic Monitor Agent",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Background crash log generator, analytics harvester, and telemetry transmitter.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.rubin.app",
+      "name": "Customization Service (Rubin AI)",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Samsung on-device AI machine learning engine that profiles user behavior, app usage, and search patterns for advertising.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.scloud",
+      "name": "Samsung Cloud",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Samsung proprietary cloud backup service. Safe to remove if using Google Drive / Google Photos.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.scs",
+      "name": "Samsung Core Services",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Background NLP search indexing, OCR photo search, and deep link provider for Samsung native apps.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.kidsinstaller",
+      "name": "Samsung Kids Installer",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Installer stub for the Samsung Kids sandbox environment.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.sec.android.app.kidshome",
+      "name": "Samsung Kids Home",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Child-friendly sandbox launcher environment. Safe to remove for adult users.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.sec.android.app.billing",
+      "name": "Samsung Checkout",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "In-app purchase billing platform for Galaxy Store themes and custom fonts.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.game.gamehome",
+      "name": "Gaming Hub (Game Launcher)",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Gaming library hub that displays sponsored mobile game ads and promotional recommendations.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.game.gametools",
+      "name": "Game Booster (Game Tools)",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "In-game floating toolbar for screen recording, touch lock, and temperature monitoring.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.game.gos",
+      "name": "Game Optimizing Service (GOS)",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Performance regulation service that identifies app package IDs and throttles CPU/GPU frequencies.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.mdx",
+      "name": "Link to Windows (Phone Link)",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Background companion daemon that mirrors notifications, SMS, and screen to Microsoft Windows PCs.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.mdx.kit",
+      "name": "Link to Windows Service Kit",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Platform bridge supporting Link to Windows cross-device clipboard and audio streaming.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.allshare.service.mediashare",
+      "name": "Samsung Quick Share Media Server",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "DLNA media streaming and local device discovery daemon.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.samsungpass",
+      "name": "Samsung Pass",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Biometric password manager from Samsung. Safe to remove if using Bitwarden, 1Password, or Google Password Manager.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.samsungpassautofill",
+      "name": "Samsung Pass Autofill Engine",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Credential autofill provider plugin for Samsung Pass.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.spay",
+      "name": "Samsung Wallet (Samsung Pay)",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Contactless mobile payment and digital wallet app from Samsung. Safe to remove if using Google Wallet.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.spayfw",
+      "name": "Samsung Pay Framework",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Card tokenization and security handshake framework for Samsung Pay.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.sec.enterprise.knox.attestation",
+      "name": "Knox Attestation Service",
+      "tier": 2,
+      "category": "telemetry",
+      "description": "Device hardware integrity and enterprise boot-status verifier.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.knox.analytics.uploader",
+      "name": "Knox Analytics Uploader",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Enterprise security usage and diagnostic telemetry uploader.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.sec.enterprise.knox.cloudmdm.smdms",
+      "name": "Knox Cloud MDM Client",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Corporate mobile device management enrollment client.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.bbc.bbcagent",
+      "name": "Knox BBC Agent",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Enterprise container monitoring service.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.sec.android.desktopmode.uiservice",
+      "name": "Samsung DeX UI Service",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Desktop PC environment UI shell when connected to external monitors or HDMI docks.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.sec.android.app.dexonpc",
+      "name": "DeX on PC",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "USB streaming client for projecting desktop DeX inside a Windows or Mac computer window.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.sec.android.app.samsungapps",
+      "name": "Galaxy Store",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Secondary app market from Samsung. Safe to disable if you install all apps from Google Play Store.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.themestore",
+      "name": "Galaxy Themes",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Storefront for purchasing wallpapers, AOD clocks, and system icon packs.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.app.tips",
+      "name": "Samsung Tips",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Tutorial showcase pushing push notification tips after OS updates.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.sec.android.easyMover",
+      "name": "Smart Switch",
+      "tier": 2,
+      "category": "bloatware",
+      "description": "Data transfer utility for copying contacts and photos from an old phone during initial unboxing setup.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.samsung.android.smartcallprovider",
+      "name": "Hiya Smart Call Caller ID",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Third-party spam database integration that uploads unknown inbound phone numbers to Hiya servers.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.mdecservice",
+      "name": "Call and Text on Other Devices",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Cloud relay daemon allowing Samsung Galaxy Tab and Galaxy Book to make cellular calls through phone.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.samsung.android.fmm",
+      "name": "SmartThings Find (Find My Mobile)",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Offline finding location beacon network for Samsung devices.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    }
+  ]
+}

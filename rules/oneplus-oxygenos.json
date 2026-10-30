@@ -1,0 +1,188 @@
+{
+  "manufacturer": "OnePlus",
+  "version": "1.0.0",
+  "description": "Safe debloat rules for OnePlus smartphones running OxygenOS and ColorOS unified base, targeting background diagnostic loggers, HeyTap analytics, and promotional apps.",
+  "rule": "oneplus-oxygenos",
+  "rules": [
+    {
+      "package": "com.oneplus.opbugreportlite",
+      "name": "OPBugreport Lite",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Background bug reporting tool that continuously captures and archives kernel and framework diagnostic logs.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "net.oneplus.odm.provider",
+      "name": "OnePlus ODM Provider",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "ODM diagnostic telemetry content provider collecting usage stats.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "net.oneplus.odm",
+      "name": "OnePlus ODM Daemon",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Hardware diagnostic reporter communicating with OnePlus telemetry servers.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.oneplus.logkit",
+      "name": "OnePlus LogKit",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "System logging suite with broad permissions that stores detailed call, network, and Bluetooth logs.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.oem.oemlogkit",
+      "name": "OEM LogKit",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Factory low-level hardware debug logger.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "net.oneplus.push",
+      "name": "OnePlus Push Service",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Proprietary push notification channel used primarily for marketing and system update announcements.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.oneplus.diagnostics",
+      "name": "OnePlus Diagnostics",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Hardware diagnostic test application reporting battery health and sensor telemetry.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.oneplus.gamespace",
+      "name": "OnePlus Games (Game Space)",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Game launcher overlay with promotional banners, community ads, and network accelerator upsells.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.heytap.mcs",
+      "name": "HeyTap Mobile Cloud Push Service",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "BBK / HeyTap background push notification channel for cloud services.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.heytap.cloud",
+      "name": "HeyTap Cloud",
+      "tier": 2,
+      "category": "bloatware",
+      "description": "Secondary cloud backup engine. Safe to remove if using Google Drive/Photos.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.heytap.usercenter",
+      "name": "HeyTap Account / User Center",
+      "tier": 2,
+      "category": "bloatware",
+      "description": "HeyTap account registration and login manager.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.heytap.openid",
+      "name": "HeyTap OpenID",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "HeyTap cross-app advertising tracking identifier.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.heytap.pictorial",
+      "name": "HeyTap Lockscreen Pictorial",
+      "tier": 1,
+      "category": "adware",
+      "description": "Rotating lockscreen wallpaper service showing sponsored stories and clickbait articles.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.heytap.habit.analysis",
+      "name": "HeyTap User Habit Analysis",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Analyzes app usage times and device behavioral habits for ad targeting.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.oneplus.membership",
+      "name": "Red Cable Club (Membership)",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "Promotional reward program, extended warranty registration, and OnePlus merchandise store portal.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.oneplus.mall",
+      "name": "OnePlus Store",
+      "tier": 1,
+      "category": "bloatware",
+      "description": "E-commerce shopping app for OnePlus accessories, phones, and audio gear.",
+      "safe_to_remove": true,
+      "recommended_action": "uninstall"
+    },
+    {
+      "package": "com.redteamobile.roaming",
+      "name": "Redtea Mobile Roaming Service",
+      "tier": 1,
+      "category": "carrier",
+      "description": "Virtual eSIM and international data package purchase store.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.oplus.cosa",
+      "name": "COSA Game Acceleration",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Proprietary gaming telemetry and GPU frequency scaling daemon.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.oplus.postmanservice",
+      "name": "OPlus Postman Service",
+      "tier": 1,
+      "category": "telemetry",
+      "description": "Internal push notification router for Oppo/OnePlus bundled apps.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    },
+    {
+      "package": "com.oneplus.brickmode",
+      "name": "Zen Mode",
+      "tier": 2,
+      "category": "optional_feature",
+      "description": "Digital wellbeing mindfulness app that locks device for designated intervals.",
+      "safe_to_remove": true,
+      "recommended_action": "disable"
+    }
+  ]
+}
