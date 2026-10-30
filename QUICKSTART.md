@@ -2,14 +2,35 @@
 
 Clean your phone and debloat OEM bloatware at the maximum safe level with this powerful phone debloater in under 2 minutes with **zero personal data loss**.
 
+🌐 **Official Website & Docs:** [https://debloater.rovoxia.com](https://debloater.rovoxia.com)
+
 ---
 
 ## ⚡ Option A: 1-Click AI Agent Execution (Recommended)
 
-Just copy & paste this single prompt into **Claude Code CLI**, **ChatGPT**, **Cursor**, or **Gemini**:
+Just copy & paste this prompt into **Claude Code CLI**, **ChatGPT**, **Cursor**, or **Gemini**:
 
 ```text
-Clone https://github.com/Rovoxia/AI-Phone-Debloater.git and safely debloat my connected Android phone at Tier 1. First run 'python scripts/debloat-engine.py scan', show me the device breakdown, simulate with dry-run, take an auto-snapshot, and execute safe debloat preserving all personal data.
+Clone https://github.com/Rovoxia/AI-Phone-Debloater.git and guide me through safely debloating my connected Android phone. Execute the workflow strictly in the following order:
+
+1. Clone & Verify Connection:
+   - Clone the repository and enter the directory.
+   - Verify that my Android device is connected and authorized via ADB.
+
+2. Device Scan & Breakdown:
+   - Run `python scripts/debloat-engine.py scan`.
+   - Present a clear summary of my device information and detected bloatware packages.
+
+3. Tier & Dry-Run Prompt (Interactive Check):
+   - Clearly ask me which debloat tier I want to use (defaulting to Tier 1 — Safe if I don't specify).
+   - Ask if I would like to run a `dry-run` simulation first before making actual changes:
+     * If YES: Run the dry-run for the selected tier, show the exact packages that would be removed, and wait for my confirmation to proceed.
+     * If NO: Proceed directly to step 4.
+
+4. Auto-Snapshot & Safe Execution:
+   - Take an automatic snapshot of the current package states so changes can be easily rolled back.
+   - Execute the debloat for the selected tier while ensuring all personal data, app data, and user files remain 100% intact.
+   - Show a final summary of the completed actions and where the backup snapshot is saved.
 ```
 
 The AI agent will detect your phone, verify safety guardrails (0 collisions with critical system packages), simulate the run, and safely debloat your device with an automatic backup snapshot.
