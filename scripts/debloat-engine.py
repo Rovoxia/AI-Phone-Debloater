@@ -840,21 +840,65 @@ class DebloatEngine:
         self._confirmed = False
 
     # -- wireless -----------------------------------------------------------
+    def scan_lan_adb(self, timeout: float = 0.2) -> List[str]:
+        """Scan local /24 subnet for open ADB port 5555."""
+        import socket
+        from concurrent.futures import ThreadPoolExecutor
+
+        local_ip = ""
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            local_ip = s.getsockname()[0]
+            s.close()
+        except Exception:
+            return []
+
+        if not local_ip or local_ip.startswith("127."):
+            return []
+
+        prefix = ".".join(local_ip.split(".")[:3])
+        found: List[str] = []
+
+        def probe(host_num: int) -> None:
+            ip = f"{prefix}.{host_num}"
+            if ip == local_ip:
+                return
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(timeout)
+            try:
+                if sock.connect_ex((ip, 5555)) == 0:
+                    found.append(f"{ip}:5555")
+            except Exception:
+                pass
+            finally:
+                sock.close()
+
+        with ThreadPoolExecutor(max_workers=64) as pool:
+            pool.map(probe, range(1, 255))
+
+        return found
+
     def discover_wireless(self) -> List[Dict[str, str]]:
-        """Discover wireless devices via ADB mDNS/Bonjour (Android 11+)."""
-        self.logger.info("Searching for wireless ADB devices via mDNS/Bonjour...")
+        """Discover wireless devices via ADB mDNS and LAN subnet sweep."""
+        self.logger.info("Searching for wireless ADB devices via mDNS and LAN...")
         rc, out, err = run_cmd([self.adb_path, "mdns", "services"], timeout=self.timeout)
         devices = []
         for line in out.splitlines():
             line = line.strip()
             if not line:
                 continue
-            # Parse mDNS discovery output: "device_name (ip:port)" or just "ip:port"
             parts = line.replace("(", " ").replace(")", " ").split()
             if len(parts) >= 2:
                 addr = parts[-1]
                 if ":" in addr and addr.count(".") >= 3:
                     devices.append({"serial": addr, "state": "device", "name": parts[0]})
+
+        if not devices:
+            self.logger.info("No mDNS broadcast. Scanning local LAN on port 5555...")
+            for ep in self.scan_lan_adb():
+                devices.append({"serial": ep, "state": "device", "name": "LAN-Device"})
+
         return devices
 
     def auto_discover(self) -> Optional[str]:
@@ -1346,8 +1390,8 @@ class DebloatEngine:
                     self.restore_pkg(pkg)
                 elif choice.lower() == "w":
                     print("\nWireless ADB (Wi-Fi) Setup:")
-                    print("  1) Auto-discover via mDNS (searches Wi-Fi automatically)")
-                    print("  2) Connect to known IP:Port (e.g. 192.168.1.50:5555)")
+                    print("  1) Auto-discover (mDNS + LAN scan)")
+                    print("  2) Connect to known IP:Port (from phone screen)")
                     print("  3) Pair Android 11+ Wireless Debugging (IP:Port + Pairing Code)")
                     print("  4) Switch connected USB phone to Wi-Fi mode (adb tcpip 5555)")
                     subc = input("\nSelect (1/2/3/4): ").strip()
@@ -1359,8 +1403,9 @@ class DebloatEngine:
                                 self.connect()
                                 self.load_rules()
                         else:
-                            self.logger.warn("No wireless devices detected via mDNS.")
-                            self.logger.info("Tip: Ensure Wireless debugging is turned ON in Developer options.")
+                            self.logger.warn("No wireless devices detected automatically.")
+                            self.logger.info("Tip: Check phone screen under 'Settings > Developer options > Wireless debugging'.")
+                            self.logger.info("     Enter the displayed IP:Port using Option 2 or 3.")
                     elif subc == "2":
                         addr = input("Device IP:Port (e.g. 192.168.1.50:5555): ").strip()
                         if addr:
