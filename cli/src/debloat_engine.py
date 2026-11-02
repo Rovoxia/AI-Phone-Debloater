@@ -56,13 +56,7 @@ RULES_DIR_CANDIDATES = [
     SCRIPT_DIR.parent / "rules",
 ]
 BACKUPS_DIR = Path.home() / "AiPhoneDebloater" / "backups"
-LEGACY_BACKUPS_DIRS = [
-    PROJECT_ROOT / "cli" / "backups",
-    Path.home() / "cli" / "backups",
-    Path.home() / ".ai-phone-debloater" / "backups",
-    Path.cwd() / "backups",
-    Path.cwd() / "cli" / "backups",
-]
+LOCAL_BACKUPS_DIR = PROJECT_ROOT / "cli" / "backups"
 DEFAULT_ADB_PATH_CANDIDATES: List[str] = [
     "adb",
     str(PROJECT_ROOT / "cli" / "tools" / "platform-tools" / "adb.exe"),
@@ -643,14 +637,16 @@ class SnapshotManager:
         return data
 
     def list_backups(self):
-        all_dirs = [self.backups_dir] + [d for d in LEGACY_BACKUPS_DIRS if d != self.backups_dir and d.exists()]
+        search_dirs = [self.backups_dir]
+        if LOCAL_BACKUPS_DIR.exists() and LOCAL_BACKUPS_DIR != self.backups_dir:
+            search_dirs.append(LOCAL_BACKUPS_DIR)
         results = []
-        seen_names = set()
-        for b_dir in all_dirs:
+        seen = set()
+        for b_dir in search_dirs:
             if not b_dir.exists(): continue
             for path in sorted(b_dir.glob("snapshot_*.json"), key=lambda p: p.stat().st_mtime, reverse=True):
-                if path.name in seen_names: continue
-                seen_names.add(path.name)
+                if path.name in seen: continue
+                seen.add(path.name)
                 try:
                     with path.open("r", encoding="utf-8") as fh: data = json.load(fh)
                     if not isinstance(data, dict): raise ValueError("not a JSON object")
@@ -665,23 +661,24 @@ class SnapshotManager:
         if not ident: return None
         p = Path(ident)
         if p.is_file(): return p
-        all_dirs = [self.backups_dir] + [d for d in LEGACY_BACKUPS_DIRS if d != self.backups_dir and d.exists()]
+        search_dirs = [self.backups_dir]
+        if LOCAL_BACKUPS_DIR.exists() and LOCAL_BACKUPS_DIR != self.backups_dir:
+            search_dirs.append(LOCAL_BACKUPS_DIR)
         matches = []
-        for b_dir in all_dirs:
+        for b_dir in search_dirs:
             cand = b_dir / ident
             if cand.is_file(): return cand
             m = sorted(b_dir.glob("snapshot_*.json"), key=lambda q: q.stat().st_mtime, reverse=True)
             matches.extend([q for q in m if ident in q.name])
-        unique_matches = []
         seen = set()
+        unique = []
         for q in matches:
-            resolved = str(q.resolve())
-            if resolved not in seen:
-                seen.add(resolved)
-                unique_matches.append(q)
-        if len(unique_matches) > 1:
-            raise DebloatError(f"'{ident}' matches {len(unique_matches)} snapshots; be more specific: " + ", ".join(q.name for q in unique_matches[:5]))
-        return unique_matches[0] if unique_matches else None
+            if q.name not in seen:
+                seen.add(q.name)
+                unique.append(q)
+        if len(unique) > 1:
+            raise DebloatError(f"'{ident}' matches {len(unique)} snapshots; be more specific: " + ", ".join(q.name for q in unique[:5]))
+        return unique[0] if unique else None
 
 class DebloatEngine:
     def __init__(self, adb_path=None, serial=None, rules_dir=None, backups_dir=BACKUPS_DIR, quiet=False, verbose=False, dry_run=False, timeout=30.0,

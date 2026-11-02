@@ -49,22 +49,6 @@ try {
 
     Write-Host "[INFO] Syncing CLI to $InstallDir (Version: $NewVersion)..." -ForegroundColor Yellow
 
-    # Ensure permanent external backups directory exists safely in User's home
-    $SafeBackupsDir = Join-Path $HOME "AiPhoneDebloater\\backups"
-    New-Item -ItemType Directory -Force -Path $SafeBackupsDir | Out-Null
-
-    # Migrate any legacy backups from install dir or accidental cli folder into safe external home folder
-    $LegacyDirs = @(
-        (Join-Path $InstallDir "backups"),
-        (Join-Path $HOME "cli\\backups")
-    )
-    foreach ($ld in $LegacyDirs) {
-        if (Test-Path $ld) {
-            Copy-Item -Force "$ld\\*.json" $SafeBackupsDir -ErrorAction SilentlyContinue
-            Remove-Item -Recurse -Force $ld -ErrorAction SilentlyContinue
-        }
-    }
-
     # If version changed, purge old tools so fresh ADB binaries are downloaded
     if ($VersionChanged) {
         if ($InstalledVersion -ne "") {

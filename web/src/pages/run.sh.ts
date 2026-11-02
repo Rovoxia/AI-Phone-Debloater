@@ -64,18 +64,6 @@ fi
 
 echo "[INFO] Syncing CLI to \${INSTALL_DIR} (Version: \${NEW_VERSION})..."
 
-# Ensure permanent external backups directory exists safely in User's home
-SAFE_BACKUPS_DIR="\$HOME/AiPhoneDebloater/backups"
-mkdir -p "\$SAFE_BACKUPS_DIR"
-
-# Migrate any legacy backups from install dir or accidental cli folder into safe external home folder
-for ld in "\$INSTALL_DIR/backups" "\$HOME/cli/backups"; do
-    if [ -d "\$ld" ]; then
-        cp "\$ld"/*.json "\$SAFE_BACKUPS_DIR/" 2>/dev/null || true
-        rm -rf "\$ld" 2>/dev/null || true
-    fi
-done
-
 # If version changed, purge old tools so fresh ADB binaries are downloaded
 if [ "$INSTALLED_VERSION" != "$NEW_VERSION" ]; then
     if [ -n "$INSTALLED_VERSION" ]; then
