@@ -40,9 +40,24 @@ if not defined PY (
 
 echo [OK] Python runtime: %PY%
 
-:: 2. Check ADB
-if exist "%CLI_DIR%\tools\platform-tools" (
+:: 2. Check and bootstrap ADB
+if exist "%CLI_DIR%\tools\platform-tools\adb.exe" (
     set "PATH=%CLI_DIR%\tools\platform-tools;%PATH%"
+)
+
+where adb >nul 2>&1
+if errorlevel 1 (
+    echo [INFO] ADB not found on system. Auto-downloading Google Android Platform-Tools...
+    if not exist "%CLI_DIR%\tools" mkdir "%CLI_DIR%\tools"
+    "%PY%" -c "import urllib.request, zipfile, io, sys; print('[INFO] Fetching platform-tools from Google...'); req = urllib.request.Request('https://dl.google.com/android/repository/platform-tools-latest-windows.zip', headers={'User-Agent': 'Mozilla/5.0'}); data = urllib.request.urlopen(req).read(); print('[INFO] Extracting platform-tools archive...'); zipfile.ZipFile(io.BytesIO(data)).extractall(sys.argv[1]); print('[OK] Download complete.')" "%CLI_DIR%\tools"
+    if exist "%CLI_DIR%\tools\platform-tools\adb.exe" (
+        set "PATH=%CLI_DIR%\tools\platform-tools;%PATH%"
+        echo [OK] ADB platform-tools installed successfully.
+    ) else (
+        echo [WARNING] Automatic ADB download failed. Please install ADB manually or put it on PATH.
+    )
+) else (
+    echo [OK] ADB runtime detected.
 )
 
 echo.
