@@ -79,9 +79,11 @@ Choose the debloating workflow that matches your preferred environment:
 
 Feed our canonical debloating prompt directly into **Claude Code CLI**, **ChatGPT**, **Cursor**, **Gemini**, or **Cline**. The AI agent will auto-detect your device, cross-reference installed packages against OEM databases, simulate changes via a dry-run report, and safely apply debloating rules with your confirmation.
 
-> 📋 **Official Master AI Prompt (Click to open, view, and copy/paste):**
-> - 📄 **[Open prompt/master-prompt.md (Local Repository)](prompt/master-prompt.md)**
-> - 🌐 **[Open https://debloater.rovoxia.com/prompt.md (Raw Web Link)](https://debloater.rovoxia.com/prompt.md)**
+<p align="left">
+  <a href="https://debloater.rovoxia.com/prompt.md">
+    <img src="https://img.shields.io/badge/📋_Click_Here_to_Get_Prompt-Open_Raw_AI_Prompt-10b981?style=for-the-badge&logo=markdown&logoColor=white" alt="Click Here to Get Prompt" height="38" />
+  </a>
+</p>
 
 ---
 
