@@ -18,7 +18,7 @@ AI-Phone-Debloater/
 │   └── tests/                    # Rule validation test suite
 ├── web/                          # Astro + Tailwind web dashboard (npm run build)
 ├── prompt/                       # AI Prompts & Forensic Guides
-│   └── master/                   # Master 1-click prompt & analysis prompts
+│   └── master-prompt.md          # Master 1-click prompt for any AI agent
 ├── QUICKSTART.md                 # Quickstart guide
 ├── SAFETY_GUIDELINES.md          # Safety principles & blacklists
 ├── CONTRIBUTING.md               # Contribution guide

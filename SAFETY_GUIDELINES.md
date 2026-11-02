@@ -169,7 +169,7 @@ The engine provides `python scripts/debloat-engine.py restore <package>` (or `re
 
 ## Golden rules (non-negotiable)
 
-1. **Zero data loss.** Never delete, modify, or move SMS, contacts, photos, app data, call logs, or personal files. Commands target packages and system state only.
+1. **Personal files protected.** Never delete, modify, or move SMS, contacts, photos, app data, call logs, or personal files. Commands target packages and system state only.
 2. **Dry-run first.** Every debloat command is verified with `--dry-run` before executing. If anything looks risky, ask for confirmation instead of proceeding.
 3. **Rollback is always possible.** A rollback can restore any package on demand. No factory reset is ever required.
 4. **User data is sacred.** Data lives under `/data/user/0`; system state lives under `/system`, `/vendor`. You only touch the user partition where specified (`--user 0`).

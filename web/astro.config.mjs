@@ -23,7 +23,7 @@ export async function fetchRemoteVersion() {
 const remoteVersion = await fetchRemoteVersion();
 
 export default defineConfig({
-  site: 'https://debloat.rovoxia.com',
+  site: 'https://debloater.rovoxia.com',
   integrations: [sitemap()],
   vite: {
     plugins: [tailwindcss()],

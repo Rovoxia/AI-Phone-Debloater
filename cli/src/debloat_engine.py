@@ -36,14 +36,14 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
 
 def load_version() -> str:
-    vfile = PROJECT_ROOT / "VERSION"
-    if vfile.is_file():
-        try:
-            val = vfile.read_text(encoding="utf-8").strip()
-            if val:
-                return val
-        except Exception:
-            pass
+    for cand in (PROJECT_ROOT / "VERSION", SCRIPT_DIR.parent / "VERSION", Path.cwd() / "VERSION"):
+        if cand.is_file():
+            try:
+                val = cand.read_text(encoding="utf-8").strip()
+                if val:
+                    return val
+            except Exception:
+                pass
     return "1.0.0"
 
 __version__ = load_version()

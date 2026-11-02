@@ -25,7 +25,7 @@ OEM-specific bloat lists live in `rules/`. Each file is a JSON rule set describi
 
 ### Where rules are used
 
-The debloat engine loads rule files from `rules/` and merges them with the device scan to produce a per-device debloat plan. Rule files are also consumed by AI agents via the master prompt in `prompts/ai-debloat-system-prompt.md`.
+The debloat engine loads rule files from `rules/` and merges them with the device scan to produce a per-device debloat plan. Rule files are also consumed by AI agents via the master prompt in `prompt/master-prompt.md`.
 
 ---
 
@@ -175,4 +175,4 @@ Any package in `rules/critical-do-not-touch.json` or the Tier-4 blacklist table 
 
 ## Code of conduct
 
-Be respectful, prioritize device safety over aggressiveness, and when in doubt, classify a package as `unknown` rather than proposing removal. Zero data loss and zero bricking risk are non-negotiable.
+Be respectful, prioritize device safety over aggressiveness, and when in doubt, classify a package as `unknown` rather than proposing removal. 100% reversible changes and zero bricking risk are non-negotiable.

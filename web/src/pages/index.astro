@@ -3,28 +3,65 @@
 import '../styles/global.css';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
-import rulesData from '../data/rules-dataset.json';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const SITE_URL = 'https://debloat.rovoxia.com';
+const SITE_URL = 'https://debloater.rovoxia.com';
 const CANONICAL_URL = `${SITE_URL}/`;
-const TITLE = 'AI-Phone-Debloater — debloat.rovoxia.com | Universal Android ADB Debloater & Bloatware Remover';
-const DESCRIPTION = 'Universal rootless Android ADB debloater & bloatware remover at debloat.rovoxia.com. 100% fail-safe with auto-snapshots, zero data loss and 320+ curated OEM rules for Samsung, Xiaomi, OnePlus, and Google.';
-const totalRules = rulesData.stats.totalRules;
-const rules = rulesData.rules || [];
+const TITLE = 'AI Phone Debloater — The Safe, Open-Source Android Debloater';
+const DESCRIPTION = 'Clean Android bloatware safely without root. Automated AI prompts, powerful CLI tools, and visual WebApp powered by 320+ curated OEM rules. 100% reversible, automated backups, instant rollbacks.';
+const KEYWORDS = 'AI Phone Debloater, Android debloater, bloatware remover, ADB debloat, Samsung debloat, Xiaomi debloat, rootless debloater';
 
-const WIN_CMD = 'irm https://debloat.rovoxia.com/install.ps1 | iex';
-const UNIX_CMD = 'curl -sSL https://debloat.rovoxia.com/install.sh | bash';
+const totalRules = 330;
 
-// Read master prompt content directly
-let agentPrompt = '';
+// Curated representative rules across safety tiers
+const sampleRules = [
+  {
+    tier: 'Tier 1 • Safe',
+    tierColor: 'emerald',
+    pkg: 'com.miui.msa.global',
+    name: 'Xiaomi Ad Daemon',
+    type: 'Adware & Telemetry',
+    action: 'Safe to Disable',
+  },
+  {
+    tier: 'Tier 2 • Caution',
+    tierColor: 'amber',
+    pkg: 'com.samsung.android.bixby.agent',
+    name: 'Samsung Bixby Voice',
+    type: 'OEM Assistant',
+    action: 'Review First',
+  },
+  {
+    tier: 'Tier 3 • Advanced',
+    tierColor: 'orange',
+    pkg: 'com.samsung.android.honeyboard',
+    name: 'Stock Samsung Keyboard',
+    type: 'Keyboard / Input',
+    action: 'Power Users',
+  },
+  {
+    tier: 'Tier 4 • Critical',
+    tierColor: 'rose',
+    pkg: 'com.android.systemui',
+    name: 'Android System UI',
+    type: 'Core OS Framework',
+    action: '⛔ Hard-Blocked',
+  },
+];
+
+const WIN_CMD = 'irm https://debloater.rovoxia.com/run.ps1 | iex';
+const UNIX_CMD = 'curl -sSL https://debloater.rovoxia.com/run.sh | bash';
+
+// Read master prompt content for AI Agent 1-click copy
+let masterPrompt = '';
 try {
-  const promptFilePath = path.join(process.cwd(), '..', 'prompt', 'master', 'master-prompt.md');
-  const content = fs.readFileSync(promptFilePath, 'utf8');
-  agentPrompt = content.trim();
+  const promptPathWeb = path.resolve(process.cwd(), '..', 'prompt', 'master-prompt.md');
+  const promptPathRoot = path.resolve(process.cwd(), 'prompt', 'master-prompt.md');
+  const finalPromptPath = fs.existsSync(promptPathWeb) ? promptPathWeb : promptPathRoot;
+  masterPrompt = fs.readFileSync(finalPromptPath, 'utf8').trim();
 } catch (e) {
-  agentPrompt = 'You are an expert Android systems engineer and AI agent assistant. Execute the AI-Phone-Debloater workflow safely.';
+  masterPrompt = 'You are an expert Android systems engineer and mobile OS debloating specialist. Guide me through safely debloating my connected Android device with 100% reversible execution, using the official repository: https://github.com/Rovoxia/AI-Phone-Debloater.git';
 }
 ---
 
@@ -36,44 +73,104 @@ try {
     <meta name="theme-color" content="#ffffff" />
     <title>{TITLE}</title>
     <meta name="description" content={DESCRIPTION} />
+    <meta name="keywords" content={KEYWORDS} />
+    <meta name="author" content="Rovoxia" />
+    <meta name="robots" content="index, follow" />
     <link rel="canonical" href={CANONICAL_URL} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-    <!-- Open Graph / AEO / Social Meta Tags -->
+    <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content={CANONICAL_URL} />
     <meta property="og:title" content={TITLE} />
     <meta property="og:description" content={DESCRIPTION} />
-    <meta property="og:site_name" content="AI-Phone-Debloater" />
+    <meta property="og:site_name" content="AI Phone Debloater" />
 
-    <meta name="twitter:card" content="summary_large_image" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content={TITLE} />
     <meta name="twitter:description" content={DESCRIPTION} />
 
-    <!-- Schema.org Structured Data for AEO (Answer Engine Optimization) -->
-    <script type="application/ld+json" set:html={JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "AI-Phone-Debloater",
-      "url": SITE_URL,
-      "applicationCategory": "DeveloperApplication",
-      "operatingSystem": "Windows, macOS, Linux, Android",
-      "description": DESCRIPTION,
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      },
-      "author": {
-        "@type": "Organization",
-        "name": "Rovoxia",
-        "url": "https://rovoxia.com"
-      }
-    })} />
-
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+    <!-- JSON-LD Structured Data for SEO & AEO (Google / Bing / Perplexity / ChatGPT Search) -->
+    <script type="application/ld+json" is:inline>
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "SoftwareApplication",
+            "name": "AI Phone Debloater",
+            "operatingSystem": "Android, Windows, macOS, Linux",
+            "applicationCategory": "UtilitiesApplication",
+            "description": "The safe, open-source Android debloater and bloatware remover powered by AI agent master prompts, automated CLI, and WebApp workspace with 320+ curated OEM safety rules.",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            },
+            "url": "https://debloater.rovoxia.com"
+          },
+          {
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "What are the benefits of debloating an Android phone?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Frees 1.5GB–3GB+ RAM, boosts battery 20–30%, reduces heat, and stops background carrier and OEM telemetry."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Why use AI Phone Debloater instead of other debloating tools?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Combines 1-click AI agent analysis, zero-install terminal runners, 61 hard-blocked core packages, auto-rollback snapshots, and 100% reversible execution."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Do I need root access to debloat my phone?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No. Runs 100% rootless via ADB User 0. Bootloader stays locked, Knox stays 0x0, warranty remains valid, and banking apps keep working."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What are the safety best practices and data backup recommendations?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Uses non-destructive User 0 commands with 61 OS packages hard-blocked. Because OEM skins vary, always backup important photos and data before modifying Tier 2 or Tier 3 packages."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Can I restore an uninstalled app later?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. Restore any app instantly via 'cmd package install-existing <package>' or with 1-click snapshot restore."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Will debloating affect OTA system software updates?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No. Operates in User 0 without touching read-only system partitions (dm-verity intact). Official OTA updates install normally."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+
     <script is:inline>
       (function() {
         try {
@@ -86,294 +183,859 @@ try {
       })();
     </script>
   </head>
-  <body class="bg-[#f8f9fa] text-[#202124] dark:bg-[#121212] dark:text-[#e8eaed] antialiased min-h-screen transition-colors duration-150">
+  <body class="bg-slate-50 text-slate-900 dark:bg-[#0b0f17] dark:text-slate-100 font-sans antialiased min-h-screen selection:bg-emerald-500 selection:text-white">
 
     <Navbar />
 
-    <main class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10 space-y-16">
+    <main>
+      <!-- HERO SECTION: Priority #1 AI Prompt -->
+      <section id="ai-prompt" class="relative pt-12 pb-16 md:pt-20 md:pb-24 overflow-hidden">
+        <!-- Subtle Glow Background -->
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[380px] bg-emerald-500/10 blur-[130px] rounded-full pointer-events-none -z-10 dark:bg-emerald-500/15"></div>
 
-      {/* Hero Section */}
-      <section id="hero" class="text-center space-y-6 pt-10 pb-6">
-        <div class="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3.5 py-1 text-xs font-medium text-blue-600 dark:text-blue-400">
-          <span>debloat.rovoxia.com &middot; {totalRules}+ Curated OEM Rules</span>
-        </div>
-        <h1 class="text-3xl sm:text-5xl font-normal tracking-tight text-slate-900 dark:text-white">
-          Universal Android ADB Debloater
-        </h1>
-        <p class="text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
-          Remove carrier bloatware, OEM telemetry, and pre-installed apps safely without root or data loss via <strong class="text-slate-900 dark:text-white font-medium">debloat.rovoxia.com</strong>. Choose your preferred workflow below.
-        </p>
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
 
-        {/* AI Agent Prompt Quick-Copy Card in Hero */}
-        <div class="max-w-4xl mx-auto pt-2 text-left">
-          <div class="rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.03] p-6 dark:border-emerald-500/30 dark:bg-emerald-500/[0.04] shadow-xs space-y-3">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2.5">
-                <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500 text-white font-bold text-xs">🤖</span>
-                <div>
-                  <h2 class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">AI Agent Single-Run Prompt</h2>
-                  <p class="text-[11px] text-slate-500 dark:text-slate-400">Master system prompt for AI-powered execution</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                id="copy-hero-prompt-btn"
-                class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-emerald-500 transition-colors cursor-pointer shadow-sm"
-                data-prompt={agentPrompt}
-              >
-                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                <span>Copy AI Prompt</span>
-              </button>
+          <!-- Top Badges -->
+          <div class="flex flex-wrap items-center justify-center gap-2.5 mb-6">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 text-xs font-semibold">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Let AI Do It (1-Click Prompt)
             </div>
-            <div class="rounded-xl border border-slate-200 bg-white p-3.5 dark:border-slate-800 dark:bg-[#121212] font-mono text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed max-h-28 overflow-y-auto select-all">
-              {agentPrompt}
-            </div>
-          </div>
-        </div>
-
-        {/* Dual Path Selector Cards in Hero */}
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto pt-2 text-left">
-
-          {/* Path A: CLI & Terminal */}
-          <div class="rounded-2xl border border-slate-200/80 bg-white p-7 dark:border-slate-800 dark:bg-[#181c24] shadow-xs hover:shadow-md transition-shadow space-y-5 flex flex-col justify-between">
-            <div class="space-y-3">
-              <div class="flex items-center gap-3">
-                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400">
-                  <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="4 17 10 11 4 5" /><line x1="12" y1="19" x2="20" y2="19" />
-                  </svg>
-                </div>
-                <div>
-                  <h2 class="text-base font-semibold text-slate-900 dark:text-white">Terminal CLI</h2>
-                  <p class="text-[11px] text-slate-500 dark:text-slate-400">Run via single command</p>
-                </div>
-              </div>
-              <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Instantly setup ADB and run the interactive CLI engine directly in your terminal using PowerShell or Bash.
-              </p>
-            </div>
-
-            <div class="space-y-2.5 pt-1">
-              <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-[#121212] space-y-1.5">
-                <div class="flex items-center justify-between">
-                  <span class="text-[10px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Windows &middot; PowerShell</span>
-                  <button type="button" class="copy-btn h-5 w-5 rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 inline-flex items-center justify-center cursor-pointer shadow-2xs" data-cmd={WIN_CMD} title="Copy command">
-                    <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                  </button>
-                </div>
-                <code class="block font-mono text-[10px] text-slate-800 dark:text-slate-200 select-all overflow-x-auto py-0.5">{WIN_CMD}</code>
-              </div>
-
-              <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-[#121212] space-y-1.5">
-                <div class="flex items-center justify-between">
-                  <span class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">macOS / Linux &middot; Bash</span>
-                  <button type="button" class="copy-btn h-5 w-5 rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 inline-flex items-center justify-center cursor-pointer shadow-2xs" data-cmd={UNIX_CMD} title="Copy command">
-                    <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                  </button>
-                </div>
-                <code class="block font-mono text-[10px] text-slate-800 dark:text-slate-200 select-all overflow-x-auto py-0.5">{UNIX_CMD}</code>
-              </div>
+            <div class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 text-xs font-bold shadow-2xs">
+              <svg class="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              <span>100% No Root Required • Warranty Safe</span>
             </div>
           </div>
 
-          {/* Path B: WebApp Workspace */}
-          <div class="rounded-2xl border border-slate-200/80 bg-white p-7 dark:border-slate-800 dark:bg-[#181c24] shadow-xs hover:shadow-md transition-shadow space-y-5 flex flex-col justify-between">
-            <div class="space-y-3">
-              <div class="flex items-center gap-3">
-                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">
-                  <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="3" width="20" height="14" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" />
-                  </svg>
-                </div>
-                <div>
-                  <h2 class="text-base font-semibold text-slate-900 dark:text-white">WebApp Workspace</h2>
-                  <p class="text-[11px] text-slate-500 dark:text-slate-400">Visual browser interface</p>
-                </div>
-              </div>
-              <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Connect your device via local ADB bridge, browse packages by OEM brand, review safety tiers, and debloat with 1-click.
-              </p>
-            </div>
+          <!-- Main Title -->
+          <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.15] mb-6">
+            Debloat Your Phone <br />
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500">
+              on Autopilot.
+            </span>
+          </h1>
 
-            <div class="pt-2">
-              <a href="/app" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3.5 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors">
-                <span>Open WebApp Workspace &rarr;</span>
-              </a>
-            </div>
+          <!-- Subtitle -->
+          <p class="text-lg md:text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mb-8 leading-relaxed font-normal">
+            Paste our official master prompt into Claude Code, Cursor, ChatGPT, Gemini, or Copilot. Your AI agent safely scans, classifies, and debloats your phone with 100% reversible execution.
+          </p>
+
+          <!-- Primary Actions -->
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-3.5 mb-10">
+            <!-- 1-Click Master Prompt Copy Button (Primary CTA) -->
+            <button
+              type="button"
+              id="copy-master-prompt-btn"
+              class="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-base shadow-lg shadow-emerald-600/25 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer group"
+              data-prompt={masterPrompt}
+              title="Copy Master Prompt for Claude Code, ChatGPT, Cursor, etc."
+            >
+              <svg class="w-5 h-5 text-emerald-200 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
+              </svg>
+              <span id="copy-prompt-btn-text">Copy Master AI Prompt</span>
+            </button>
+
+            <!-- Jump to Run via CLI (Instant) -->
+            <a
+              href="#cli"
+              class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold text-base transition-colors shadow-xs"
+            >
+              <svg class="w-5 h-5 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span>Run via CLI (Instant)</span>
+            </a>
+
+            <!-- Jump to Use the Web App (GUI) -->
+            <a
+              href="#webapp"
+              class="relative w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold text-base transition-colors shadow-xs"
+            >
+              <span class="absolute -top-2 -right-2 px-1.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[9px] font-black uppercase tracking-wider shadow-sm">Beta</span>
+              <svg class="w-5 h-5 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" />
+                <line x1="8" y1="21" x2="16" y2="21" />
+                <line x1="12" y1="17" x2="12" y2="21" />
+              </svg>
+              <span>Use WebApp (GUI)</span>
+            </a>
           </div>
 
-        </div>
-
-      </section>
-
-      {/* Terminal Walkthrough / Workflow */}
-      <section id="walkthrough" class="space-y-4">
-        <div class="text-center space-y-1">
-          <h2 class="text-lg font-medium text-slate-900 dark:text-white tracking-tight">Interactive Terminal Workflow</h2>
-          <p class="text-xs text-slate-600 dark:text-slate-400">Run the debloat engine in interactive mode with automated safety checks.</p>
-        </div>
-        <div class="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#181c24] font-mono text-xs text-slate-700 dark:text-slate-300 shadow-sm overflow-x-auto space-y-2">
-          <div class="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800 text-[11px] text-slate-400">
-            <span class="h-2.5 w-2.5 rounded-full bg-rose-500 inline-block"></span>
-            <span class="h-2.5 w-2.5 rounded-full bg-amber-500 inline-block"></span>
-            <span class="h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block"></span>
-            <span class="ml-2 font-mono">debloat-engine — bash / powershell</span>
+          <!-- Compatibility Badges -->
+          <div class="flex flex-wrap items-center justify-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <span class="font-medium text-slate-700 dark:text-slate-300 mr-1">Supported AI Agents:</span>
+            <span class="px-2.5 py-1 rounded-md bg-slate-200/70 dark:bg-slate-800 font-mono text-slate-700 dark:text-slate-300">Claude Code</span>
+            <span class="px-2.5 py-1 rounded-md bg-slate-200/70 dark:bg-slate-800 font-mono text-slate-700 dark:text-slate-300">Cursor</span>
+            <span class="px-2.5 py-1 rounded-md bg-slate-200/70 dark:bg-slate-800 font-mono text-slate-700 dark:text-slate-300">ChatGPT</span>
+            <span class="px-2.5 py-1 rounded-md bg-slate-200/70 dark:bg-slate-800 font-mono text-slate-700 dark:text-slate-300">Gemini</span>
+            <span class="px-2.5 py-1 rounded-md bg-slate-200/70 dark:bg-slate-800 font-mono text-slate-700 dark:text-slate-300">Cline</span>
+            <span class="px-2.5 py-1 rounded-md bg-slate-200/70 dark:bg-slate-800 font-mono text-slate-700 dark:text-slate-300">Windsurf</span>
           </div>
-          <div class="text-emerald-600 dark:text-emerald-400">$ python3 scripts/debloat-engine.py --interactive</div>
-          <div class="text-slate-500">[INFO] Detecting connected ADB device...</div>
-          <div class="text-emerald-600 dark:text-emerald-300">[SUCCESS] Found device: SM-S918B (Samsung Galaxy S23 Ultra) - Android 14</div>
-          <div class="text-slate-500">[INFO] Loading safety rules dataset (331 rules)...</div>
-          <div class="text-blue-600 dark:text-blue-400">&gt; Select mode: [1] Safe Debloat [2] Custom Scan [3] Rollback Snapshot</div>
-          <div class="text-slate-500">[INFO] Simulating uninstall (Dry-run mode)... 24 safe packages targeted. Zero data loss (-k enabled).</div>
+
         </div>
       </section>
 
-      {/* Safety Tiers Explanation */}
-      <section id="safety" class="space-y-4">
-        <div class="text-center space-y-1">
-          <h2 class="text-lg font-medium text-slate-900 dark:text-white tracking-tight">Four-Tier Safety Architecture</h2>
-          <p class="text-xs text-slate-600 dark:text-slate-400">Every package is strictly classified to prevent bootloops or system instability.</p>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-2">
-            <span class="inline-flex rounded bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">Tier 1 &middot; Safe</span>
-            <h3 class="text-xs font-semibold text-slate-900 dark:text-white">Safe to Remove</h3>
-            <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">Bloatware, carrier apps, and optional OEM services that have zero impact on system stability.</p>
-          </div>
-          <div class="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 space-y-2">
-            <span class="inline-flex rounded bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400">Tier 2 &middot; Caution</span>
-            <h3 class="text-xs font-semibold text-slate-900 dark:text-white">Review Recommended</h3>
-            <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">Optional features like OEM keyboards, cloud backups, or secondary app stores. May disable specific companion features.</p>
-          </div>
-          <div class="rounded-xl border border-orange-500/30 bg-orange-500/5 p-4 space-y-2">
-            <span class="inline-flex rounded bg-orange-500/10 px-2 py-0.5 text-[10px] font-bold text-orange-700 dark:text-orange-400">Tier 3 &middot; Extreme</span>
-            <h3 class="text-xs font-semibold text-slate-900 dark:text-white">Advanced Users Only</h3>
-            <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">Core system components. Removal can affect system telemetry or advanced gestures. Recommended to disable rather than uninstall.</p>
-          </div>
-          <div class="rounded-xl border border-rose-500/30 bg-rose-500/5 p-4 space-y-2">
-            <span class="inline-flex rounded bg-rose-500/10 px-2 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-400">Tier 4 &middot; Critical</span>
-            <h3 class="text-xs font-semibold text-slate-900 dark:text-white">Do Not Touch</h3>
-            <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">System UI, package installer, and telephony framework. Hard-blocked by the engine to prevent bootloops.</p>
+      <!-- Trust & Guarantees Bar -->
+      <section class="border-y border-slate-200 dark:border-slate-800/80 bg-white dark:bg-[#0f131c] py-7">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+            <div>
+              <div class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">100%</div>
+              <div class="text-xs font-bold text-slate-800 dark:text-slate-200 mt-1">No Root Required</div>
+            </div>
+            <div>
+              <div class="text-2xl font-bold text-slate-900 dark:text-white">{totalRules}+</div>
+              <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Verified OEM Rules</div>
+            </div>
+            <div>
+              <div class="text-2xl font-bold text-slate-900 dark:text-white">100%</div>
+              <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Reversible & Safe</div>
+            </div>
+            <div>
+              <div class="text-2xl font-bold text-slate-900 dark:text-white">1-Click</div>
+              <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Instant Rollback Backup</div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Rules Explorer Table */}
-      <section id="rules" class="space-y-4">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <!-- FEATURES & BENEFITS SECTION (Full SEO & AEO Ready) -->
+      <section id="features" class="py-20 md:py-28 relative">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          <!-- Section Header -->
+          <div class="text-center max-w-3xl mx-auto mb-16 md:mb-20">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 text-xs font-semibold mb-3">
+              Features &amp; Benefits
+            </div>
+            <h2 class="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-4">
+              Why Debloat Android &amp; Why Choose <br class="hidden sm:inline" />
+              <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">AI Phone Debloater</span>
+            </h2>
+            <p class="text-slate-600 dark:text-slate-300 text-base md:text-lg leading-relaxed">
+              Modern OEM phones ship with 50+ background daemons, ad-tracking frameworks, and redundant bloatware apps that drain battery and slow your device down. Here is how debloating transforms your phone.
+            </p>
+          </div>
+
+          <!-- PART 1: The Core Benefits of Debloating Android (4 Cards Grid) -->
+          <div class="mb-20">
+            <div class="flex items-center justify-between mb-8 pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div>
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white">Core Benefits of Debloating Your Android</h3>
+                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">Measurable real-world gains on battery, performance, and privacy</p>
+              </div>
+              <span class="hidden sm:inline-block text-xs font-semibold px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">Zero-Risk Gains</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <!-- Benefit 1: Battery Life -->
+              <div class="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#121620] p-6 shadow-xs flex flex-col justify-between hover:border-emerald-500/40 transition-colors">
+                <div>
+                  <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mb-4">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <rect x="2" y="7" width="16" height="10" rx="2" ry="2" />
+                      <line x1="20" y1="11" x2="20" y2="13" />
+                      <line x1="6" y1="10" x2="6" y2="14" />
+                      <line x1="10" y1="10" x2="10" y2="14" />
+                    </svg>
+                  </div>
+                  <h4 class="text-base font-bold text-slate-900 dark:text-white mb-2">+20% to 30% Battery Life</h4>
+                  <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                    Terminates persistent wakelocks, carrier sync services, and silent analytics loops that drain battery while your screen is off.
+                  </p>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                  <span>⚡ Up to 2-3 hrs extra screen-on time</span>
+                </div>
+              </div>
+
+              <!-- Benefit 2: RAM & Performance -->
+              <div class="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#121620] p-6 shadow-xs flex flex-col justify-between hover:border-emerald-500/40 transition-colors">
+                <div>
+                  <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 mb-4">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <h4 class="text-base font-bold text-slate-900 dark:text-white mb-2">1.5GB–3GB RAM Reclaimed</h4>
+                  <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                    Stops heavy OEM background daemons (Bixby, Mi AI, Facebook services) from hoarding RAM, eliminating UI stutters and lag.
+                  </p>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 text-[11px] font-semibold text-teal-700 dark:text-teal-400 flex items-center gap-1.5">
+                  <span>🚀 Instant multitasking responsiveness</span>
+                </div>
+              </div>
+
+              <!-- Benefit 3: Privacy & Telemetry -->
+              <div class="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#121620] p-6 shadow-xs flex flex-col justify-between hover:border-emerald-500/40 transition-colors">
+                <div>
+                  <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 mb-4">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                    </svg>
+                  </div>
+                  <h4 class="text-base font-bold text-slate-900 dark:text-white mb-2">Block Silent Telemetry</h4>
+                  <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                    Cuts off pre-installed diagnostic uploaders, behavioral trackers, and adware frameworks that transmit your usage without consent.
+                  </p>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 text-[11px] font-semibold text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
+                  <span>🔒 Zero background analytics pings</span>
+                </div>
+              </div>
+
+              <!-- Benefit 4: Storage & Clutter -->
+              <div class="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#121620] p-6 shadow-xs flex flex-col justify-between hover:border-emerald-500/40 transition-colors">
+                <div>
+                  <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 mb-4">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                  </div>
+                  <h4 class="text-base font-bold text-slate-900 dark:text-white mb-2">Zero App Clutter</h4>
+                  <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                    Removes duplicate manufacturer app stores, carrier games, unremovable demo apps, and redundant system viewers cleanly.
+                  </p>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 text-[11px] font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                  <span>✨ 40–100+ bloat packages stripped</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PART 2: Why AI Phone Debloater vs Other Tools (3 Pillar Advantage Cards) -->
+          <div class="mb-20">
+            <div class="flex items-center justify-between mb-8 pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div>
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white">Why Use AI Phone Debloater Instead of Others?</h3>
+                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">Built from the ground up for safety, speed, and modern AI developer workflows</p>
+              </div>
+              <span class="hidden sm:inline-block text-xs font-semibold px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-400">Next-Gen Architecture</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <!-- Pillar 1: AI-Powered Forensics -->
+              <div class="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#121620] p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div class="flex items-center gap-3 mb-4">
+                  <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
+                    1
+                  </div>
+                  <h4 class="text-base font-bold text-slate-900 dark:text-white">AI-Agent Forensics</h4>
+                </div>
+                <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-3">
+                  Static package lists fail because Android versions and carrier variants differ. Our Master AI Prompt instructs Claude Code, Cursor, or ChatGPT to inspect your phone’s exact hardware, OS build, and package dependencies dynamically.
+                </p>
+                <div class="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                  ✓ Context-aware decisions, never blind deletion
+                </div>
+              </div>
+
+              <!-- Pillar 2: 4-Tier Zero-Brick Engine -->
+              <div class="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#121620] p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div class="flex items-center gap-3 mb-4">
+                  <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold">
+                    2
+                  </div>
+                  <h4 class="text-base font-bold text-slate-900 dark:text-white">Zero-Brick Protection</h4>
+                </div>
+                <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-3">
+                  Other tools allow you to accidentally remove SystemUI or Telephony and brick your device into a bootloop. Our engine permanently hard-blocks 61+ core packages directly in code. Removal is strictly forbidden, even if forced.
+                </p>
+                <div class="text-[11px] font-medium text-rose-600 dark:text-rose-400">
+                  ✓ 61+ critical system packages hard-blacklisted
+                </div>
+              </div>
+
+              <!-- Pillar 3: Automated Snapshots & Rollback -->
+              <div class="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#121620] p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div class="flex items-center gap-3 mb-4">
+                  <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold">
+                    3
+                  </div>
+                  <h4 class="text-base font-bold text-slate-900 dark:text-white">Instant 1-Click Rollback</h4>
+                </div>
+                <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-3">
+                  Before a single package is modified, the engine automatically records a timestamped JSON snapshot of your device's exact state. If you ever want a package back, restore it instantly with one click or command.
+                </p>
+                <div class="text-[11px] font-medium text-blue-600 dark:text-blue-400">
+                  ✓ 100% reversible with instant snapshot rollback
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PART 3: Side-by-Side Comparison Table (AI Phone Debloater vs Other Alternatives) -->
           <div>
-            <h2 class="text-lg font-medium text-slate-900 dark:text-white tracking-tight">Curated OEM Rules Dataset ({totalRules}+ Rules)</h2>
-            <p class="text-xs text-slate-600 dark:text-slate-400">Sample of verified packages across Samsung, Xiaomi, OnePlus, Google, Motorola, and Universal vendors.</p>
-          </div>
-          <a href="/app" class="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition-colors">
-            <span>Explore All in WebApp &rarr;</span>
-          </a>
-        </div>
+            <div class="flex items-center justify-between mb-8 pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div>
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white">Comparison: AI Phone Debloater vs. Alternatives</h3>
+                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">How we compare against legacy debloating methods</p>
+              </div>
+              <span class="hidden sm:inline-block text-xs font-semibold px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-700 dark:text-purple-400">Feature Matrix</span>
+            </div>
 
-        <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-[#181c24] shadow-sm">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-slate-50 dark:bg-[#121212] text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[10px] border-b border-slate-200 dark:border-slate-800">
-              <tr>
-                <th class="px-3.5 py-3">Package</th>
-                <th class="px-3.5 py-3">Name</th>
-                <th class="px-3.5 py-3">Brand</th>
-                <th class="px-3.5 py-3">Tier</th>
-                <th class="px-3.5 py-3">Action</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
-              {rules.slice(0, 10).map((r) => (
-                <tr class="hover:bg-slate-50 dark:hover:bg-white/[0.02]">
-                  <td class="px-3.5 py-3 font-mono text-slate-800 dark:text-slate-200">{r.package}</td>
-                  <td class="px-3.5 py-3 text-slate-600 dark:text-slate-400">{r.name}</td>
-                  <td class="px-3.5 py-3 text-slate-500 uppercase text-[10px] font-bold">{r.brand}</td>
-                  <td class="px-3.5 py-3">
-                    <span class:list={[
-                      "inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-bold",
-                      r.tier === 1 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30' :
-                      r.tier === 2 ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30' :
-                      r.tier === 3 ? 'bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/30' :
-                      'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30'
-                    ]}>
-                      T{r.tier}
-                    </span>
-                  </td>
-                  <td class="px-3.5 py-3 text-slate-600 dark:text-slate-400">{r.recommended_action}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            <div class="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-[#121620] shadow-sm">
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs sm:text-sm">
+                  <thead class="bg-slate-50 dark:bg-slate-900/70 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold text-[11px]">
+                    <tr>
+                      <th class="py-4 px-4 sm:px-6">Feature / Capability</th>
+                      <th class="py-4 px-4 sm:px-6 text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 font-bold">AI Phone Debloater</th>
+                      <th class="py-4 px-4 sm:px-6">Universal Android Debloater</th>
+                      <th class="py-4 px-4 sm:px-6">Manual ADB Shell</th>
+                      <th class="py-4 px-4 sm:px-6">Root / Magisk Modules</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
+                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                      <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-900 dark:text-white">AI Agent Prompt</td>
+                      <td class="py-3.5 px-4 sm:px-6 font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/5">✅ 1-Click Master Prompt</td>
+                      <td class="py-3.5 px-4 sm:px-6 text-slate-500">❌ None</td>
+                      <td class="py-3.5 px-4 sm:px-6 text-slate-500">❌ None</td>
+                      <td class="py-3.5 px-4 sm:px-6 text-slate-500">❌ None</td>
+                    </tr>
+                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                      <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-900 dark:text-white">Zero-Git 1-Line Run</td>
+                      <td class="py-3.5 px-4 sm:px-6 font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/5">✅ run.ps1 &amp; run.sh</td>
+                      <td class="py-3.5 px-4 sm:px-6 text-slate-500">❌ Manual Binary Download</td>
+                      <td class="py-3.5 px-4 sm:px-6 text-slate-500">❌ Manual SDK Setup</td>
+                      <td class="py-3.5 px-4 sm:px-6 text-slate-500">❌ Bootloader Flash</td>
+                    </tr>
+                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                      <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-900 dark:text-white">Anti-Brick Core Protection</td>
+                      <td class="py-3.5 px-4 sm:px-6 font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/5">✅ 4-Tier Hard-Blocked (61+ Pkgs)</td>
+                      <td class="py-3.5 px-4 sm:px-6 text-slate-500">⚠️ Static Community Lists</td>
+                      <td class="py-3.5 px-4 sm:px-6 text-slate-500">❌ Zero (Typo Can Brick)</td>
+                      <td class="py-3.5 px-4 sm:px-6 text-slate-500">❌ High Bootloop Risk</td>
+                    </tr>
+                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                      <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-900 dark:text-white">Automated Snapshots &amp; Rollback</td>
+                      <td class="py-3.5 px-4 sm:px-6 font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/5">✅ Auto Pre-run Snapshot</td>
+                      <td class="py-3.5 px-4 sm:px-6 text-slate-500">⚠️ Manual Export</td>
+                      <td class="py-3.5 px-4 sm:px-6 text-slate-500">❌ None</td>
+                      <td class="py-3.5 px-4 sm:px-6 text-slate-500">⚠️ Full Nandroid (Recovery)</td>
+                    </tr>
+                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                      <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-900 dark:text-white">In-Browser WebApp (WebADB)</td>
+                      <td class="py-3.5 px-4 sm:px-6 font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/5">✅ Built-in Workspace</td>
+                      <td class="py-3.5 px-4 sm:px-6 text-slate-500">❌ Desktop App Only</td>
+                      <td class="py-3.5 px-4 sm:px-6 text-slate-500">❌ Terminal Only</td>
+                      <td class="py-3.5 px-4 sm:px-6 text-slate-500">❌ On-device App</td>
+                    </tr>
+                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                      <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-900 dark:text-white">100% Reversible (-k flag)</td>
+                      <td class="py-3.5 px-4 sm:px-6 font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/5">✅ Always Enforced (User 0)</td>
+                      <td class="py-3.5 px-4 sm:px-6 text-slate-500">⚠️ Mode Dependent</td>
+                      <td class="py-3.5 px-4 sm:px-6 text-slate-500">⚠️ Must Type -k Manually</td>
+                      <td class="py-3.5 px-4 sm:px-6 text-slate-500">❌ Often Wipes Data</td>
+                    </tr>
+                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                      <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-900 dark:text-white">Warranty &amp; Banking Apps Intact</td>
+                      <td class="py-3.5 px-4 sm:px-6 font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/5">✅ 100% Rootless (Safe)</td>
+                      <td class="py-3.5 px-4 sm:px-6 text-slate-500">✅ Rootless</td>
+                      <td class="py-3.5 px-4 sm:px-6 text-slate-500">✅ Rootless</td>
+                      <td class="py-3.5 px-4 sm:px-6 text-rose-500">❌ Voids Warranty / Breaks Knox</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 
-      {/* FAQ */}
-      <section id="faq" class="space-y-4">
-        <div class="text-center space-y-1">
-          <h2 class="text-lg font-medium text-slate-900 dark:text-white tracking-tight">Frequently Asked Questions</h2>
-          <p class="text-xs text-slate-600 dark:text-slate-400">Common questions about rootless Android debloating.</p>
+      <!-- OPTION 2: Redesigned CLI Command Section -->
+      <section id="cli" class="py-20 md:py-28 bg-[#090d14] text-white relative">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          <div class="text-center max-w-2xl mx-auto mb-14">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-semibold mb-3">
+              Run via CLI (Instant)
+            </div>
+            <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4">
+              Single-Command Terminal Run
+            </h2>
+            <p class="text-slate-400 text-sm sm:text-base leading-relaxed">
+              Auto-bootstraps ADB platform-tools, verifies your Android device connection, and starts the debloat engine in your terminal.
+            </p>
+          </div>
+
+          <!-- Redesigned CLI Terminal Cards (Single line commands, never cropped) -->
+          <div class="space-y-5 max-w-4xl mx-auto">
+
+            <!-- Windows PowerShell Command -->
+            <div class="rounded-2xl bg-[#0f141f] border border-slate-800 p-5 sm:p-6 shadow-xl">
+              <div class="flex items-center justify-between mb-3.5">
+                <div class="flex items-center gap-2.5">
+                  <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-blue-500/15 text-blue-400 border border-blue-500/20">
+                    Windows
+                  </span>
+                  <span class="text-xs text-slate-400 font-mono">PowerShell (Run as User)</span>
+                </div>
+                <button
+                  type="button"
+                  class="copy-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-all cursor-pointer border border-slate-700"
+                  data-cmd={WIN_CMD}
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <rect x="9" y="9" width="13" height="13" rx="2" stroke-width="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-width="2"/>
+                  </svg>
+                  <span>Copy</span>
+                </button>
+              </div>
+
+              <!-- Uncropped Single Line Box -->
+              <div class="relative flex items-center bg-[#070a10] border border-slate-800/90 rounded-xl px-4 py-3.5 overflow-x-auto">
+                <span class="text-blue-400 font-mono select-none mr-3 text-sm font-semibold">&gt;</span>
+                <code class="font-mono text-xs sm:text-sm text-emerald-400 whitespace-nowrap select-all tracking-wide">
+                  {WIN_CMD}
+                </code>
+              </div>
+            </div>
+
+            <!-- macOS / Linux Bash Command -->
+            <div class="rounded-2xl bg-[#0f141f] border border-slate-800 p-5 sm:p-6 shadow-xl">
+              <div class="flex items-center justify-between mb-3.5">
+                <div class="flex items-center gap-2.5">
+                  <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                    macOS / Linux
+                  </span>
+                  <span class="text-xs text-slate-400 font-mono">Terminal (Bash / Zsh)</span>
+                </div>
+                <button
+                  type="button"
+                  class="copy-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-all cursor-pointer border border-slate-700"
+                  data-cmd={UNIX_CMD}
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <rect x="9" y="9" width="13" height="13" rx="2" stroke-width="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-width="2"/>
+                  </svg>
+                  <span>Copy</span>
+                </button>
+              </div>
+
+              <!-- Uncropped Single Line Box -->
+              <div class="relative flex items-center bg-[#070a10] border border-slate-800/90 rounded-xl px-4 py-3.5 overflow-x-auto">
+                <span class="text-emerald-400 font-mono select-none mr-3 text-sm font-semibold">$</span>
+                <code class="font-mono text-xs sm:text-sm text-emerald-400 whitespace-nowrap select-all tracking-wide">
+                  {UNIX_CMD}
+                </code>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Feature highlights -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 max-w-4xl mx-auto text-xs text-slate-400">
+            <div class="flex items-center gap-2 p-3 rounded-xl bg-slate-800/40 border border-slate-800">
+              <span class="text-emerald-400 font-bold">✓</span>
+              <span>Automated Snapshots</span>
+            </div>
+            <div class="flex items-center gap-2 p-3 rounded-xl bg-slate-800/40 border border-slate-800">
+              <span class="text-emerald-400 font-bold">✓</span>
+              <span>Dry-Run Simulation</span>
+            </div>
+            <div class="flex items-center gap-2 p-3 rounded-xl bg-slate-800/40 border border-slate-800">
+              <span class="text-emerald-400 font-bold">✓</span>
+              <span>100% Rootless (ADB)</span>
+            </div>
+            <div class="flex items-center gap-2 p-3 rounded-xl bg-slate-800/40 border border-slate-800">
+              <span class="text-emerald-400 font-bold">✓</span>
+              <span>Instant Rollback</span>
+            </div>
+          </div>
+
+          <!-- Safety & Best Practices Notice (High Contrast & Summarized) -->
+          <div class="mt-8 max-w-4xl mx-auto rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 sm:p-5 text-left shadow-lg">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-400 text-slate-950 text-xs font-black">!</span>
+              <span class="text-xs sm:text-sm font-bold text-amber-300 uppercase tracking-wide">Safety &amp; Best Practices</span>
+              <span class="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">No Root Required</span>
+            </div>
+            <p class="text-xs text-slate-200 leading-relaxed">
+              Uses safe User 0 commands (<code class="font-mono text-[11px] text-amber-200 bg-black/40 px-1.5 py-0.5 rounded border border-amber-500/30">disable-user</code> / <code class="font-mono text-[11px] text-amber-200 bg-black/40 px-1.5 py-0.5 rounded border border-amber-500/30">uninstall -k</code>) with 61 core OS packages hard-blocked. Because OEM skins vary, Tier 2/3 removal may disrupt dependent features. <strong class="text-white">Always back up important photos, chats, and data before modifying packages.</strong>
+            </p>
+          </div>
+
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#181c24] shadow-sm space-y-2">
-            <h3 class="text-xs font-semibold text-slate-900 dark:text-white">Do I need root access?</h3>
-            <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">No. All operations use standard Android Debug Bridge (`adb shell pm uninstall -k --user 0`), targeting user 0 without requiring root privileges or unlocking the bootloader.</p>
+      </section>
+
+      <!-- OPTION 3: WebApp Section -->
+      <section id="webapp" class="py-20 md:py-28 bg-slate-100/60 dark:bg-[#0c1017]">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          <div class="text-center max-w-2xl mx-auto mb-14">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold mb-3">
+              Use the Web App (GUI)
+            </div>
+            <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-4">
+              Prefer a Visual Interface? Open WebApp
+            </h2>
+            <p class="text-slate-600 dark:text-slate-400 text-sm sm:text-base leading-relaxed">
+              Connect your phone via WebADB and manage system packages visually in your browser. Zero terminal knowledge needed.
+            </p>
           </div>
-          <div class="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#181c24] shadow-sm space-y-2">
-            <h3 class="text-xs font-semibold text-slate-900 dark:text-white">Will I lose personal data?</h3>
-            <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">No. The engine automatically passes the `-k` (keep data) flag and creates automated backup snapshots prior to executing any removal.</p>
+
+          <!-- WebApp Visual Mockup Preview -->
+          <div class="relative mx-auto max-w-4xl rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#12161f] shadow-2xl overflow-hidden text-left">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/50">
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-rose-500/80"></div>
+                <div class="w-3 h-3 rounded-full bg-amber-500/80"></div>
+                <div class="w-3 h-3 rounded-full bg-emerald-500/80"></div>
+                <span class="ml-2 text-xs font-mono text-slate-400">AI Phone Debloater WebApp Workspace</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Ready to connect
+              </div>
+            </div>
+
+            <!-- Mock UI Body -->
+            <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50/30 dark:bg-slate-900/10">
+              <div class="md:col-span-1 space-y-4">
+                <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#161b26]">
+                  <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Connected Device</div>
+                  <div class="font-bold text-slate-800 dark:text-white text-base">Samsung Galaxy S23</div>
+                  <div class="text-xs text-slate-500 mt-1 font-mono">SM-S911B • One UI 6.1</div>
+                </div>
+                <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#161b26]">
+                  <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Scan Summary</div>
+                  <div class="flex justify-between items-center text-sm py-1 border-b border-slate-100 dark:border-slate-800">
+                    <span class="text-slate-600 dark:text-slate-400">Total Packages</span>
+                    <span class="font-semibold text-slate-800 dark:text-white">384</span>
+                  </div>
+                  <div class="flex justify-between items-center text-sm py-1 border-b border-slate-100 dark:border-slate-800">
+                    <span class="text-emerald-600 dark:text-emerald-400">Safe to Remove</span>
+                    <span class="font-semibold text-emerald-600 dark:text-emerald-400">42</span>
+                  </div>
+                  <div class="flex justify-between items-center text-sm py-1">
+                    <span class="text-rose-500">Critical Core</span>
+                    <span class="font-semibold text-rose-500">112</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="md:col-span-2">
+                <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#161b26] h-full flex flex-col justify-between">
+                  <div>
+                    <div class="flex items-center justify-between mb-4">
+                      <div class="font-bold text-slate-800 dark:text-white text-sm">Recommended Debloat Plan</div>
+                      <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 font-semibold">Tier 1: Safe</span>
+                    </div>
+                    <div class="space-y-2 text-xs">
+                      <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                        <div>
+                          <div class="font-semibold text-slate-800 dark:text-white">com.facebook.katana</div>
+                          <div class="text-slate-500">Facebook App & Analytics</div>
+                        </div>
+                        <span class="text-emerald-600 font-medium">Safe</span>
+                      </div>
+                      <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                        <div>
+                          <div class="font-semibold text-slate-800 dark:text-white">com.samsung.android.bixby.agent</div>
+                          <div class="text-slate-500">Samsung Bixby Voice Assistant</div>
+                        </div>
+                        <span class="text-emerald-600 font-medium">Safe</span>
+                      </div>
+                      <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                        <div>
+                          <div class="font-semibold text-slate-800 dark:text-white">com.microsoft.skydrive</div>
+                          <div class="text-slate-500">Microsoft OneDrive Sync</div>
+                        </div>
+                        <span class="text-emerald-600 font-medium">Safe</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <span class="text-xs text-slate-400">Automatic backup snapshot is enabled</span>
+                    <a
+                      href="/app"
+                      class="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-md transition-colors"
+                    >
+                      <span>Launch WebApp Workspace</span>
+                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#181c24] shadow-sm space-y-2">
-            <h3 class="text-xs font-semibold text-slate-900 dark:text-white">How do I restore a removed package?</h3>
-            <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">You can instantly restore any package using `cmd package install-existing &lt;package_name&gt;` or through the automated rollback snapshot manager.</p>
+
+        </div>
+      </section>
+
+      <!-- Safety Architecture Section -->
+      <section id="safety" class="py-20 md:py-28">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="text-center max-w-2xl mx-auto mb-16">
+            <h2 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">
+              Four-Tier Safety Classification
+            </h2>
+            <p class="text-slate-600 dark:text-slate-400">
+              Every package is analyzed before any action. Critical system packages are permanently protected.
+            </p>
           </div>
-          <div class="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#181c24] shadow-sm space-y-2">
-            <h3 class="text-xs font-semibold text-slate-900 dark:text-white">Can I use this via WebApp?</h3>
-            <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">Yes! Simply run the one-command setup in your terminal to spin up the local bridge, then click <strong class="text-blue-600 dark:text-blue-400">Open WebApp Workspace</strong> to manage everything visually at debloat.rovoxia.com.</p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="p-6 rounded-2xl border border-emerald-500/30 bg-white dark:bg-[#12161f] shadow-sm">
+              <span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 mb-3">Tier 1 • Safe</span>
+              <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">Safe to Remove</h3>
+              <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Carrier bloat, duplicate apps, analytics, and non-essential OEM utilities. Zero system impact.
+              </p>
+            </div>
+
+            <div class="p-6 rounded-2xl border border-amber-500/30 bg-white dark:bg-[#12161f] shadow-sm">
+              <span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 mb-3">Tier 2 • Caution</span>
+              <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">Review First</h3>
+              <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Cloud sync, alternate keyboards, manufacturer stores. Safe to remove if you do not use them.
+              </p>
+            </div>
+
+            <div class="p-6 rounded-2xl border border-orange-500/30 bg-white dark:bg-[#12161f] shadow-sm">
+              <span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-800 dark:bg-orange-500/20 dark:text-orange-300 mb-3">Tier 3 • Advanced</span>
+              <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">Power Users</h3>
+              <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                OEM ecosystem services, gestures, and background sync. May affect dependent third-party apps.
+              </p>
+            </div>
+
+            <div class="p-6 rounded-2xl border border-rose-500/30 bg-white dark:bg-[#12161f] shadow-sm">
+              <span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-300 mb-3">Tier 4 • Critical</span>
+              <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">Hard-Blocked</h3>
+              <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Android framework, package installer, System UI, telephony. Engine permanently forbids removal.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
+      <!-- Rules Preview (Compact) -->
+      <section id="rules" class="py-14 sm:py-16 bg-slate-100/50 dark:bg-[#0c1017] border-y border-slate-200/80 dark:border-slate-800">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
+            <div>
+              <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                Curated Safety Rules
+              </h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                4-tier classification across 330+ packages.
+              </p>
+            </div>
+            <span class="text-[11px] font-mono px-2.5 py-1 rounded-md bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 self-start sm:self-auto">
+              61 Core Hard-Blocked
+            </span>
+          </div>
+
+          <div class="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-[#12161f] shadow-2xs">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 font-semibold">
+                  <tr>
+                    <th class="py-2.5 px-4">Tier</th>
+                    <th class="py-2.5 px-4">Sample Package</th>
+                    <th class="py-2.5 px-4 hidden sm:table-cell">Category</th>
+                    <th class="py-2.5 px-4">Engine Action</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                  {sampleRules.map((r) => (
+                    <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/30">
+                      <td class="py-3 px-4 whitespace-nowrap">
+                        <span class={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                          r.tierColor === 'emerald' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300' :
+                          r.tierColor === 'amber' ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300' :
+                          r.tierColor === 'orange' ? 'bg-orange-100 text-orange-800 dark:bg-orange-500/20 dark:text-orange-300' :
+                          'bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-300'
+                        }`}>
+                          {r.tier}
+                        </span>
+                      </td>
+                      <td class="py-3 px-4">
+                        <div class="font-mono text-[11px] font-medium text-slate-900 dark:text-slate-100">{r.pkg}</div>
+                        <div class="text-[11px] text-slate-500 dark:text-slate-400">{r.name}</div>
+                      </td>
+                      <td class="py-3 px-4 text-slate-600 dark:text-slate-400 hidden sm:table-cell">
+                        {r.type}
+                      </td>
+                      <td class="py-3 px-4 whitespace-nowrap">
+                        <span class={`text-xs font-semibold ${
+                          r.tierColor === 'rose' ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300'
+                        }`}>
+                          {r.action}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ Section -->
+      <section id="faq" class="py-20 md:py-28">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="text-center mb-16">
+            <h2 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">
+              Frequently Asked Questions
+            </h2>
+            <p class="text-slate-600 dark:text-slate-400">
+              Common questions about device safety, warranties, and rollback options.
+            </p>
+          </div>
+
+          <div class="space-y-4">
+            <details class="group p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#12161f]">
+              <summary class="flex justify-between items-center font-bold text-slate-900 dark:text-white cursor-pointer list-none">
+                <span>Do I need root access to debloat my phone?</span>
+                <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </summary>
+              <p class="mt-4 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                <strong>No.</strong> Runs 100% rootless via ADB User 0. Bootloader stays locked, Samsung Knox stays 0x0, warranty remains valid, and banking apps keep working.
+              </p>
+            </details>
+
+            <details class="group p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#12161f]">
+              <summary class="flex justify-between items-center font-bold text-slate-900 dark:text-white cursor-pointer list-none">
+                <span>What are the safety best practices and data backup recommendations?</span>
+                <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </summary>
+              <p class="mt-4 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                Uses non-destructive User 0 commands with 61 OS packages hard-blocked. Because OEM skins vary, always back up important photos and data before modifying Tier 2 or Tier 3 packages.
+              </p>
+            </details>
+
+            <details class="group p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#12161f]">
+              <summary class="flex justify-between items-center font-bold text-slate-900 dark:text-white cursor-pointer list-none">
+                <span>Can I restore an uninstalled app later?</span>
+                <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </summary>
+              <p class="mt-4 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                Yes. Restore any app instantly via ADB with <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-mono text-xs">cmd package install-existing &lt;package&gt;</code> or with 1-click snapshot restore.
+              </p>
+            </details>
+
+            <details class="group p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#12161f]">
+              <summary class="flex justify-between items-center font-bold text-slate-900 dark:text-white cursor-pointer list-none">
+                <span>What are the key benefits of debloating Android?</span>
+                <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </summary>
+              <p class="mt-4 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                Frees 1.5GB–3GB+ RAM, boosts battery life by 20–30%, reduces device heat, and stops background carrier and OEM telemetry.
+              </p>
+            </details>
+
+            <details class="group p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#12161f]">
+              <summary class="flex justify-between items-center font-bold text-slate-900 dark:text-white cursor-pointer list-none">
+                <span>Why use AI Phone Debloater instead of other tools?</span>
+                <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </summary>
+              <p class="mt-4 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                Combines 1-click AI agent analysis, zero-install terminal runners (<code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-mono text-xs">run.ps1</code> / <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-mono text-xs">run.sh</code>), 61 hard-blocked core packages, auto-rollback snapshots, and 100% reversible execution.
+              </p>
+            </details>
+
+            <details class="group p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#12161f]">
+              <summary class="flex justify-between items-center font-bold text-slate-900 dark:text-white cursor-pointer list-none">
+                <span>Will debloating affect OTA system software updates?</span>
+                <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </summary>
+              <p class="mt-4 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                No. Operates in User 0 without touching read-only system partitions (dm-verity intact). Official OTA updates download and install normally.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <!-- Bottom Call to Action -->
+      <section class="py-16 md:py-20 bg-gradient-to-r from-emerald-600 to-teal-700 text-white text-center">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 class="text-3xl font-extrabold tracking-tight mb-4">
+            Reclaim your Android in minutes.
+          </h2>
+          <p class="text-emerald-100 max-w-xl mx-auto mb-8 text-base">
+            Copy the AI prompt, run via CLI, or connect to our WebApp workspace. Safe, automated, 100% reversible.
+          </p>
+          <div class="flex flex-wrap items-center justify-center gap-4">
+            <button
+              type="button"
+              class="footer-prompt-copy-btn px-7 py-3.5 rounded-xl bg-white text-emerald-800 font-bold hover:bg-emerald-50 transition-colors shadow-lg cursor-pointer"
+              data-prompt={masterPrompt}
+            >
+              Copy AI Agent Prompt
+            </button>
+            <a
+              href="/app"
+              class="px-7 py-3.5 rounded-xl border border-white/30 bg-emerald-800/40 hover:bg-emerald-800/60 text-white font-semibold transition-colors"
+            >
+              Open WebApp
+            </a>
+          </div>
+        </div>
+      </section>
     </main>
 
     <Footer />
 
+    <!-- Copy Buttons Logic -->
     <script>
-      (function () {
-        // Copy standard command buttons
-        const copyBtns = document.querySelectorAll('.copy-btn');
-        copyBtns.forEach((btn) => {
+      // CLI & Generic copy buttons
+      const copyBtns = document.querySelectorAll('.copy-btn');
+      copyBtns.forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const cmd = btn.getAttribute('data-cmd') || '';
+          try {
+            await navigator.clipboard.writeText(cmd);
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<span class="text-emerald-400 font-bold">✓ Copied!</span>';
+            setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
+          } catch {
+            prompt('Copy this command:', cmd);
+          }
+        });
+      });
+
+      // Master Prompt Copy Buttons (Hero + Card + Footer)
+      const setupPromptCopy = (selector: string, textSelector?: string) => {
+        const buttons = document.querySelectorAll(selector);
+        buttons.forEach((btn) => {
           btn.addEventListener('click', async () => {
-            const cmd = btn.getAttribute('data-cmd') || '';
+            const text = btn.getAttribute('data-prompt') || '';
             try {
-              await navigator.clipboard.writeText(cmd);
-              const original = btn.innerHTML;
-              btn.innerHTML = '<svg class="h-3 w-3 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
-              setTimeout(() => {
-                btn.innerHTML = original;
-              }, 1600);
+              await navigator.clipboard.writeText(text);
+              const labelEl = textSelector ? btn.querySelector(textSelector) : btn;
+              if (labelEl) {
+                const originalText = labelEl.textContent;
+                labelEl.textContent = '✓ Copied Prompt!';
+                setTimeout(() => {
+                  labelEl.textContent = originalText;
+                }, 2500);
+              }
             } catch {
-              prompt('Copy this command:', cmd);
+              prompt('Copy AI Agent Prompt:', text);
             }
           });
         });
+      };
 
-        // Copy hero AI prompt button
-        const heroPromptBtn = document.getElementById('copy-hero-prompt-btn');
-        if (heroPromptBtn) {
-          heroPromptBtn.addEventListener('click', async () => {
-            const promptText = heroPromptBtn.getAttribute('data-prompt') || '';
-            try {
-              await navigator.clipboard.writeText(promptText);
-              const original = heroPromptBtn.innerHTML;
-              heroPromptBtn.innerHTML = '<span class="text-white">✓ Copied AI Prompt</span>';
-              setTimeout(() => {
-                heroPromptBtn.innerHTML = original;
-              }, 2000);
-            } catch {
-              prompt('Copy AI prompt:', promptText);
-            }
-          });
-        }
-      })();
+      setupPromptCopy('#copy-master-prompt-btn', '#copy-prompt-btn-text');
+      setupPromptCopy('.secondary-prompt-copy-btn');
+      setupPromptCopy('.footer-prompt-copy-btn');
     </script>
   </body>
 </html>

@@ -6,8 +6,8 @@ export interface Props {
 
 const { variant = 'landing' } = Astro.props;
 
-const WIN_CMD = 'irm https://debloat.rovoxia.com/install.ps1 | iex';
-const UNIX_CMD = 'curl -sSL https://debloat.rovoxia.com/install.sh | bash';
+const WIN_CMD = 'irm https://debloater.rovoxia.com/run.ps1 | iex';
+const UNIX_CMD = 'curl -sSL https://debloater.rovoxia.com/run.sh | bash';
 ---
 
 <section class="rounded-2xl border border-slate-200 bg-white shadow-xs p-6 sm:p-8 dark:border-slate-800 dark:bg-[#181c24]" id="adb-setup-card">

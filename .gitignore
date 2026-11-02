@@ -40,3 +40,6 @@ web/dist/
 web/.astro/
 web/.env
 web/.env.*
+
+# Local Claude Code configuration
+CLAUDE.md
