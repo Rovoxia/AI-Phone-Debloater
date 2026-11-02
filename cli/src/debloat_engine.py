@@ -19,7 +19,7 @@ import threading
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 if hasattr(sys.stdout, "reconfigure"):
     try:
@@ -342,9 +342,6 @@ class Adb:
     def pair_wireless(self, address: str, code: str):
         return self._run([self.adb_path, "pair", address, code])
 
-    def tcpip(self, port=5555):
-        return self._run(self._base() + ["tcpip", str(int(port))])
-
     def getprop(self, prop: str, timeout=None):
         if not re.match(r"^[A-Za-z0-9._-]+$", prop): raise DebloatError(f"Invalid property name: {prop!r}")
         try:
@@ -403,9 +400,6 @@ class Adb:
         except AdbError:
             return False
 
-    def is_enabled(self, package: str):
-        return self._exact_listed(package, user=0, enabled=True)
-
     def is_installed_user(self, package: str, user=0):
         return self._exact_listed(package, user=user)
 
@@ -418,9 +412,7 @@ class RuleSet:
         self.critical = set(HARDCRITICAL_PACKAGES.keys())
         self.critical_reasons = dict(HARDCRITICAL_PACKAGES)
         self.safe = {}
-        self.oem = {}
         self.loaded_files = []
-        self.critical_loaded = False
 
     def _load_json(self, path: Path):
         if not path.is_file(): return None
@@ -449,7 +441,6 @@ class RuleSet:
         self.critical.add(pkg)
         self.critical_reasons[pkg] = reason
         self.safe.pop(pkg, None)
-        self.oem.pop(pkg, None)
 
     def _add_safe(self, pkg, tier, reason, source):
         if pkg in self.critical: return
@@ -498,7 +489,6 @@ class RuleSet:
             for entry in self._entries(data):
                 pkg = entry.get("package")
                 if isinstance(pkg, str) and pkg: self._add_critical(pkg, entry.get("description", "critical"))
-            self.critical_loaded = True
         else:
             self.logger.error(f"Critical blacklist missing or invalid: {crit_path}. Disable/uninstall will be refused.")
         univ_path = rules_dir / "universal-safe-to-remove.json"
@@ -533,17 +523,16 @@ class RuleSet:
                 tier = self._entry_tier(entry, rf.name)
                 if tier is None: continue
                 reason = entry.get("description", entry.get("reason", ""))
-                self.oem[pkg] = {"tier": tier, "reason": reason, "source": rf.name}
                 self._add_safe(pkg, tier, reason, rf.name)
 
     def is_critical(self, pkg): return pkg in self.critical
     def critical_reason(self, pkg): return self.critical_reasons.get(pkg, "critical")
     def tier_for(self, pkg):
-        info = self.safe.get(pkg) or self.oem.get(pkg)
+        info = self.safe.get(pkg)
         return int(info["tier"]) if info else None
     def classify(self, pkg):
         if self.is_critical(pkg): return 4, self.critical_reason(pkg), "critical"
-        info = self.safe.get(pkg) or self.oem.get(pkg)
+        info = self.safe.get(pkg)
         if info: return int(info["tier"]), info["reason"], info["source"]
         return 0, "not categorized", "unknown"
 
@@ -605,7 +594,6 @@ class SnapshotManager:
         path = self.snapshot_path(device.model, ts)
         enabled_set = set(adb.pm_list_packages(user=0, enabled=True))
         user0_set = set(adb.pm_list_packages(user=0))
-        any_user_set = set(adb.pm_list_packages(uninstalled=True))
         meta_by_name = {}
         for pkg in packages_meta or []:
             if isinstance(pkg, dict) and pkg.get("name"): meta_by_name[pkg["name"]] = pkg
@@ -616,7 +604,6 @@ class SnapshotManager:
             meta = meta_by_name.get(name, {})
             entries.append({
                 "name": name, "enabled": name in enabled_set, "installed_user0": name in user0_set,
-                "installed_any_user": name in any_user_set,
                 "tier": meta.get("tier", 0), "reason": meta.get("reason", ""), "source": meta.get("source", "")
             })
         snapshot = {"created_at": datetime.now().isoformat(), "timestamp": ts, "device": device.to_dict(), "package_count": len(entries), "packages": entries}
@@ -636,13 +623,17 @@ class SnapshotManager:
             raise DebloatError(f"Not a valid snapshot file: {path}")
         return data
 
-    def list_backups(self):
-        search_dirs = [self.backups_dir]
+    @property
+    def snapshot_search_dirs(self):
+        dirs = [self.backups_dir]
         if LOCAL_BACKUPS_DIR.exists() and LOCAL_BACKUPS_DIR != self.backups_dir:
-            search_dirs.append(LOCAL_BACKUPS_DIR)
+            dirs.append(LOCAL_BACKUPS_DIR)
+        return dirs
+
+    def list_backups(self):
         results = []
         seen = set()
-        for b_dir in search_dirs:
+        for b_dir in self.snapshot_search_dirs:
             if not b_dir.exists(): continue
             for path in sorted(b_dir.glob("snapshot_*.json"), key=lambda p: p.stat().st_mtime, reverse=True):
                 if path.name in seen: continue
@@ -661,11 +652,8 @@ class SnapshotManager:
         if not ident: return None
         p = Path(ident)
         if p.is_file(): return p
-        search_dirs = [self.backups_dir]
-        if LOCAL_BACKUPS_DIR.exists() and LOCAL_BACKUPS_DIR != self.backups_dir:
-            search_dirs.append(LOCAL_BACKUPS_DIR)
         matches = []
-        for b_dir in search_dirs:
+        for b_dir in self.snapshot_search_dirs:
             cand = b_dir / ident
             if cand.is_file(): return cand
             m = sorted(b_dir.glob("snapshot_*.json"), key=lambda q: q.stat().st_mtime, reverse=True)
@@ -900,8 +888,6 @@ class DebloatEngine:
     def execute_plan(self, packages, action="disable", require_confirm=True, auto_snapshot=True, packages_meta=None):
         if action not in ("disable", "uninstall"):
             raise DebloatError(f"Unknown action: {action}")
-        if not self.rules.critical_loaded:
-            raise DebloatError("Critical blacklist (critical-do-not-touch.json) is not loaded; refusing to change packages.")
         report = {"action": action, "total": len(packages), "dry_run": self.dry_run, "cancelled": False,
                   "executed": [], "failed": [], "skipped_protected": []}
         actionable, seen = [], set()
@@ -912,8 +898,7 @@ class DebloatEngine:
                 report["failed"].append({"package": str(pkg), "error": "invalid package name"})
                 self.logger.error(f"Refusing invalid package name: {pkg!r}")
                 continue
-            # Last line of defence: nothing on either blacklist ever reaches pm, whatever the caller passed.
-            if self.rules.is_critical(pkg) or pkg in HARDCRITICAL_PACKAGES:
+            if self.rules.is_critical(pkg):
                 report["skipped_protected"].append({"package": pkg, "reason": "critical"})
                 self.logger.warn(f"Protected (critical), skipped: {pkg}")
                 continue

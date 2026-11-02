@@ -1788,7 +1788,7 @@
       "description": "Huawei system app controller and OEM background service.",
       "safe_to_remove": true,
       "recommended_action": "disable",
-      "sourceFile": "OEM-rules.json",
+      "sourceFile": "huawei-emui.json",
       "severity": "SAFE"
     },
     {
@@ -1802,7 +1802,7 @@
       "description": "Huawei proprietary media and screen sharing.",
       "safe_to_remove": true,
       "recommended_action": "disable",
-      "sourceFile": "OEM-rules.json",
+      "sourceFile": "huawei-emui.json",
       "severity": "SAFE"
     },
     {
@@ -1816,7 +1816,7 @@
       "description": "Huawei push notification daemon.",
       "safe_to_remove": true,
       "recommended_action": "disable",
-      "sourceFile": "OEM-rules.json",
+      "sourceFile": "huawei-emui.json",
       "severity": "SAFE"
     },
     {
@@ -1830,7 +1830,7 @@
       "description": "Voice assistant listener and telemetry service.",
       "safe_to_remove": true,
       "recommended_action": "disable",
-      "sourceFile": "OEM-rules.json",
+      "sourceFile": "huawei-emui.json",
       "severity": "SAFE"
     },
     {
