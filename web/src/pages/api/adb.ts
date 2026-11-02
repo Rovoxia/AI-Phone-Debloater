@@ -1,10 +1,10 @@
 import type { APIRoute } from 'astro';
-import { exec } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 // Packages that must never be uninstalled/disabled by the webapp, even if the UI
 // allows it. Defense-in-depth on top of the UI-side tier filtering.
@@ -36,7 +36,7 @@ function adbArgs(serial?: string, extra: string[] = []): string[] {
 }
 
 function runAdb(args: string[]) {
-  return execAsync(args.join(' '));
+  return execFileAsync(args[0], args.slice(1));
 }
 
 function parseDevices(output: string) {
@@ -77,7 +77,8 @@ export const GET: APIRoute = async ({ url }) => {
     }
 
     if (action === 'shell') {
-      const cmd = url.searchParams.get('cmd') || '';
+      const cmd = (url.searchParams.get('cmd') || '').trim();
+      if (!cmd) return json({ success: false, error: 'cmd required' }, 400);
       const { stdout, stderr } = await runAdb([adb, 'shell', cmd]);
       return json({ success: true, stdout, stderr });
     }
