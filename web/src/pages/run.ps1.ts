@@ -32,16 +32,63 @@ try {
         throw "Subfolder '$Subfolder' not found in the repository archive."
     }
 
-    Write-Host "[INFO] Syncing CLI to $InstallDir..." -ForegroundColor Yellow
-    if (Test-Path $InstallDir) {
-        Remove-Item -Recurse -Force $InstallDir
+    # Version comparison
+    $InstalledVersionFile = Join-Path $InstallDir "VERSION"
+    $InstalledVersion = ""
+    if (Test-Path $InstalledVersionFile) {
+        $InstalledVersion = (Get-Content $InstalledVersionFile -Raw).Trim()
     }
-    New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+
+    $NewVersionFile = Join-Path $ExtractedRoot.FullName "VERSION"
+    $NewVersion = "1.0.0"
+    if (Test-Path $NewVersionFile) {
+        $NewVersion = (Get-Content $NewVersionFile -Raw).Trim()
+    }
+
+    $VersionChanged = ($InstalledVersion -ne $NewVersion) -or (-not (Test-Path $InstallDir))
+
+    Write-Host "[INFO] Syncing CLI to $InstallDir (Version: $NewVersion)..." -ForegroundColor Yellow
+
+    # Preserve backups folder under all circumstances
+    $BackupsDir = Join-Path $InstallDir "backups"
+    $PreservedBackupsTemp = Join-Path $TempDir "preserved_backups"
+    if (Test-Path $BackupsDir) {
+        New-Item -ItemType Directory -Force -Path $PreservedBackupsTemp | Out-Null
+        Copy-Item -Recurse -Force "$BackupsDir\\*" $PreservedBackupsTemp -ErrorAction SilentlyContinue
+    }
+
+    # If version changed, purge old tools so fresh ADB binaries are downloaded
+    if ($VersionChanged) {
+        if ($InstalledVersion -ne "") {
+            Write-Host "[INFO] Version update detected ($InstalledVersion -> $NewVersion). Refreshing binaries and ADB tools..." -ForegroundColor Yellow
+        }
+        $ToolsDir = Join-Path $InstallDir "tools"
+        if (Test-Path $ToolsDir) {
+            Remove-Item -Recurse -Force $ToolsDir -ErrorAction SilentlyContinue
+        }
+    }
+
+    # Clean existing install except backups
+    if (Test-Path $InstallDir) {
+        Get-ChildItem -Path $InstallDir -Exclude "backups" | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+    } else {
+        New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+    }
+
+    # Copy updated CLI files
     Copy-Item -Recurse -Force "$SourceSubfolder\\*" $InstallDir
 
-    $VersionFile = Join-Path $ExtractedRoot.FullName "VERSION"
-    if (Test-Path $VersionFile) {
-        Copy-Item -Force $VersionFile $InstallDir
+    # Restore preserved backups
+    if (Test-Path $PreservedBackupsTemp) {
+        if (-not (Test-Path $BackupsDir)) {
+            New-Item -ItemType Directory -Force -Path $BackupsDir | Out-Null
+        }
+        Copy-Item -Recurse -Force "$PreservedBackupsTemp\\*" $BackupsDir -ErrorAction SilentlyContinue
+    }
+
+    # Copy VERSION file
+    if (Test-Path $NewVersionFile) {
+        Copy-Item -Force $NewVersionFile $InstallDir
     }
 
     Write-Host "[SUCCESS] Ready!" -ForegroundColor Green

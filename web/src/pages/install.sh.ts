@@ -51,10 +51,53 @@ if [ ! -d "$SOURCE_SUBFOLDER" ]; then
     exit 1
 fi
 
-echo "Installing to \${INSTALL_DIR}..."
+INSTALLED_VERSION_FILE="$INSTALL_DIR/VERSION"
+INSTALLED_VERSION=""
+if [ -f "$INSTALLED_VERSION_FILE" ]; then
+    INSTALLED_VERSION=\$(tr -d '\r\n' < "$INSTALLED_VERSION_FILE")
+fi
+
+NEW_VERSION_FILE="\${EXTRACTED_ROOT}/VERSION"
+NEW_VERSION="1.0.0"
+if [ -f "$NEW_VERSION_FILE" ]; then
+    NEW_VERSION=\$(tr -d '\r\n' < "$NEW_VERSION_FILE")
+fi
+
+echo "Installing to \${INSTALL_DIR} (Version: \${NEW_VERSION})..."
+
+# Preserve backups folder under all circumstances
+BACKUPS_DIR="$INSTALL_DIR/backups"
+PRESERVED_BACKUPS="$TEMP_DIR/preserved_backups"
+if [ -d "$BACKUPS_DIR" ]; then
+    mkdir -p "$PRESERVED_BACKUPS"
+    cp -R "$BACKUPS_DIR"/* "$PRESERVED_BACKUPS/" 2>/dev/null || true
+fi
+
+# If version changed, purge old tools so fresh ADB binaries are downloaded
+if [ "$INSTALLED_VERSION" != "$NEW_VERSION" ]; then
+    if [ -n "$INSTALLED_VERSION" ]; then
+        echo "[INFO] Version update detected (\${INSTALLED_VERSION} -> \${NEW_VERSION}). Refreshing binaries and ADB tools..."
+    fi
+    rm -rf "$INSTALL_DIR/tools" 2>/dev/null || true
+fi
+
 mkdir -p "$INSTALL_DIR"
-rm -rf "\${INSTALL_DIR:?}"/*
+# Remove old files except backups
+find "$INSTALL_DIR" -mindepth 1 -maxdepth 1 ! -name 'backups' -exec rm -rf {} + 2>/dev/null || true
+
+# Copy updated CLI files
 cp -R "\${SOURCE_SUBFOLDER}/"* "$INSTALL_DIR/"
+
+# Restore preserved backups
+if [ -d "$PRESERVED_BACKUPS" ]; then
+    mkdir -p "$BACKUPS_DIR"
+    cp -R "$PRESERVED_BACKUPS"/* "$BACKUPS_DIR/" 2>/dev/null || true
+fi
+
+# Copy VERSION file
+if [ -f "$NEW_VERSION_FILE" ]; then
+    cp "$NEW_VERSION_FILE" "$INSTALL_DIR/"
+fi
 
 echo "Installation complete!"
 echo "Location: \${INSTALL_DIR}"

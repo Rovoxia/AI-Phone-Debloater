@@ -16,8 +16,8 @@ debloat-plan.json
 my-plan.json
 
 # Local ADB platform-tools binaries & embeddable Python
-cli/tools/python/
-cli/tools/platform-tools/
+cli/tools/
+cli/tools/*
 platform-tools/
 *.zip
 *.log
