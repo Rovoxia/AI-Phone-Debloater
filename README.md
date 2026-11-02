@@ -5,6 +5,14 @@
 **The Universal, Rootless Android Debloater & Bloatware Removal Engine**  
 *Built for AI Coding Agents (Claude Code, ChatGPT, Cursor, Gemini) & Terminal Power Users.*
 
+<br />
+
+<p align="center">
+  <a href="https://debloater.rovoxia.com">
+    <img src="web/public/og-image.svg" alt="AI-Phone-Debloater Architecture & Safety Flow" width="100%" />
+  </a>
+</p>
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg?style=flat-square)](LICENSE)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue.svg?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Android 8.0 - 15+](https://img.shields.io/badge/Android-8.0%20--%2015%2B-green.svg?style=flat-square&logo=android&logoColor=white)](https://developer.android.com)
@@ -66,30 +74,9 @@ Choose the debloating workflow that matches your preferred environment:
 
 Feed our canonical debloating prompt directly into **Claude Code CLI**, **ChatGPT**, **Cursor**, **Gemini**, or **Cline**. The AI agent will auto-detect your device, cross-reference installed packages against OEM databases, simulate changes via a dry-run report, and safely apply debloating rules with your confirmation.
 
-> **Copy & Paste this prompt into your AI Coding Agent:**
-
-```markdown
-Clone https://github.com/Rovoxia/AI-Phone-Debloater.git and guide me through safely debloating my connected Android phone. Execute strictly in this order:
-
-1. Environment & Connection Check:
-   - Verify ADB connectivity (python cli/src/debloat_engine.py --scan or adb devices -l).
-   - Resolve ADB from PATH, local repo tools, or auto-download Google SDK Platform-Tools if missing.
-
-2. Device Profiling & Classification:
-   - Identify device manufacturer, model, and Android OS version.
-   - Cross-reference installed packages against cli/rules/*.json and classify into 4 Safety Tiers.
-
-3. Dry-Run Simulation:
-   - Default strictly to Tier 1 (Safe Bloat). Run: python cli/src/debloat_engine.py --tier 1 --dry-run
-   - Display the proposed changes table and pause for my confirmation before modifying anything.
-
-4. Snapshot & Safe Execution:
-   - Create an automated backup snapshot (cli/backups/snapshot_<model>_<timestamp>.json).
-   - Execute safe debloat using `disable` (or `uninstall -k`), ensuring all personal files remain intact.
-   - Display the restore command for instant rollback.
-```
-
-🔗 *Hosted Master Prompt Raw Endpoint:* `https://debloater.rovoxia.com/prompt.md`
+> 📋 **Official Master AI Prompt (Click to open, view, and copy/paste):**
+> - 📄 **[Open prompt/master-prompt.md (Local Repository)](prompt/master-prompt.md)**
+> - 🌐 **[Open https://debloater.rovoxia.com/prompt.md (Raw Web Link)](https://debloater.rovoxia.com/prompt.md)**
 
 ---
 
