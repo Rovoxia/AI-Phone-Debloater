@@ -24,7 +24,7 @@ Clear and concise description of the bug.
 - **ADB version:** `adb version` →
 - **Phone manufacturer / model:** e.g. Samsung Galaxy S24, Xiaomi 14
 - **Android version / skin:** e.g. Android 14, One UI 6
-- **Launcher used:** `debloat.bat` / `debloat.sh` / `python scripts/debloat-engine.py`
+- **Launcher used:** `cli\bin\debloat.bat` / `bash cli/bin/debloat.sh` / `python cli/src/debloat_engine.py`
 
 ### Device state
 - USB debugging authorized: yes/no
@@ -32,7 +32,7 @@ Clear and concise description of the bug.
 - Bootloader unlocked: yes/no
 
 ### Logs / output
-Paste the command output or attach a log. Use `python scripts/debloat-engine.py --dry-run` first and include its output.
+Paste the command output or attach a log. Use `python cli/src/debloat_engine.py --dry-run` first and include its output.
 
 ```
 <output here>

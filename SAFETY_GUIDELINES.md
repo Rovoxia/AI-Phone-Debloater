@@ -104,7 +104,7 @@ When you run `pm uninstall -k --user 0 <package>`:
 
 ## 5. Blacklist breakdown: code-level protection of critical packages
 
-Some packages manage fundamental subsystems (status bar, telephony, radio, settings provider, Bluetooth, Wi-Fi, keystore). Touching them can break calls, networking, or boot. AI-Phone-Debloater protects them with **code-level checks** in `rules/critical-do-not-touch.json` and the debloat engine.
+Some packages manage fundamental subsystems (status bar, telephony, radio, settings provider, Bluetooth, Wi-Fi, keystore). Touching them can break calls, networking, or boot. AI-Phone-Debloater protects them with **code-level checks** in `cli/rules/critical-do-not-touch.json` and the debloat engine.
 
 ### Blacklisted categories (never remove or disable)
 
@@ -122,7 +122,7 @@ Some packages manage fundamental subsystems (status bar, telephony, radio, setti
 
 ### How code-level checks work
 
-The debloat engine loads `rules/critical-do-not-touch.json` before executing anything. Every package in a user's plan is compared against the blacklist:
+The debloat engine loads `cli/rules/critical-do-not-touch.json` before executing anything. Every package in a user's plan is compared against the blacklist:
 
 - If a package **matches** the blacklist, the engine **refuses** the action and logs a hard error, even if an AI agent recommended it.
 - Tier-4 packages in any AI-generated plan must be marked `dangerous: true`; the engine treats these as read-only.
@@ -157,13 +157,13 @@ adb shell pm list packages -d
 # List all packages for user 0
 adb shell pm list packages -U 0
 
-# Full engine rollback
-python scripts/debloat-engine.py --restore <package>
+# Full engine snapshot rollback
+python cli/src/debloat_engine.py --restore <SNAPSHOT_FILENAME>
 ```
 
 ### Rollback command
 
-The engine provides `python scripts/debloat-engine.py restore <package>` (or `restore <snapshot>`) to restore any package on demand without a factory reset. Every debloat action recommended by an AI agent must be reversible using this path.
+The engine provides `python cli/src/debloat_engine.py --restore <SNAPSHOT_FILENAME>` to restore any package state from a snapshot on demand without a factory reset. Every debloat action recommended by an AI agent must be reversible using this path.
 
 ---
 
