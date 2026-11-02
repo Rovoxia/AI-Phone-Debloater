@@ -1,0 +1,163 @@
+---
+// src/components/CliReference.astro
+
+interface CliCmd {
+  cmd: string;
+  desc: string;
+  flags?: string;
+  example: string;
+}
+
+const commands: CliCmd[] = [
+  {
+    cmd: "scan",
+    desc: "Queries hardware specs via ADB and categorizes all user-0 packages into Safety Tiers (1-4).",
+    flags: "--adb-path, --serial, -v",
+    example: "python scripts/debloat-engine.py scan"
+  },
+  {
+    cmd: "dry-run",
+    desc: "Simulates debloating for a specific safety tier. Checks the 61-package blacklist with zero changes.",
+    flags: "--tier {1,2,3}",
+    example: "python scripts/debloat-engine.py dry-run --tier 1"
+  },
+  {
+    cmd: "debloat",
+    desc: "Executes package removal on user 0. Automatically saves a JSON safety snapshot in backups/ first.",
+    flags: "--tier {1,2,3}, --action {disable,uninstall}, --yes",
+    example: "python scripts/debloat-engine.py debloat --tier 1 --action disable"
+  },
+  {
+    cmd: "export-for-ai",
+    desc: "Exports device profile and classified inventory to JSON & Markdown for feeding into Claude Code, ChatGPT, or Gemini.",
+    flags: "--rules-dir, -q",
+    example: "python scripts/debloat-engine.py export-for-ai"
+  },
+  {
+    cmd: "apply-ai-plan",
+    desc: "Validates and executes an AI-generated JSON debloat plan. Intercepts and aborts if any critical package is referenced.",
+    flags: "<plan.json>, --action {disable,uninstall}",
+    example: "python scripts/debloat-engine.py apply-ai-plan plan.json --action disable"
+  },
+  {
+    cmd: "restore",
+    desc: "Restores packages from a snapshot back to their exact original states, or restores a single package by name.",
+    flags: "[snapshot.json], --pkg <name>, --action {auto,enable,install-existing}",
+    example: "python scripts/debloat-engine.py restore backups/snapshot_Galaxy_S24_Ultra.json"
+  },
+  {
+    cmd: "list-backups",
+    desc: "Lists all available timestamped JSON backup snapshots stored in backups/ with metadata.",
+    flags: "--backups-dir",
+    example: "python scripts/debloat-engine.py list-backups"
+  },
+  {
+    cmd: "interactive",
+    desc: "Launches the interactive terminal menu with numbered choices for scanning, debloating, and restoring.",
+    flags: "-i, --interactive",
+    example: "python scripts/debloat-engine.py interactive"
+  }
+];
+---
+
+<section id="cli" class="py-12 sm:py-16 border-b border-slate-200 dark:border-slate-800">
+  <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+
+    <!-- Section Heading -->
+    <div class="text-center max-w-2xl mx-auto mb-8">
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+        CLI Command Reference
+      </h2>
+      <p class="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+        Run <code class="font-mono text-emerald-700 dark:text-emerald-400">scripts/debloat-engine.py</code> directly. Standard Python 3 with zero pip dependencies.
+      </p>
+    </div>
+
+    <!-- 1-Click Launchers -->
+    <div class="flex flex-col sm:flex-row items-center gap-3 mb-6">
+      <div class="w-full sm:flex-1 rounded-lg border border-slate-200 bg-white p-3 flex items-center justify-between dark:border-slate-800 dark:bg-[#0c101a]">
+        <div>
+          <div class="text-[11px] font-medium text-slate-500">Windows Interactive Batch</div>
+          <code class="font-mono text-xs font-bold text-slate-900 dark:text-white">.\debloat.bat</code>
+        </div>
+        <button type="button" class="cli-copy-btn rounded border border-slate-300 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer" data-copy=".\\debloat.bat">
+          Copy
+        </button>
+      </div>
+
+      <div class="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1">OR</div>
+
+      <div class="w-full sm:flex-1 rounded-lg border border-slate-200 bg-white p-3 flex items-center justify-between dark:border-slate-800 dark:bg-[#0c101a]">
+        <div>
+          <div class="text-[11px] font-medium text-slate-500">macOS / Linux Shell Script</div>
+          <code class="font-mono text-xs font-bold text-slate-900 dark:text-white">./debloat.sh</code>
+        </div>
+        <button type="button" class="cli-copy-btn rounded border border-slate-300 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer" data-copy="./debloat.sh">
+          Copy
+        </button>
+      </div>
+    </div>
+
+    <!-- Commands List -->
+    <div class="space-y-2.5">
+      {commands.map((cmd) => (
+        <div class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-[#0c101a] hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-2">
+                <span class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs font-bold text-slate-900 dark:bg-slate-800 dark:text-white">
+                  {cmd.cmd}
+                </span>
+                {cmd.flags && (
+                  <span class="font-mono text-[11px] text-slate-500">
+                    Flags: {cmd.flags}
+                  </span>
+                )}
+              </div>
+              <p class="text-xs text-slate-600 dark:text-slate-400">
+                {cmd.desc}
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2 self-start sm:self-auto">
+              <div class="rounded bg-slate-100 px-2.5 py-1 font-mono text-xs text-slate-800 select-all dark:bg-slate-900 dark:text-emerald-300">
+                <span class="text-slate-400 select-none">$ </span>{cmd.example}
+              </div>
+              <button
+                type="button"
+                class="cli-copy-btn flex-shrink-0 rounded border border-slate-300 bg-white p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:text-white cursor-pointer"
+                data-copy={cmd.example}
+                title="Copy command"
+                aria-label={`Copy command ${cmd.cmd}`}
+              >
+                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll('.cli-copy-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const text = btn.getAttribute('data-copy') || '';
+      try {
+        await navigator.clipboard.writeText(text);
+        const original = btn.textContent;
+        if (original && original.trim() !== '') {
+          btn.textContent = 'Copied!';
+          setTimeout(() => { btn.textContent = original; }, 2000);
+        }
+      } catch {
+        prompt('Copy command:', text);
+      }
+    });
+  });
+</script>

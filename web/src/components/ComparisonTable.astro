@@ -1,0 +1,96 @@
+---
+// src/components/ComparisonTable.astro
+---
+
+<section id="compare" class="py-12 sm:py-16 border-b border-slate-200 dark:border-slate-800">
+  <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+
+    <!-- Section Heading -->
+    <div class="text-center max-w-2xl mx-auto mb-8">
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+        Feature Comparison
+      </h2>
+      <p class="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+        How AI-Phone-Debloater compares against legacy debloating tools and manual ADB commands.
+      </p>
+    </div>
+
+    <!-- Table Container -->
+    <div class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden dark:border-slate-800 dark:bg-[#0c101a]">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="border-b border-slate-200 bg-slate-50 font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300">
+            <tr>
+              <th scope="col" class="py-3 pl-4 pr-3 sm:w-1/3">Capability</th>
+              <th scope="col" class="py-3 px-3 text-center text-emerald-800 dark:text-emerald-400 font-bold bg-emerald-500/5 border-x border-emerald-500/20">
+                AI-Phone-Debloater
+              </th>
+              <th scope="col" class="py-3 px-3 text-center text-slate-600 dark:text-slate-400">UAD-ng</th>
+              <th scope="col" class="py-3 px-3 text-center text-slate-600 dark:text-slate-400">ADB AppControl</th>
+              <th scope="col" class="py-3 pl-3 pr-4 text-center text-slate-600 dark:text-slate-400">Manual ADB</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-slate-700 dark:divide-slate-800/80 dark:text-slate-300">
+            <tr>
+              <td class="py-3 pl-4 pr-3 font-semibold text-slate-900 dark:text-white">Rootless Execution</td>
+              <td class="py-3 px-3 text-center bg-emerald-500/5 border-x border-emerald-500/20 font-bold text-emerald-700 dark:text-emerald-400">Yes (User 0)</td>
+              <td class="py-3 px-3 text-center">Yes</td>
+              <td class="py-3 px-3 text-center">Yes</td>
+              <td class="py-3 pl-3 pr-4 text-center">Yes</td>
+            </tr>
+            <tr>
+              <td class="py-3 pl-4 pr-3 font-semibold text-slate-900 dark:text-white">Zero Data Loss (<code class="font-mono text-[11px]">-k</code> flag)</td>
+              <td class="py-3 px-3 text-center bg-emerald-500/5 border-x border-emerald-500/20 font-bold text-emerald-700 dark:text-emerald-400">Full (-k flag)</td>
+              <td class="py-3 px-3 text-center text-amber-600 dark:text-amber-400">Partial</td>
+              <td class="py-3 px-3 text-center text-rose-600 dark:text-rose-400">No</td>
+              <td class="py-3 pl-3 pr-4 text-center text-amber-600 dark:text-amber-400">Manual Only</td>
+            </tr>
+            <tr>
+              <td class="py-3 pl-4 pr-3 font-semibold text-slate-900 dark:text-white">1-Click AI Agent Integration</td>
+              <td class="py-3 px-3 text-center bg-emerald-500/5 border-x border-emerald-500/20 font-bold text-emerald-700 dark:text-emerald-400">Native (Claude, Gemini, GPT)</td>
+              <td class="py-3 px-3 text-center text-rose-600 dark:text-rose-400">None</td>
+              <td class="py-3 px-3 text-center text-rose-600 dark:text-rose-400">None</td>
+              <td class="py-3 pl-3 pr-4 text-center text-rose-600 dark:text-rose-400">None</td>
+            </tr>
+            <tr>
+              <td class="py-3 pl-4 pr-3 font-semibold text-slate-900 dark:text-white">Automatic Pre-Snapshots</td>
+              <td class="py-3 px-3 text-center bg-emerald-500/5 border-x border-emerald-500/20 font-bold text-emerald-700 dark:text-emerald-400">Automatic JSON</td>
+              <td class="py-3 px-3 text-center text-amber-600 dark:text-amber-400">Manual Export</td>
+              <td class="py-3 px-3 text-center text-amber-600 dark:text-amber-400">Paid License ($$)</td>
+              <td class="py-3 pl-3 pr-4 text-center text-rose-600 dark:text-rose-400">None</td>
+            </tr>
+            <tr>
+              <td class="py-3 pl-4 pr-3 font-semibold text-slate-900 dark:text-white">1-Click Full Rollback</td>
+              <td class="py-3 px-3 text-center bg-emerald-500/5 border-x border-emerald-500/20 font-bold text-emerald-700 dark:text-emerald-400">Instant (restore cmd)</td>
+              <td class="py-3 px-3 text-center text-amber-600 dark:text-amber-400">Per-package</td>
+              <td class="py-3 px-3 text-center text-amber-600 dark:text-amber-400">Manual</td>
+              <td class="py-3 pl-3 pr-4 text-center text-rose-600 dark:text-rose-400">Manual shell</td>
+            </tr>
+            <tr>
+              <td class="py-3 pl-4 pr-3 font-semibold text-slate-900 dark:text-white">Curated OEM Rules</td>
+              <td class="py-3 px-3 text-center bg-emerald-500/5 border-x border-emerald-500/20 font-bold text-emerald-700 dark:text-emerald-400">320+ Rules</td>
+              <td class="py-3 px-3 text-center text-emerald-700 dark:text-emerald-400">Community list</td>
+              <td class="py-3 px-3 text-center text-amber-600 dark:text-amber-400">Basic</td>
+              <td class="py-3 pl-3 pr-4 text-center text-rose-600 dark:text-rose-400">None</td>
+            </tr>
+            <tr>
+              <td class="py-3 pl-4 pr-3 font-semibold text-slate-900 dark:text-white">Zero Dependencies (No Pip / Executables)</td>
+              <td class="py-3 px-3 text-center bg-emerald-500/5 border-x border-emerald-500/20 font-bold text-emerald-700 dark:text-emerald-400">Pure Python Stdlib</td>
+              <td class="py-3 px-3 text-center text-amber-600 dark:text-amber-400">Rust GUI Binary</td>
+              <td class="py-3 px-3 text-center text-amber-600 dark:text-amber-400">Windows Binary</td>
+              <td class="py-3 pl-3 pr-4 text-center text-emerald-700 dark:text-emerald-400">Shell Only</td>
+            </tr>
+            <tr>
+              <td class="py-3 pl-4 pr-3 font-semibold text-slate-900 dark:text-white">Hardcoded Critical Blacklist Interception</td>
+              <td class="py-3 px-3 text-center bg-emerald-500/5 border-x border-emerald-500/20 font-bold text-emerald-700 dark:text-emerald-400">Engine Enforced (61 pkgs)</td>
+              <td class="py-3 px-3 text-center text-emerald-700 dark:text-emerald-400">Rule Enforced</td>
+              <td class="py-3 px-3 text-center text-amber-600 dark:text-amber-400">Warning Prompt</td>
+              <td class="py-3 pl-3 pr-4 text-center text-rose-600 dark:text-rose-400">None</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</section>

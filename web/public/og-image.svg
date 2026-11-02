@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <radialGradient id="bgGrad" cx="50%" cy="0%" r="80%" fx="50%" fy="0%">
+      <stop offset="0%" stop-color="#111827" />
+      <stop offset="100%" stop-color="#030712" />
+    </radialGradient>
+    <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="50%" stop-color="#06b6d4" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1f2937" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#111827" stop-opacity="0.9" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGrad)" />
+
+  <!-- Subtle grid lines -->
+  <g stroke="#374151" stroke-opacity="0.25" stroke-width="1">
+    <line x1="0" y1="105" x2="1200" y2="105" />
+    <line x1="0" y1="210" x2="1200" y2="210" />
+    <line x1="0" y1="315" x2="1200" y2="315" />
+    <line x1="0" y1="420" x2="1200" y2="420" />
+    <line x1="0" y1="525" x2="1200" y2="525" />
+    <line x1="200" y1="0" x2="200" y2="630" />
+    <line x1="400" y1="0" x2="400" y2="630" />
+    <line x1="600" y1="0" x2="600" y2="630" />
+    <line x1="800" y1="0" x2="800" y2="630" />
+    <line x1="1000" y1="0" x2="1000" y2="630" />
+  </g>
+
+  <!-- Glowing background orb -->
+  <circle cx="600" cy="180" r="320" fill="#059669" opacity="0.12" filter="blur(80px)" />
+  <circle cx="850" cy="240" r="280" fill="#0284c7" opacity="0.10" filter="blur(80px)" />
+
+  <!-- Brand badge -->
+  <g transform="translate(100, 80)">
+    <rect width="210" height="38" rx="19" fill="#064e3b" fill-opacity="0.6" stroke="#059669" stroke-width="1.5" />
+    <circle cx="20" cy="19" r="6" fill="#10b981" />
+    <text x="36" y="24" fill="#a7f3d0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="600" letter-spacing="0.5">ROVOXIA OPEN SOURCE</text>
+  </g>
+
+  <!-- Main Headline -->
+  <text x="100" y="190" fill="#f9fafb" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="54" font-weight="800" letter-spacing="-1.5">
+    AI-Phone-Debloater
+  </text>
+
+  <!-- Gradient Subline -->
+  <text x="100" y="250" fill="url(#brandGrad)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="34" font-weight="700">
+    Universal Rootless Android ADB Debloater
+  </text>
+
+  <!-- Description paragraph -->
+  <text x="100" y="305" fill="#9ca3af" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="400">
+    Clean &amp; speed up any phone via ADB • 320+ OEM Rules • Zero Personal Data Loss
+  </text>
+  <text x="100" y="335" fill="#9ca3af" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="400">
+    100% Fail-Safe with Auto-Snapshots, Dry-Run Simulation &amp; AI Agent 1-Click Prompt.
+  </text>
+
+  <!-- Feature Pill Tags -->
+  <g transform="translate(100, 385)">
+    <!-- Pill 1 -->
+    <rect x="0" y="0" width="180" height="42" rx="10" fill="#1f2937" stroke="#374151" stroke-width="1" />
+    <text x="20" y="26" fill="#34d399" font-family="monospace" font-size="15" font-weight="600">✓ No Root Required</text>
+
+    <!-- Pill 2 -->
+    <rect x="195" y="0" width="195" height="42" rx="10" fill="#1f2937" stroke="#374151" stroke-width="1" />
+    <text x="215" y="26" fill="#38bdf8" font-family="monospace" font-size="15" font-weight="600">✓ Auto-Snapshot (JSON)</text>
+
+    <!-- Pill 3 -->
+    <rect x="405" y="0" width="185" height="42" rx="10" fill="#1f2937" stroke="#374151" stroke-width="1" />
+    <text x="425" y="26" fill="#a78bfa" font-family="monospace" font-size="15" font-weight="600">✓ 320+ OEM Rules</text>
+
+    <!-- Pill 4 -->
+    <rect x="605" y="0" width="195" height="42" rx="10" fill="#1f2937" stroke="#374151" stroke-width="1" />
+    <text x="625" y="26" fill="#f43f5e" font-family="monospace" font-size="15" font-weight="600">✓ 61 Pkg Blacklist</text>
+  </g>
+
+  <!-- Terminal Preview Card on the bottom right -->
+  <g transform="translate(100, 460)">
+    <rect width="1000" height="110" rx="12" fill="#0f172a" stroke="#1e293b" stroke-width="1.5" />
+    <circle cx="25" cy="25" r="5" fill="#ef4444" />
+    <circle cx="42" cy="25" r="5" fill="#f59e0b" />
+    <circle cx="59" cy="25" r="5" fill="#10b981" />
+    <text x="85" y="29" fill="#64748b" font-family="monospace" font-size="13">terminal — python scripts/debloat-engine.py scan</text>
+    <text x="25" y="65" fill="#38bdf8" font-family="monospace" font-size="16">$ python scripts/debloat-engine.py scan</text>
+    <text x="25" y="92" fill="#94a3b8" font-family="monospace" font-size="14">[OK] Connected: Samsung Galaxy S24 Ultra (Android 15) • Tier 1: 45 bloat packages detected</text>
+  </g>
+</svg>

@@ -1,0 +1,244 @@
+---
+// src/components/TerminalWalkthrough.astro
+
+interface Step {
+  id: string;
+  number: string;
+  title: string;
+  command: string;
+  description: string;
+  output: string;
+}
+
+const steps: Step[] = [
+  {
+    id: "step-1",
+    number: "1",
+    title: "Scan & Audit",
+    command: "python scripts/debloat-engine.py scan",
+    description: "Queries device properties via ADB, indexes all user-0 packages, and categorizes into safety tiers.",
+    output: `ADB Discovery & Device Detection
+---------------------------------
+[OK] Connected: Samsung Galaxy S24 Ultra (Android 15, SDK 35, aarch64)
+
+Scanning installed packages for user 0:
+Total: 382 packages found (358 enabled)
+
+Safety Tier Breakdown:
+  Tier 1 (Safe Bloat):     42  -> Safe to disable/remove
+  Tier 2 (Advanced):       18  -> Assistants & cloud sync
+  Tier 3 (Extreme):         3  -> Stock tool replacements
+  Tier 4 (CRITICAL):       61  -> HARD PROTECTED (Core framework)
+  Unknown / Custom:       258  -> Unmodified`
+  },
+  {
+    id: "step-2",
+    number: "2",
+    title: "Select Tier",
+    command: "Select: Tier 1 (Safe Bloatware - Recommended)",
+    description: "Choose safe removal scope. Tier 1 targets carrier telemetry, ad daemons, and tracking stubs.",
+    output: `Safety Tier Selection:
+  [1] Tier 1 — Safe Bloat (Carrier preloads, Meta/FB daemons, Xiaomi MSA ads) [Default]
+  [2] Tier 2 — Advanced (Bixby, OEM Cloud, Digital Wellbeing)
+  [3] Tier 3 — Extreme (OEM Gallery, OEM Calculator, OEM Keyboard)
+  [4] Tier 4 — CRITICAL BLACKLIST (Engine-enforced protection: never touched)
+
+Selected: Tier 1 (Safe Default)
+  Targeting 42 verified bloatware packages.
+  Zero risk to phone calls, cellular radio, Wi-Fi, Camera, or Google Play.`
+  },
+  {
+    id: "step-3",
+    number: "3",
+    title: "Dry-Run Simulation",
+    command: "python scripts/debloat-engine.py dry-run --tier 1",
+    description: "Simulates execution without modifying the device. Validates that 0 protected packages are touched.",
+    output: `[DRY-RUN] Simulating debloat operations for Tier 1:
+Checking safety guardrails against 61-package critical blacklist...
+  [OK] 0 collisions with Critical Blacklist packages.
+  [OK] All 42 target packages classified as safe.
+
+Planned disable operations:
+  [disable] com.samsung.android.bixby.agent     tier=1  Bixby Voice Agent
+  [disable] com.samsung.android.game.gos        tier=1  Game Optimizing Service
+  [disable] com.facebook.katana                 tier=1  Facebook Client Stub
+  [disable] com.facebook.system                 tier=1  Meta App Installer Background
+  [disable] com.microsoft.skydrive              tier=1  OneDrive Cloud Preload
+  ... [37 more packages]
+
+Verification complete. 0 commands executed on device.`
+  },
+  {
+    id: "step-4",
+    number: "4",
+    title: "Safe Debloat",
+    command: "python scripts/debloat-engine.py debloat --tier 1 --action disable",
+    description: "Creates an automatic timestamped JSON snapshot, then disables packages via unprivileged user 0.",
+    output: `Executing Debloat for Tier 1:
+Creating pre-debloat safety snapshot:
+  [OK] Snapshot written: backups/snapshot_Galaxy_S24_Ultra_20261030_142010.json (382 packages recorded)
+
+Executing disable commands via 'pm disable-user --user 0':
+  [OK] disable: com.samsung.android.bixby.agent
+  [OK] disable: com.samsung.android.game.gos
+  [OK] disable: com.facebook.katana
+  [OK] disable: com.facebook.system
+  [OK] disable: com.microsoft.skydrive
+  ... [37 packages successfully disabled]
+
+Debloat execution finished!
+  Summary: 42 packages disabled | 0 failed | 0 skipped
+  Personal data & user files: 100% untouched.`
+  },
+  {
+    id: "step-5",
+    number: "5",
+    title: "Instant Restore",
+    command: "python scripts/debloat-engine.py restore backups/snapshot_Galaxy_S24_Ultra_20261030_142010.json",
+    description: "Instant rollback using 'cmd package install-existing'. Restores packages with accounts intact.",
+    output: `Restoring packages from snapshot: backups/snapshot_Galaxy_S24_Ultra_20261030_142010.json
+Target device: Samsung Galaxy S24 Ultra
+
+Restoring package states:
+  [OK] restored enable: com.samsung.android.bixby.agent
+  [OK] restored enable: com.samsung.android.game.gos
+  [OK] restored enable: com.facebook.katana
+  [OK] restored enable: com.microsoft.skydrive
+  ... [All 42 packages verified and re-enabled]
+
+Restore finished! All packages restored to original state in 1.4 seconds. No reboot required.`
+  }
+];
+---
+
+<section id="walkthrough" class="py-12 sm:py-16 border-b border-slate-200 dark:border-slate-800">
+  <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+
+    <!-- Section Heading -->
+    <div class="text-center max-w-2xl mx-auto mb-8">
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+        Workflow &amp; Verification Pipeline
+      </h2>
+      <p class="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+        Deterministic, verifiable execution. Every action is simulated before making any change to your device.
+      </p>
+    </div>
+
+    <!-- Step Navigation Pills -->
+    <div class="flex overflow-x-auto gap-2 mb-4 pb-2 no-scrollbar" id="step-nav">
+      {steps.map((step, idx) => (
+        <button
+          type="button"
+          class={`step-btn flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+            idx === 0
+              ? 'border-emerald-600 bg-emerald-50 text-emerald-900 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300'
+              : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:text-white'
+          }`}
+          data-step={step.id}
+        >
+          <span class="flex h-4 w-4 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            {step.number}
+          </span>
+          <span>{step.title}</span>
+        </button>
+      ))}
+    </div>
+
+    <!-- Terminal Box -->
+    <div class="rounded-xl border border-slate-800 bg-[#0c101a] text-slate-200 shadow-md overflow-hidden">
+
+      <!-- Header Bar -->
+      <div class="flex items-center justify-between border-b border-slate-800 bg-[#090d16] px-4 py-2.5 text-xs">
+        <div class="flex items-center gap-2 font-mono">
+          <span class="text-slate-500">$</span>
+          <span id="active-command" class="font-bold text-emerald-400">{steps[0].command}</span>
+        </div>
+        <div class="text-[11px] text-slate-400 hidden sm:inline" id="active-desc">
+          {steps[0].description}
+        </div>
+      </div>
+
+      <!-- Output Pane -->
+      <div class="p-4 sm:p-5 font-mono text-xs leading-relaxed overflow-x-auto min-h-[220px]">
+        {steps.map((step, idx) => (
+          <pre
+            id={`step-output-${step.id}`}
+            class={`step-output whitespace-pre text-slate-300 ${idx === 0 ? '' : 'hidden'}`}
+          >{step.output}</pre>
+        ))}
+      </div>
+
+      <!-- Footer Guardrail Bar -->
+      <div class="flex items-center justify-between border-t border-slate-800/80 bg-[#090d16] px-4 py-2 text-[11px] text-slate-400">
+        <span class="flex items-center gap-1.5 text-emerald-400 font-medium">
+          <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Zero Brick Risk: 61 OS packages blocked at code level
+        </span>
+        <span class="hidden sm:inline">Pure Python 3 standard library</span>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+<script>
+  const stepButtons = document.querySelectorAll('.step-btn');
+  const stepOutputs = document.querySelectorAll('.step-output');
+  const activeCommand = document.getElementById('active-command');
+  const activeDesc = document.getElementById('active-desc');
+
+  const stepDetails: Record<string, { cmd: string; desc: string }> = {
+    "step-1": {
+      cmd: "python scripts/debloat-engine.py scan",
+      desc: "Queries device properties via ADB, indexes all user-0 packages, and categorizes into safety tiers."
+    },
+    "step-2": {
+      cmd: "Select: Tier 1 (Safe Bloatware - Recommended)",
+      desc: "Choose safe removal scope. Tier 1 targets carrier telemetry, ad daemons, and tracking stubs."
+    },
+    "step-3": {
+      cmd: "python scripts/debloat-engine.py dry-run --tier 1",
+      desc: "Simulates execution without modifying the device. Validates that 0 protected packages are touched."
+    },
+    "step-4": {
+      cmd: "python scripts/debloat-engine.py debloat --tier 1 --action disable",
+      desc: "Creates an automatic timestamped JSON snapshot, then disables packages via unprivileged user 0."
+    },
+    "step-5": {
+      cmd: "python scripts/debloat-engine.py restore backups/snapshot_Galaxy_S24_Ultra_...",
+      desc: "Instant rollback using 'cmd package install-existing'. Restores packages with accounts intact."
+    }
+  };
+
+  stepButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const stepId = btn.getAttribute('data-step') || 'step-1';
+
+      // Update button active states
+      stepButtons.forEach(b => {
+        b.classList.remove('border-emerald-600', 'bg-emerald-50', 'text-emerald-900', 'dark:border-emerald-500/40', 'dark:bg-emerald-500/10', 'dark:text-emerald-300');
+        b.classList.add('border-slate-200', 'bg-white', 'text-slate-700', 'dark:border-slate-800', 'dark:bg-slate-900', 'dark:text-slate-400');
+      });
+
+      btn.classList.add('border-emerald-600', 'bg-emerald-50', 'text-emerald-900', 'dark:border-emerald-500/40', 'dark:bg-emerald-500/10', 'dark:text-emerald-300');
+      btn.classList.remove('border-slate-200', 'bg-white', 'text-slate-700', 'dark:border-slate-800', 'dark:bg-slate-900', 'dark:text-slate-400');
+
+      // Update output
+      stepOutputs.forEach(out => {
+        if (out.id === `step-output-${stepId}`) {
+          out.classList.remove('hidden');
+        } else {
+          out.classList.add('hidden');
+        }
+      });
+
+      // Update command bar
+      const info = stepDetails[stepId];
+      if (info) {
+        if (activeCommand) activeCommand.textContent = info.cmd;
+        if (activeDesc) activeDesc.textContent = info.desc;
+      }
+    });
+  });
+</script>

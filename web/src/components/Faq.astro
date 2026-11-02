@@ -1,0 +1,79 @@
+---
+// src/components/Faq.astro
+
+interface FaqItem {
+  q: string;
+  a: string;
+  category?: string;
+}
+
+export const faqs: FaqItem[] = [
+  {
+    q: "Does AI-Phone-Debloater require root access or an unlocked bootloader?",
+    a: "No. AI-Phone-Debloater is 100% rootless and does not require an unlocked bootloader. It operates exclusively via standard Android Debug Bridge (ADB) commands targeting user profile 0 (`pm disable-user --user 0` and `pm uninstall -k --user 0`). Your Knox counter remains 0x0, warranty is intact, and Google Play Integrity API / SafetyNet continues to pass for banking apps."
+  },
+  {
+    q: "Will debloating delete my WhatsApp messages, photos, contacts, or personal files?",
+    a: "No. All personal data and user files remain completely untouched. The engine operates using the `-k` flag (`pm uninstall -k --user 0`), which explicitly instructs the Android Package Manager to keep all application data directories (`/data/user/0/<package>`) intact. Furthermore, your personal media, photos, downloads, and contacts are stored in shared storage partitions (`/data/media`), which are never touched."
+  },
+  {
+    q: "How do I restore an app or rollback if something breaks?",
+    a: "Every debloat operation automatically creates a timestamped JSON backup snapshot in `backups/`. To restore all apps to their exact prior state in under 2 seconds, run `python scripts/debloat-engine.py restore <snapshot.json>`. To restore a single app by name without a snapshot, run `python scripts/debloat-engine.py restore --pkg <package_name>`. The app is immediately re-enabled via `cmd package install-existing` with all user accounts and settings intact."
+  },
+  {
+    q: "Can I connect wirelessly without a USB cable?",
+    a: "Yes. AI-Phone-Debloater works over both USB and Wireless Debugging (Android 11+). Enable 'Wireless debugging' in Developer Options, pair via `adb pair <ip>:<port>`, and connect via `adb connect <ip>:<port>`. Scanning, debloating, and backup snapshots function identically over Wi-Fi."
+  },
+  {
+    q: "What happens after an Android OTA system update?",
+    a: "When an OEM pushes an over-the-air (OTA) system update (e.g., from Android 14 to Android 15), the OEM installer may re-enable some disabled default packages during framework re-registration. Your personal data is completely safe. If any bloatware returns after an update, simply reconnect your phone (via USB or Wireless Debugging) and re-run the 1-click prompt or `python scripts/debloat-engine.py debloat --tier 1` to clean it again in seconds."
+  },
+  {
+    q: "How does AI-Phone-Debloater work with Claude Code, Gemini, and ChatGPT?",
+    a: "The repository contains curated AI agent prompts in `prompts/`. When you paste the 1-click prompt into Claude Code CLI, ChatGPT, or Gemini, the AI agent inspects your device via ADB, classifies detected packages using the 320+ OEM rule database, simulates a dry-run, takes a pre-debloat snapshot, and debloats safe packages while strictly obeying the 61-package critical blacklist sentinel."
+  },
+  {
+    q: "Does debloating void my phone's warranty or trip Knox / SafetyNet?",
+    a: "No. Because the bootloader remains locked and no root binaries (like Magisk or KernelSU) are installed, Samsung Knox warranty bit stays permanently at 0x0 (void: 0). Google Play Integrity API passes all device attestation checks, and banking apps, Google Wallet, and Netflix HD DRM (Widevine L1) continue working normally."
+  },
+  {
+    q: "What Android versions and smartphone brands are supported?",
+    a: "AI-Phone-Debloater supports any Android device running Android 8.0 (Oreo) through Android 15+. It includes 320+ verified OEM rules specifically tailored for Samsung (One UI 7/6/5), Xiaomi/Redmi/POCO (HyperOS & MIUI), Google Pixel, OnePlus (OxygenOS), BBK (Oppo ColorOS, Vivo OriginOS, Realme UI), Motorola (Hello UI & My UX), and Transsion (Tecno HiOS, Infinix XOS)."
+  }
+];
+---
+
+<section id="faq" class="py-12 sm:py-16 border-b border-slate-200 dark:border-slate-800">
+  <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+
+    <!-- Section Heading -->
+    <div class="text-center max-w-2xl mx-auto mb-8">
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+        Frequently Asked Questions
+      </h2>
+      <p class="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+        Rootless Android debloating, safety boundaries, data protection, and AI agent execution.
+      </p>
+    </div>
+
+    <!-- FAQ Accordion -->
+    <div class="space-y-3">
+      {faqs.map((faq, idx) => (
+        <details class="faq-accordion group rounded-lg border border-slate-200 bg-white p-4 transition-all hover:border-slate-300 open:border-emerald-500/40 open:bg-emerald-50 dark:border-slate-800 dark:bg-[#0c101a] dark:hover:border-slate-700 dark:open:border-emerald-500/40 dark:open:bg-emerald-500/5">
+          <summary class="flex items-center justify-between gap-4 font-bold text-slate-900 dark:text-white text-sm sm:text-base cursor-pointer list-none select-none">
+            <span>{faq.q}</span>
+            <span class="faq-icon flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 group-open:bg-emerald-100 group-open:text-emerald-700 dark:bg-slate-800 dark:text-slate-400 dark:group-open:bg-emerald-500/20 dark:group-open:text-emerald-400 transition-transform duration-200 group-open:rotate-180">
+              <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </span>
+          </summary>
+          <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            {faq.a}
+          </div>
+        </details>
+      ))}
+    </div>
+
+  </div>
+</section>

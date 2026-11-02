@@ -1,0 +1,331 @@
+---
+// src/components/RulesExplorer.astro
+
+import rulesData from '../data/rules-dataset.json';
+
+const rules: Array<{
+  package: string;
+  name: string;
+  oemId: string;
+  brand: string;
+  oemGroup: string;
+  tier: number;
+  category: string;
+  description: string;
+  safe_to_remove: boolean;
+  recommended_action: string;
+  sourceFile: string;
+  severity: string;
+}> = rulesData.rules;
+
+const brandFilters: Array<{ label: string; brand?: string | null; count: number }> = [
+  { label: 'All Rules', brand: null, count: rulesData.stats.totalRules },
+  { label: 'Samsung One UI', brand: 'Samsung', count: rulesData.stats.oemBreakdown.Samsung ?? 0 },
+  { label: 'Xiaomi HyperOS', brand: 'Xiaomi', count: rulesData.stats.oemBreakdown.Xiaomi ?? 0 },
+  { label: 'Google Pixel', brand: 'Google', count: rulesData.stats.oemBreakdown.Google ?? 0 },
+  { label: 'OnePlus OxygenOS', brand: 'OnePlus', count: rulesData.stats.oemBreakdown.OnePlus ?? 0 },
+  { label: 'BBK (Oppo/Vivo/Realme)', brand: 'BBK', count: rulesData.stats.oemBreakdown.BBK ?? 0 },
+  { label: 'Motorola Hello UI', brand: 'Motorola', count: rulesData.stats.oemBreakdown.Motorola ?? 0 },
+  { label: 'Transsion (Tecno/Infinix)', brand: 'Transsion', count: rulesData.stats.oemBreakdown.Transsion ?? 0 },
+  { label: 'Universal Carrier', brand: 'Universal', count: rulesData.stats.oemBreakdown.Universal ?? 0 },
+  { label: 'Core System Blacklist', brand: 'Core System', count: rulesData.stats.oemBreakdown['Core System'] ?? 0 },
+];
+---
+
+<section id="rules" class="py-12 sm:py-16 border-b border-slate-200 dark:border-slate-800">
+  <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+
+    <!-- Section Heading -->
+    <div class="text-center max-w-2xl mx-auto mb-8">
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+        Curated OEM Bloatware Rules Explorer
+      </h2>
+      <p class="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+        Search and inspect all <strong class="text-slate-900 dark:text-white">{rulesData.stats.totalRules}</strong> verified package definitions from the repository.
+      </p>
+    </div>
+
+    <!-- Filter & Search Controls -->
+    <div class="space-y-3 mb-6">
+
+      <!-- Search Input -->
+      <div class="relative w-full">
+        <input
+          type="text"
+          id="rules-search"
+          placeholder="Search package name, brand, or purpose (e.g. bixby, analytics, facebook)..."
+          class="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none dark:border-slate-800 dark:bg-[#0c101a] dark:text-slate-100 dark:placeholder-slate-500"
+          autocapitalize="none"
+          spellcheck="false"
+        />
+        <span id="search-count" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hidden"></span>
+      </div>
+
+      <!-- Brand Filter Chips (Google Style) with Desktop Scroll Buttons -->
+      <div class="relative flex items-center">
+        <!-- Scroll Left Button (Desktop) -->
+        <button
+          type="button"
+          id="brand-scroll-left"
+          class="hidden md:flex absolute -left-3 z-10 h-7 w-7 items-center justify-center rounded-full border border-slate-300 bg-white shadow-md text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer transition-all opacity-0 pointer-events-none"
+          aria-label="Scroll left"
+        >
+          <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+
+        <div class="flex overflow-x-auto gap-1.5 py-1 px-1 scroll-smooth w-full select-none" id="brand-pills">
+          {brandFilters.map((filter, idx) => (
+            <button
+              type="button"
+              class={`brand-chip flex-shrink-0 rounded-full border px-3 py-1 text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
+                idx === 0
+                  ? 'border-emerald-600 bg-emerald-50 text-emerald-800 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300'
+                  : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:text-white'
+              }`}
+              data-brand={filter.brand ?? 'all'}
+            >
+              {filter.label} <span class="text-[10px] opacity-70">({filter.count})</span>
+            </button>
+          ))}
+        </div>
+
+        <!-- Scroll Right Button (Desktop) -->
+        <button
+          type="button"
+          id="brand-scroll-right"
+          class="hidden md:flex absolute -right-3 z-10 h-7 w-7 items-center justify-center rounded-full border border-slate-300 bg-white shadow-md text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer transition-all"
+          aria-label="Scroll right"
+        >
+          <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Rules Grid: 6 shown initially -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="rules-grid">
+      <!-- Injected by script -->
+    </div>
+
+    <!-- Empty State -->
+    <div id="rules-empty" class="hidden py-12 text-center">
+      <div class="text-sm font-semibold text-slate-700 dark:text-slate-300">No matching packages found</div>
+      <p class="text-xs text-slate-500 mt-1">Try another keyword or select "All Rules".</p>
+    </div>
+
+    <!-- Show More & Collapse Controls -->
+    <div id="show-more-container" class="mt-6 flex flex-wrap items-center justify-center gap-3">
+      <button
+        id="show-more-btn"
+        type="button"
+        class="w-full sm:w-auto rounded-lg border border-slate-300 bg-white px-5 py-2.5 sm:py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-sm text-center"
+      >
+        Show More (+15 Packages)
+      </button>
+
+      <button
+        id="collapse-btn"
+        type="button"
+        class="hidden w-full sm:w-auto rounded-lg border border-slate-200 bg-slate-100 px-4 py-2.5 sm:py-2 text-xs font-medium text-slate-600 hover:bg-slate-200 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors cursor-pointer text-center"
+      >
+        Collapse to 6
+      </button>
+    </div>
+
+  </div>
+</section>
+
+<script is:inline define:vars={{ rules }}>
+  const ALL_RULES = rules;
+
+  const BRAND_LABELS = {
+    'Samsung': 'Samsung',
+    'Xiaomi': 'Xiaomi',
+    'Google': 'Google Pixel',
+    'OnePlus': 'OnePlus',
+    'BBK': 'BBK (Oppo/Vivo/Realme)',
+    'Motorola': 'Motorola',
+    'Transsion': 'Transsion',
+    'Universal': 'Universal Carrier',
+    'Core System': 'Core Blacklist',
+    'Huawei': 'Huawei'
+  };
+
+  const tierBadges = {
+    1: { label: 'Tier 1 · Safe', cls: 'border-emerald-600/30 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300' },
+    2: { label: 'Tier 2 · Adv', cls: 'border-cyan-600/30 bg-cyan-50 text-cyan-800 dark:border-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-300' },
+    3: { label: 'Tier 3 · Exp', cls: 'border-purple-600/30 bg-purple-50 text-purple-800 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-300' },
+    4: { label: 'TIER 4 · PROTECTED', cls: 'border-rose-600/30 bg-rose-50 text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300' }
+  };
+
+  const searchInput = document.getElementById('rules-search');
+  const brandChips = document.querySelectorAll('.brand-chip');
+  const rulesGrid = document.getElementById('rules-grid');
+  const emptyState = document.getElementById('rules-empty');
+  const searchCountEl = document.getElementById('search-count');
+  const showMoreContainer = document.getElementById('show-more-container');
+  const showMoreBtn = document.getElementById('show-more-btn');
+  const collapseBtn = document.getElementById('collapse-btn');
+
+  const INITIAL_LIMIT = 6;
+  const BATCH_SIZE = 15;
+  let currentBrand = 'all';
+  let currentQuery = '';
+  let visibleLimit = INITIAL_LIMIT;
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function render() {
+    if (!rulesGrid) return;
+
+    const q = currentQuery.toLowerCase().trim();
+    const filtered = ALL_RULES.filter(rule => {
+      const matchBrand = currentBrand === 'all' || rule.brand === currentBrand;
+      const matchQuery = q === '' ||
+        (rule.package && rule.package.toLowerCase().includes(q)) ||
+        (rule.name && rule.name.toLowerCase().includes(q)) ||
+        (rule.category && rule.category.toLowerCase().includes(q)) ||
+        (rule.description && rule.description.toLowerCase().includes(q));
+      return matchBrand && matchQuery;
+    });
+
+    // Update brand chip styles
+    brandChips.forEach(chip => {
+      const b = chip.getAttribute('data-brand');
+      if (b === currentBrand) {
+        chip.classList.add('border-emerald-600', 'bg-emerald-50', 'text-emerald-800', 'dark:border-emerald-500/40', 'dark:bg-emerald-500/10', 'dark:text-emerald-300');
+        chip.classList.remove('border-slate-200', 'bg-white', 'text-slate-600', 'dark:border-slate-800', 'dark:bg-slate-900', 'dark:text-slate-400');
+      } else {
+        chip.classList.remove('border-emerald-600', 'bg-emerald-50', 'text-emerald-800', 'dark:border-emerald-500/40', 'dark:bg-emerald-500/10', 'dark:text-emerald-300');
+        chip.classList.add('border-slate-200', 'bg-white', 'text-slate-600', 'dark:border-slate-800', 'dark:bg-slate-900', 'dark:text-slate-400');
+      }
+    });
+
+    // Update count indicator
+    if (searchCountEl) {
+      searchCountEl.textContent = `${filtered.length} found`;
+      searchCountEl.classList.toggle('hidden', q === '' && currentBrand === 'all');
+    }
+
+    // Toggle empty state
+    if (emptyState) {
+      emptyState.classList.toggle('hidden', filtered.length > 0);
+    }
+
+    const displayed = filtered.slice(0, visibleLimit);
+
+    // Toggle show more and collapse buttons
+    if (showMoreContainer && showMoreBtn) {
+      const remaining = filtered.length - displayed.length;
+      if (remaining > 0) {
+        showMoreBtn.classList.remove('hidden');
+        showMoreBtn.textContent = `Show More (+${Math.min(BATCH_SIZE, remaining)} of ${remaining} remaining)`;
+      } else {
+        showMoreBtn.classList.add('hidden');
+      }
+
+      if (collapseBtn) {
+        collapseBtn.classList.toggle('hidden', visibleLimit <= INITIAL_LIMIT || displayed.length <= INITIAL_LIMIT);
+      }
+    }
+
+    // Render cards
+    rulesGrid.innerHTML = displayed.map(rule => {
+      const tb = tierBadges[rule.tier] || tierBadges[1];
+      const actionText = rule.tier === 4 ? 'NEVER TOUCH' : (rule.recommended_action === 'uninstall' ? 'uninstall (-k)' : 'disable');
+
+      return `
+        <article class="rounded-lg border border-slate-200 bg-white p-3.5 flex flex-col justify-between dark:border-slate-800 dark:bg-[#0c101a] hover:border-slate-300 dark:hover:border-slate-700 transition-colors shadow-sm">
+          <div>
+            <div class="flex items-center justify-between gap-1.5 mb-1.5">
+              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wide truncate">${escapeHtml(BRAND_LABELS[rule.brand] || rule.brand)}</span>
+              <span class="rounded border px-1.5 py-0.2 text-[9px] font-bold ${tb.cls} whitespace-nowrap">${tb.label}</span>
+            </div>
+
+            <div class="font-mono text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold truncate mb-1" title="${escapeHtml(rule.package)}">
+              ${escapeHtml(rule.package)}
+            </div>
+
+            <h4 class="font-bold text-xs text-slate-900 dark:text-white mb-1 truncate">${escapeHtml(rule.name)}</h4>
+            <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2 mb-2">${escapeHtml(rule.description || 'Verified package definition.')}</p>
+          </div>
+
+          <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-[10px] font-mono text-slate-500">
+            <span>${escapeHtml(rule.category ? rule.category.replace(/_/g, ' ') : 'bloatware')}</span>
+            <span class="${rule.tier === 4 ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300 font-medium'}">${escapeHtml(actionText)}</span>
+          </div>
+        </article>
+      `;
+    }).join('');
+  }
+
+  brandChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      currentBrand = chip.getAttribute('data-brand') || 'all';
+      visibleLimit = INITIAL_LIMIT; // Reset to 6
+      render();
+    });
+  });
+
+  searchInput?.addEventListener('input', (e) => {
+    currentQuery = e.target.value;
+    visibleLimit = INITIAL_LIMIT; // Reset to 6
+    render();
+  });
+
+  showMoreBtn?.addEventListener('click', () => {
+    visibleLimit += BATCH_SIZE; // Add 15
+    render();
+  });
+
+  collapseBtn?.addEventListener('click', () => {
+    visibleLimit = INITIAL_LIMIT; // Collapse back to 6
+    render();
+    document.getElementById('rules')?.scrollIntoView({ behavior: 'smooth' });
+  });
+
+  // Desktop brand carousel scroll controls
+  const brandPills = document.getElementById('brand-pills');
+  const scrollLeftBtn = document.getElementById('brand-scroll-left');
+  const scrollRightBtn = document.getElementById('brand-scroll-right');
+
+  function updateScrollButtons() {
+    if (!brandPills || !scrollLeftBtn || !scrollRightBtn) return;
+    const { scrollLeft, scrollWidth, clientWidth } = brandPills;
+    const canScrollLeft = scrollLeft > 10;
+    const canScrollRight = scrollLeft < scrollWidth - clientWidth - 10;
+
+    scrollLeftBtn.classList.toggle('opacity-0', !canScrollLeft);
+    scrollLeftBtn.classList.toggle('pointer-events-none', !canScrollLeft);
+    scrollRightBtn.classList.toggle('opacity-0', !canScrollRight);
+    scrollRightBtn.classList.toggle('pointer-events-none', !canScrollRight);
+  }
+
+  scrollLeftBtn?.addEventListener('click', () => {
+    brandPills?.scrollBy({ left: -240, behavior: 'smooth' });
+  });
+
+  scrollRightBtn?.addEventListener('click', () => {
+    brandPills?.scrollBy({ left: 240, behavior: 'smooth' });
+  });
+
+  brandPills?.addEventListener('scroll', updateScrollButtons, { passive: true });
+
+  // Mouse wheel horizontal scroll on desktop
+  brandPills?.addEventListener('wheel', (e) => {
+    if (e.deltaY !== 0) {
+      e.preventDefault();
+      brandPills.scrollLeft += e.deltaY;
+      updateScrollButtons();
+    }
+  }, { passive: false });
+
+  updateScrollButtons();
+
+  render();
+</script>
