@@ -83,8 +83,14 @@ try {
         New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
     }
 
-    # Copy updated CLI files
-    Copy-Item -Recurse -Force "$SourceSubfolder\\*" $InstallDir
+    # Copy updated CLI files (excluding any backups folder)
+    Get-ChildItem -Path $SourceSubfolder | Where-Object { $_.Name -ne "backups" } | Copy-Item -Destination $InstallDir -Recurse -Force
+
+    # Ensure no backups folder ever exists in install dir
+    $InstallBackups = Join-Path $InstallDir "backups"
+    if (Test-Path $InstallBackups) {
+        Remove-Item -Recurse -Force $InstallBackups -ErrorAction SilentlyContinue
+    }
 
     # Copy VERSION file
     if (Test-Path $NewVersionFile) {

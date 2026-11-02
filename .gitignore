@@ -5,8 +5,7 @@ __pycache__/
 
 # Local user snapshots and backups (Prevent accidental upload of personal phone dumps)
 backups/
-cli/backups/*
-!cli/backups/.gitkeep
+cli/backups/
 AiPhoneDebloater/
 *snapshot_*.json
 
