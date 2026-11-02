@@ -72,7 +72,7 @@ mkdir -p "\$SAFE_BACKUPS_DIR"
 # Migrate any legacy backups from install dir or accidental cli folder into safe external home folder
 for ld in "\$INSTALL_DIR/backups" "\$HOME/cli/backups"; do
     if [ -d "\$ld" ]; then
-        cp -R "\$ld"/* "\$SAFE_BACKUPS_DIR/" 2>/dev/null || true
+        cp "\$ld"/*.json "\$SAFE_BACKUPS_DIR/" 2>/dev/null || true
         rm -rf "\$ld" 2>/dev/null || true
     fi
 done

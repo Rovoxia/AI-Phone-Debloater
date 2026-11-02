@@ -60,7 +60,7 @@ try {
     )
     foreach ($ld in $LegacyDirs) {
         if (Test-Path $ld) {
-            Copy-Item -Force "$ld\\*" $SafeBackupsDir -ErrorAction SilentlyContinue
+            Copy-Item -Force "$ld\\*.json" $SafeBackupsDir -ErrorAction SilentlyContinue
             Remove-Item -Recurse -Force $ld -ErrorAction SilentlyContinue
         }
     }
