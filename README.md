@@ -17,18 +17,18 @@
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue.svg?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Android 8.0 - 15+](https://img.shields.io/badge/Android-8.0%20--%2015%2B-green.svg?style=flat-square&logo=android&logoColor=white)](https://developer.android.com)
 [![Dependencies: Zero](https://img.shields.io/badge/Dependencies-Zero%20(Stdlib%20Only)-teal.svg?style=flat-square)](cli/src/debloat_engine.py)
-[![Root: No Root Required](https://img.shields.io/badge/Root-100%25%20No%20Root-purple.svg?style=flat-square)](#-technical-safety-architecture)
-[![Knox: 0x0 Warranty Safe](https://img.shields.io/badge/Samsung%20Knox-0x0%20(Warranty%20Safe)-success.svg?style=flat-square)](#-frequently-asked-questions)
+[![Root: No Root Required](https://img.shields.io/badge/Root-100%25%20No%20Root-purple.svg?style=flat-square)](#technical-safety-architecture)
+[![Knox: 0x0 Warranty Safe](https://img.shields.io/badge/Samsung%20Knox-0x0%20(Warranty%20Safe)-success.svg?style=flat-square)](#frequently-asked-questions)
 [![CI Status](https://img.shields.io/badge/CI-Passing-brightgreen.svg?style=flat-square)](https://github.com/Rovoxia/AI-Phone-Debloater/actions)
 [![Curated Rules](https://img.shields.io/badge/Curated%20Rules-330%2B%20Packages-orange.svg?style=flat-square)](cli/rules/)
 
 <p align="center">
   <a href="https://debloater.rovoxia.com">🌐 Official Website</a> •
-  <a href="#-quickstart-3-ways-to-debloat">⚡ Quickstart</a> •
+  <a href="#quickstart">⚡ Quickstart</a> •
   <a href="https://debloater.rovoxia.com/prompt.md">🤖 Master AI Prompt</a> •
-  <a href="#-4-tier-safety-model">🛡️ Safety Tiers</a> •
-  <a href="#-oem-coverage-matrix">📱 OEM Coverage</a> •
-  <a href="#-comparison-matrix">📊 Comparison</a>
+  <a href="#safety-tiers">🛡️ Safety Tiers</a> •
+  <a href="#oem-coverage-matrix">📱 OEM Coverage</a> •
+  <a href="#comparison-matrix">📊 Comparison</a>
 </p>
 
 </div>
@@ -47,25 +47,30 @@ Unlike legacy debloating scripts that execute unvetted package removal commands 
 - **🛡️ 100% Reversible & Safe:** Modifies only User 0 package registration state while keeping application private caches intact via the `-k` preservation flag.
 - **🔒 Knox 0x0 & Play Integrity Verified:** Rootless architecture ensures banking applications, Google Wallet, Netflix HD, and Samsung Knox remain 100% functional.
 
+> [!WARNING]
+> ### ⚠️ Safety & Best Practices Notice • `No Root Required`
+> Uses safe User 0 commands (`disable-user` / `uninstall -k`) with 61 core OS packages hard-blocked. Because OEM skins vary, Tier 2/3 removal may disrupt dependent features. **Always back up important photos, chats, and data before modifying packages.**
+
 ---
 
 ## 🧭 Navigation
 
-- [⚡ Quickstart: 3 Ways to Debloat](#-quickstart-3-ways-to-debloat)
+- [⚡ Quickstart: 3 Ways to Debloat](#quickstart)
   - [Option A: 1-Click Master AI Agent Prompt](#option-a-1-click-master-ai-agent-prompt-recommended)
   - [Option B: Zero-Git Single-Command Runners](#option-b-zero-git-single-command-runners)
   - [Option C: Interactive Local CLI & Wireless ADB](#option-c-interactive-local-cli--wireless-adb)
-- [🛡️ 4-Tier Safety Model](#-4-tier-safety-model)
-- [📊 Comparison Matrix](#-comparison-matrix)
-- [📱 OEM Coverage Matrix](#-oem-coverage-matrix)
-- [🔬 Technical Safety Architecture](#-technical-safety-architecture)
-- [💻 CLI Engine Command Reference](#-cli-engine-command-reference)
-- [🔄 Rollback & Disaster Recovery](#-rollback--disaster-recovery)
-- [❓ Frequently Asked Questions](#-frequently-asked-questions)
-- [🤝 Contributing & Community](#-contributing--community)
+- [🛡️ 4-Tier Safety Model](#safety-tiers)
+- [📊 Comparison Matrix](#comparison-matrix)
+- [📱 OEM Coverage Matrix](#oem-coverage-matrix)
+- [🔬 Technical Safety Architecture](#technical-safety-architecture)
+- [💻 CLI Engine Command Reference](#cli-engine-command-reference)
+- [🔄 Rollback & Disaster Recovery](#rollback-disaster-recovery)
+- [❓ Frequently Asked Questions](#frequently-asked-questions)
+- [🤝 Contributing & Community](#contributing-community)
 
 ---
 
+<a id="quickstart"></a>
 ## ⚡ Quickstart: 3 Ways to Debloat
 
 Choose the debloating workflow that matches your preferred environment:
@@ -124,6 +129,7 @@ python cli/src/debloat_engine.py --wireless 192.168.1.50:5555
 
 ---
 
+<a id="safety-tiers"></a><a id="4-tier-safety-model"></a>
 ## 🛡️ 4-Tier Safety Model
 
 Every Android package evaluated by AI-Phone-Debloater is classified strictly into one of four safety tiers:
@@ -135,10 +141,32 @@ Every Android package evaluated by AI-Phone-Debloater is classified strictly int
 | **Tier 3** | **Extreme Debloat** | Replaceable stock apps (keyboards, stock dialers, default SMS, OEM gallery apps, updaters). | `com.samsung.android.honeyboard`<br>`com.miui.gallery`<br>`com.google.android.dialer`<br>`com.sec.android.app.myfiles` | 🟠 **Moderate Risk**<br>(Install replacement first) |
 | **Tier 4** | **Critical Core** *(Sentinel)* | Android framework, telephony call routing, modem HALs, keystore encryption, package installer. | `android`<br>`com.android.systemui`<br>`com.android.phone`<br>`android.security.keystore` | 🔴 **HARD-BLOCKED**<br>(Never touched) |
 
-> ⚠️ **Safety & Best Practices Notice:** AI-Phone-Debloater uses safe User 0 commands (`disable-user` and `uninstall -k`) with 61 core OS packages hard-blocked. Because OEM skins vary, Tier 2/3 removal may disrupt dependent features. **Always back up important photos, chats, and data before modifying packages.**
+> [!WARNING]
+> ### ⚠️ Safety & Best Practices Notice • `No Root Required`
+> Uses safe User 0 commands (`disable-user` / `uninstall -k`) with 61 core OS packages hard-blocked. Because OEM skins vary, Tier 2/3 removal may disrupt dependent features. **Always back up important photos, chats, and data before modifying packages.**
+
+### ⚙️ How Safety Tiers Work (Engine Decision Pipeline)
+
+1. **Inviolable Core Sentinel (Tier 4 Guardrail)**  
+   The engine initializes by loading 61 critical operating system packages from `cli/rules/critical-do-not-touch.json` and internal kernel safeguards into memory. Any package marked as Tier 4 (`com.android.systemui`, telephony stack, keystore biometrics) is **permanently blocked** and cannot be removed, frozen, or bypassed by any argument or AI prompt.
+
+2. **OEM Skin Auto-Discovery & Dynamic Rules**  
+   The engine queries device properties via ADB (`ro.product.manufacturer`, `ro.product.model`) and dynamically matches the corresponding OEM rulebook (`samsung-oneui.json`, `xiaomi-miui-hyperos.json`, `oneplus-oxygenos.json`, `google-pixel.json`, etc.) alongside `universal-safe-to-remove.json`.
+
+3. **Classification & Targeted Debloat**  
+   - **`--tier 1` (Safe Bloat):** Recommended default. Freezes carrier junk, partner bloat (Facebook, Netflix, Microsoft), and telemetry loggers without affecting any OS features.
+   - **`--tier 2` (Advanced):** Freezes secondary OEM assistants (Bixby, Celia), OEM cloud sync, and AR sticker utilities. Safe if you don't use those specific OEM features.
+   - **`--tier 3` (Extreme):** Targets replaceable stock utilities (OEM dialer, stock keyboard, gallery). Prerequisite: Install a third-party replacement app (e.g., Gboard, Google Phone) first.
+
+4. **Dry-Run Simulation Before Execution**  
+   Run `python cli/src/debloat_engine.py --tier 1 --dry-run` to inspect a full table of proposed changes, package descriptions, and reasons before modifying your device.
+
+5. **Automated Rollback Snapshot & Reversible State**  
+   Before any package state is changed, an automated timestamped JSON snapshot (`cli/backups/snapshot_<model>_<timestamp>.json`) is saved. Debloat commands use `disable-user` or `uninstall -k` (which preserves user application data in `/data/user/0/`), enabling instant 1-click restore via `--restore <SNAPSHOT>`.
 
 ---
 
+<a id="comparison-matrix"></a>
 ## 📊 Comparison Matrix
 
 How AI-Phone-Debloater compares against traditional Android debloating solutions:
@@ -157,6 +185,7 @@ How AI-Phone-Debloater compares against traditional Android debloating solutions
 
 ---
 
+<a id="oem-coverage-matrix"></a>
 ## 📱 OEM Coverage Matrix
 
 Curated rule databases located in `cli/rules/` cover over 330+ verified OEM packages:
@@ -174,6 +203,7 @@ Curated rule databases located in `cli/rules/` cover over 330+ verified OEM pack
 
 ---
 
+<a id="technical-safety-architecture"></a>
 ## 🔬 Technical Safety Architecture
 
 ### 1. Rootless User 0 Execution
@@ -195,6 +225,7 @@ The core engine enforces a hard-coded set of 61 fundamental operating system pac
 
 ---
 
+<a id="cli-engine-command-reference"></a>
 ## 💻 CLI Engine Command Reference
 
 The core engine is located at `cli/src/debloat_engine.py` and supports full non-interactive automation:
@@ -230,6 +261,7 @@ python cli/src/debloat_engine.py --restore snapshot_SM-S911B_20261101_120000.jso
 
 ---
 
+<a id="rollback-disaster-recovery"></a>
 ## 🔄 Rollback & Disaster Recovery
 
 Every action performed by AI-Phone-Debloater is 100% reversible:
@@ -253,6 +285,7 @@ adb shell cmd package install-existing --user 0 <package_name>
 
 ---
 
+<a id="frequently-asked-questions"></a>
 ## ❓ Frequently Asked Questions
 
 <details>
@@ -282,6 +315,7 @@ adb shell cmd package install-existing --user 0 <package_name>
 
 ---
 
+<a id="contributing-community"></a>
 ## 🤝 Contributing & Community
 
 Contributions are welcomed! We actively accept pull requests for new OEM rule databases, bug fixes, and documentation improvements.

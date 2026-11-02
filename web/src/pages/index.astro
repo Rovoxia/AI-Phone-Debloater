@@ -16,36 +16,179 @@ const totalRules = 330;
 
 // Curated representative rules across safety tiers
 const sampleRules = [
+  // Tier 1 • Safe Bloat
   {
+    tierNum: 1,
     tier: 'Tier 1 • Safe',
     tierColor: 'emerald',
     pkg: 'com.miui.msa.global',
-    name: 'Xiaomi Ad Daemon',
+    name: 'Xiaomi Analytics & Ad Daemon',
     type: 'Adware & Telemetry',
     action: 'Safe to Disable',
   },
   {
+    tierNum: 1,
+    tier: 'Tier 1 • Safe',
+    tierColor: 'emerald',
+    pkg: 'com.facebook.katana',
+    name: 'Facebook Preloaded Client',
+    type: 'Social Partner Bloat',
+    action: 'Safe to Disable',
+  },
+  {
+    tierNum: 1,
+    tier: 'Tier 1 • Safe',
+    tierColor: 'emerald',
+    pkg: 'com.amazon.appmanager',
+    name: 'Amazon Shopping Assistant',
+    type: 'Carrier / Partner App',
+    action: 'Safe to Disable',
+  },
+  {
+    tierNum: 1,
+    tier: 'Tier 1 • Safe',
+    tierColor: 'emerald',
+    pkg: 'com.netflix.partner.activation',
+    name: 'Netflix Activation Service',
+    type: 'Preload Partner Stub',
+    action: 'Safe to Disable',
+  },
+  {
+    tierNum: 1,
+    tier: 'Tier 1 • Safe',
+    tierColor: 'emerald',
+    pkg: 'com.samsung.android.app.spage',
+    name: 'Samsung Free / Media Feed',
+    type: 'OEM Promotional Feed',
+    action: 'Safe to Disable',
+  },
+  // Tier 2 • Caution (Advanced)
+  {
+    tierNum: 2,
     tier: 'Tier 2 • Caution',
     tierColor: 'amber',
     pkg: 'com.samsung.android.bixby.agent',
-    name: 'Samsung Bixby Voice',
-    type: 'OEM Assistant',
+    name: 'Samsung Bixby Voice Agent',
+    type: 'Secondary Voice Assistant',
     action: 'Review First',
   },
   {
+    tierNum: 2,
+    tier: 'Tier 2 • Caution',
+    tierColor: 'amber',
+    pkg: 'com.miui.cloudservice',
+    name: 'Xiaomi Mi Cloud Sync Service',
+    type: 'OEM Cloud Sync',
+    action: 'Review First',
+  },
+  {
+    tierNum: 2,
+    tier: 'Tier 2 • Caution',
+    tierColor: 'amber',
+    pkg: 'com.samsung.android.arzone',
+    name: 'Samsung AR Zone & Emoji',
+    type: 'AR Camera Stickers',
+    action: 'Review First',
+  },
+  {
+    tierNum: 2,
+    tier: 'Tier 2 • Caution',
+    tierColor: 'amber',
+    pkg: 'com.google.android.apps.wellbeing',
+    name: 'Digital Wellbeing Tracker',
+    type: 'Usage Telemetry',
+    action: 'Review First',
+  },
+  {
+    tierNum: 2,
+    tier: 'Tier 2 • Caution',
+    tierColor: 'amber',
+    pkg: 'com.heytap.cloud',
+    name: 'Oppo / OnePlus HeyTap Cloud',
+    type: 'OEM Cloud Sync',
+    action: 'Review First',
+  },
+  // Tier 3 • Advanced (Extreme)
+  {
+    tierNum: 3,
     tier: 'Tier 3 • Advanced',
     tierColor: 'orange',
     pkg: 'com.samsung.android.honeyboard',
     name: 'Stock Samsung Keyboard',
-    type: 'Keyboard / Input',
-    action: 'Power Users',
+    type: 'Input Method (IME)',
+    action: 'Install Alt First',
   },
   {
+    tierNum: 3,
+    tier: 'Tier 3 • Advanced',
+    tierColor: 'orange',
+    pkg: 'com.miui.gallery',
+    name: 'Xiaomi MIUI Gallery App',
+    type: 'Stock Photo Viewer',
+    action: 'Install Alt First',
+  },
+  {
+    tierNum: 3,
+    tier: 'Tier 3 • Advanced',
+    tierColor: 'orange',
+    pkg: 'com.google.android.dialer',
+    name: 'Google Stock Phone Dialer',
+    type: 'Telephony UI Dialer',
+    action: 'Install Alt First',
+  },
+  {
+    tierNum: 3,
+    tier: 'Tier 3 • Advanced',
+    tierColor: 'orange',
+    pkg: 'com.sec.android.app.myfiles',
+    name: 'Samsung My Files Manager',
+    type: 'Stock File Explorer',
+    action: 'Install Alt First',
+  },
+  // Tier 4 • Critical (Hard-Blocked Sentinel)
+  {
+    tierNum: 4,
+    tier: 'Tier 4 • Critical',
+    tierColor: 'rose',
+    pkg: 'android',
+    name: 'Android Core OS Framework',
+    type: 'Base Operating System',
+    action: '⛔ Hard-Blocked',
+  },
+  {
+    tierNum: 4,
     tier: 'Tier 4 • Critical',
     tierColor: 'rose',
     pkg: 'com.android.systemui',
-    name: 'Android System UI',
-    type: 'Core OS Framework',
+    name: 'System UI & Notification Shade',
+    type: 'Core User Shell',
+    action: '⛔ Hard-Blocked',
+  },
+  {
+    tierNum: 4,
+    tier: 'Tier 4 • Critical',
+    tierColor: 'rose',
+    pkg: 'com.android.phone',
+    name: 'Cellular Radio & Emergency Calls',
+    type: 'Telephony RIL Daemon',
+    action: '⛔ Hard-Blocked',
+  },
+  {
+    tierNum: 4,
+    tier: 'Tier 4 • Critical',
+    tierColor: 'rose',
+    pkg: 'android.security.keystore',
+    name: 'Hardware Keystore & Biometrics',
+    type: 'Encryption Keyring',
+    action: '⛔ Hard-Blocked',
+  },
+  {
+    tierNum: 4,
+    tier: 'Tier 4 • Critical',
+    tierColor: 'rose',
+    pkg: 'com.android.packageinstaller',
+    name: 'Core Package Installer',
+    type: 'APK Security Manager',
     action: '⛔ Hard-Blocked',
   },
 ];
@@ -779,68 +922,120 @@ try {
       </section>
 
       <!-- Safety Architecture Section -->
-      <section id="safety" class="py-20 md:py-28">
+      <section id="safety" class="py-20 md:py-28 relative">
+        <div id="safety-tiers" class="absolute -top-20 left-0"></div>
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="text-center max-w-2xl mx-auto mb-16">
             <h2 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">
               Four-Tier Safety Classification
             </h2>
             <p class="text-slate-600 dark:text-slate-400">
-              Every package is analyzed before any action. Critical system packages are permanently protected.
+              Every package is analyzed before any action. Critical system packages are permanently protected. Click any tier card to view matching rules.
             </p>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div class="p-6 rounded-2xl border border-emerald-500/30 bg-white dark:bg-[#12161f] shadow-sm">
-              <span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 mb-3">Tier 1 • Safe</span>
+            <button type="button" data-tier-target="1" class="tier-card text-left p-6 rounded-2xl border border-emerald-500/30 bg-white dark:bg-[#12161f] shadow-sm hover:shadow-md hover:border-emerald-500/70 hover:scale-[1.02] transition-all cursor-pointer group focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              <div class="flex items-center justify-between mb-3">
+                <span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300">Tier 1 • Safe</span>
+                <span class="text-[10px] text-slate-400 font-mono group-hover:text-emerald-500 transition-colors">View rules ↓</span>
+              </div>
               <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">Safe to Remove</h3>
               <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                 Carrier bloat, duplicate apps, analytics, and non-essential OEM utilities. Zero system impact.
               </p>
-            </div>
+            </button>
 
-            <div class="p-6 rounded-2xl border border-amber-500/30 bg-white dark:bg-[#12161f] shadow-sm">
-              <span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 mb-3">Tier 2 • Caution</span>
+            <button type="button" data-tier-target="2" class="tier-card text-left p-6 rounded-2xl border border-amber-500/30 bg-white dark:bg-[#12161f] shadow-sm hover:shadow-md hover:border-amber-500/70 hover:scale-[1.02] transition-all cursor-pointer group focus:outline-none focus:ring-2 focus:ring-amber-500">
+              <div class="flex items-center justify-between mb-3">
+                <span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">Tier 2 • Caution</span>
+                <span class="text-[10px] text-slate-400 font-mono group-hover:text-amber-500 transition-colors">View rules ↓</span>
+              </div>
               <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">Review First</h3>
               <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                 Cloud sync, alternate keyboards, manufacturer stores. Safe to remove if you do not use them.
               </p>
-            </div>
+            </button>
 
-            <div class="p-6 rounded-2xl border border-orange-500/30 bg-white dark:bg-[#12161f] shadow-sm">
-              <span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-800 dark:bg-orange-500/20 dark:text-orange-300 mb-3">Tier 3 • Advanced</span>
+            <button type="button" data-tier-target="3" class="tier-card text-left p-6 rounded-2xl border border-orange-500/30 bg-white dark:bg-[#12161f] shadow-sm hover:shadow-md hover:border-orange-500/70 hover:scale-[1.02] transition-all cursor-pointer group focus:outline-none focus:ring-2 focus:ring-orange-500">
+              <div class="flex items-center justify-between mb-3">
+                <span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-800 dark:bg-orange-500/20 dark:text-orange-300">Tier 3 • Advanced</span>
+                <span class="text-[10px] text-slate-400 font-mono group-hover:text-orange-500 transition-colors">View rules ↓</span>
+              </div>
               <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">Power Users</h3>
               <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                 OEM ecosystem services, gestures, and background sync. May affect dependent third-party apps.
               </p>
-            </div>
+            </button>
 
-            <div class="p-6 rounded-2xl border border-rose-500/30 bg-white dark:bg-[#12161f] shadow-sm">
-              <span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-300 mb-3">Tier 4 • Critical</span>
+            <button type="button" data-tier-target="4" class="tier-card text-left p-6 rounded-2xl border border-rose-500/30 bg-white dark:bg-[#12161f] shadow-sm hover:shadow-md hover:border-rose-500/70 hover:scale-[1.02] transition-all cursor-pointer group focus:outline-none focus:ring-2 focus:ring-rose-500">
+              <div class="flex items-center justify-between mb-3">
+                <span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-300">Tier 4 • Critical</span>
+                <span class="text-[10px] text-slate-400 font-mono group-hover:text-rose-500 transition-colors">View rules ↓</span>
+              </div>
               <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">Hard-Blocked</h3>
               <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                 Android framework, package installer, System UI, telephony. Engine permanently forbids removal.
               </p>
-            </div>
+            </button>
           </div>
         </div>
       </section>
 
       <!-- Rules Preview (Compact) -->
-      <section id="rules" class="py-14 sm:py-16 bg-slate-100/50 dark:bg-[#0c1017] border-y border-slate-200/80 dark:border-slate-800">
+      <section id="rules" class="py-14 sm:py-16 bg-slate-100/50 dark:bg-[#0c1017] border-y border-slate-200/80 dark:border-slate-800 scroll-mt-14">
         <div class="max-w-4xl mx-auto px-4 sm:px-6">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
             <div>
               <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
                 Curated Safety Rules
               </h2>
               <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                4-tier classification across 330+ packages.
+                4-tier classification across 330+ packages. Filter by safety level below:
               </p>
             </div>
             <span class="text-[11px] font-mono px-2.5 py-1 rounded-md bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 self-start sm:self-auto">
               61 Core Hard-Blocked
             </span>
+          </div>
+
+          <!-- Interactive Tier Filter Tabs -->
+          <div class="flex flex-wrap items-center gap-2 mb-4">
+            <button
+              type="button"
+              data-tier-filter="all"
+              class="tier-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white transition-all cursor-pointer shadow-xs"
+            >
+              All Tiers (19)
+            </button>
+            <button
+              type="button"
+              data-tier-filter="1"
+              class="tier-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-500 transition-all cursor-pointer"
+            >
+              Tier 1 • Safe (6)
+            </button>
+            <button
+              type="button"
+              data-tier-filter="2"
+              class="tier-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-amber-500 transition-all cursor-pointer"
+            >
+              Tier 2 • Caution (5)
+            </button>
+            <button
+              type="button"
+              data-tier-filter="3"
+              class="tier-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-orange-500 transition-all cursor-pointer"
+            >
+              Tier 3 • Advanced (4)
+            </button>
+            <button
+              type="button"
+              data-tier-filter="4"
+              class="tier-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-rose-500 transition-all cursor-pointer"
+            >
+              Tier 4 • Critical (4)
+            </button>
           </div>
 
           <div class="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-[#12161f] shadow-2xs">
@@ -856,7 +1051,7 @@ try {
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
                   {sampleRules.map((r) => (
-                    <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/30">
+                    <tr class="rule-row hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors" data-rule-tier={r.tierNum}>
                       <td class="py-3 px-4 whitespace-nowrap">
                         <span class={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
                           r.tierColor === 'emerald' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300' :
@@ -1040,6 +1235,50 @@ try {
       setupPromptCopy('#copy-master-prompt-btn', '#copy-prompt-btn-text');
       setupPromptCopy('.secondary-prompt-copy-btn');
       setupPromptCopy('.footer-prompt-copy-btn');
+
+      // Safety Tier Interactive Filter & Card Navigation
+      const filterButtons = document.querySelectorAll<HTMLButtonElement>('.tier-filter-btn');
+      const tierCards = document.querySelectorAll<HTMLButtonElement>('.tier-card');
+      const ruleRows = document.querySelectorAll<HTMLTableRowElement>('.rule-row');
+
+      const applyTierFilter = (tier: string) => {
+        filterButtons.forEach((btn) => {
+          const btnTier = btn.getAttribute('data-tier-filter');
+          const isSelected = btnTier === tier;
+          if (isSelected) {
+            btn.className = 'tier-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white transition-all cursor-pointer shadow-xs';
+          } else {
+            btn.className = 'tier-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-500 transition-all cursor-pointer';
+          }
+        });
+
+        ruleRows.forEach((row) => {
+          const rowTier = row.getAttribute('data-rule-tier');
+          if (tier === 'all' || rowTier === tier) {
+            row.classList.remove('hidden');
+          } else {
+            row.classList.add('hidden');
+          }
+        });
+      };
+
+      filterButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const tier = btn.getAttribute('data-tier-filter') || 'all';
+          applyTierFilter(tier);
+        });
+      });
+
+      tierCards.forEach((card) => {
+        card.addEventListener('click', () => {
+          const targetTier = card.getAttribute('data-tier-target') || 'all';
+          applyTierFilter(targetTier);
+          const rulesSection = document.getElementById('rules');
+          if (rulesSection) {
+            rulesSection.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      });
     </script>
   </body>
 </html>
