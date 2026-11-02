@@ -4,8 +4,11 @@ __pycache__/
 *$py.class
 
 # Local user snapshots and backups (Prevent accidental upload of personal phone dumps)
+backups/
 cli/backups/*
 !cli/backups/.gitkeep
+AiPhoneDebloater/
+*snapshot_*.json
 
 # Device scan exports & AI plans
 *.txt
