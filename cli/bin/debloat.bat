@@ -43,14 +43,6 @@ if not defined PY (
 echo [OK] Python runtime: %PY%
 
 :: 2. Check and bootstrap ADB
-set "TOOLS_VER_FILE=%CLI_DIR%\tools\.version"
-if not exist "%TOOLS_VER_FILE%" goto :skip_tools_ver_check
-set /p CURRENT_TOOLS_VER=<"%TOOLS_VER_FILE%"
-if "%CURRENT_TOOLS_VER%"=="%APP_VERSION%" goto :skip_tools_ver_check
-echo [INFO] Version update detected (%CURRENT_TOOLS_VER% to %APP_VERSION%). Refreshing ADB platform-tools...
-if exist "%CLI_DIR%\tools\platform-tools" rmdir /s /q "%CLI_DIR%\tools\platform-tools" >nul 2>&1
-:skip_tools_ver_check
-
 if exist "%CLI_DIR%\tools\platform-tools\adb.exe" (
     set "PATH=%CLI_DIR%\tools\platform-tools;%PATH%"
 )
@@ -62,14 +54,11 @@ if errorlevel 1 (
     "%PY%" -c "import urllib.request, zipfile, io, sys; print('[INFO] Fetching platform-tools from Google...'); req = urllib.request.Request('https://dl.google.com/android/repository/platform-tools-latest-windows.zip', headers={'User-Agent': 'Mozilla/5.0'}); data = urllib.request.urlopen(req).read(); print('[INFO] Extracting platform-tools archive...'); zipfile.ZipFile(io.BytesIO(data)).extractall(sys.argv[1]); print('[OK] Download complete.')" "%CLI_DIR%\tools"
     if exist "%CLI_DIR%\tools\platform-tools\adb.exe" (
         set "PATH=%CLI_DIR%\tools\platform-tools;%PATH%"
-        echo %APP_VERSION%>"%TOOLS_VER_FILE%"
         echo [OK] ADB platform-tools installed successfully.
     ) else (
         echo [WARNING] Automatic ADB download failed. Please install ADB manually or put it on PATH.
     )
 ) else (
-    if not exist "%CLI_DIR%\tools" mkdir "%CLI_DIR%\tools" >nul 2>&1
-    echo %APP_VERSION%>"%TOOLS_VER_FILE%" 2>nul
     echo [OK] ADB runtime detected.
 )
 

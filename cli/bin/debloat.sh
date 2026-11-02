@@ -31,15 +31,6 @@ fi
 echo "Using Python: $PY"
 
 # 2. Check and bootstrap ADB
-TOOLS_VER_FILE="$CLI_DIR/tools/.version"
-if [ -f "$TOOLS_VER_FILE" ]; then
-    CURRENT_TOOLS_VER=$(tr -d '\r\n ' < "$TOOLS_VER_FILE")
-    if [ "$CURRENT_TOOLS_VER" != "$APP_VERSION" ]; then
-        echo "[INFO] Version update detected ($CURRENT_TOOLS_VER -> $APP_VERSION). Refreshing ADB platform-tools..."
-        rm -rf "$CLI_DIR/tools/platform-tools"
-    fi
-fi
-
 if [ -f "$CLI_DIR/tools/platform-tools/adb" ]; then
     chmod +x "$CLI_DIR/tools/platform-tools/adb" 2>/dev/null || true
     export PATH="$CLI_DIR/tools/platform-tools:$PATH"
@@ -71,15 +62,11 @@ print('[OK] Download complete.')
     if [ -f "$CLI_DIR/tools/platform-tools/adb" ]; then
         chmod +x "$CLI_DIR/tools/platform-tools/adb" 2>/dev/null || true
         export PATH="$CLI_DIR/tools/platform-tools:$PATH"
-        mkdir -p "$CLI_DIR/tools"
-        echo "$APP_VERSION" > "$TOOLS_VER_FILE"
         echo "[OK] ADB platform-tools installed successfully."
     else
         echo "[WARNING] Automatic ADB download failed. Please install ADB manually or put it on PATH."
     fi
 else
-    mkdir -p "$CLI_DIR/tools"
-    echo "$APP_VERSION" > "$TOOLS_VER_FILE" 2>/dev/null || true
     echo "[OK] ADB runtime detected."
 fi
 
