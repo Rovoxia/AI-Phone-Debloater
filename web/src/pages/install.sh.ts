@@ -92,9 +92,6 @@ rm -rf "\${INSTALL_DIR:?}"/*
 # Copy updated CLI files
 cp -R "\${SOURCE_SUBFOLDER}/"* "$INSTALL_DIR/"
 
-# Ensure no backups folder exists inside install directory
-rm -rf "\$INSTALL_DIR/backups" 2>/dev/null || true
-
 # Copy VERSION file
 if [ -f "$NEW_VERSION_FILE" ]; then
     cp "$NEW_VERSION_FILE" "$INSTALL_DIR/"
