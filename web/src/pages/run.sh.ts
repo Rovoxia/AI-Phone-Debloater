@@ -64,13 +64,17 @@ fi
 
 echo "[INFO] Syncing CLI to \${INSTALL_DIR} (Version: \${NEW_VERSION})..."
 
-# Preserve backups folder under all circumstances
-BACKUPS_DIR="$INSTALL_DIR/backups"
-PRESERVED_BACKUPS="$TEMP_DIR/preserved_backups"
-if [ -d "$BACKUPS_DIR" ]; then
-    mkdir -p "$PRESERVED_BACKUPS"
-    cp -R "$BACKUPS_DIR"/* "$PRESERVED_BACKUPS/" 2>/dev/null || true
-fi
+# Ensure permanent external backups directory exists safely in User's home
+SAFE_BACKUPS_DIR="\$HOME/AiPhoneDebloater/backups"
+mkdir -p "\$SAFE_BACKUPS_DIR"
+
+# Migrate any legacy backups from install dir or accidental cli folder into safe external home folder
+for ld in "\$INSTALL_DIR/backups" "\$HOME/cli/backups"; do
+    if [ -d "\$ld" ]; then
+        cp -R "\$ld"/* "\$SAFE_BACKUPS_DIR/" 2>/dev/null || true
+        rm -rf "\$ld" 2>/dev/null || true
+    fi
+done
 
 # If version changed, purge old tools so fresh ADB binaries are downloaded
 if [ "$INSTALLED_VERSION" != "$NEW_VERSION" ]; then
@@ -81,17 +85,11 @@ if [ "$INSTALLED_VERSION" != "$NEW_VERSION" ]; then
 fi
 
 mkdir -p "$INSTALL_DIR"
-# Remove old files except backups
-find "$INSTALL_DIR" -mindepth 1 -maxdepth 1 ! -name 'backups' -exec rm -rf {} + 2>/dev/null || true
+# Clean existing install directory completely (backups live safely outside in ~/AiPhoneDebloater/backups)
+rm -rf "\${INSTALL_DIR:?}"/*
 
 # Copy updated CLI files
 cp -R "\${SOURCE_SUBFOLDER}/"* "$INSTALL_DIR/"
-
-# Restore preserved backups
-if [ -d "$PRESERVED_BACKUPS" ]; then
-    mkdir -p "$BACKUPS_DIR"
-    cp -R "$PRESERVED_BACKUPS"/* "$BACKUPS_DIR/" 2>/dev/null || true
-fi
 
 # Copy VERSION file
 if [ -f "$NEW_VERSION_FILE" ]; then

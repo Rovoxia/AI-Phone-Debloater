@@ -49,12 +49,20 @@ try {
 
     Write-Host "[INFO] Installing CLI to $InstallDir (Version: $NewVersion)..." -ForegroundColor Yellow
 
-    # Preserve backups folder under all circumstances
-    $BackupsDir = Join-Path $InstallDir "backups"
-    $PreservedBackupsTemp = Join-Path $TempDir "preserved_backups"
-    if (Test-Path $BackupsDir) {
-        New-Item -ItemType Directory -Force -Path $PreservedBackupsTemp | Out-Null
-        Copy-Item -Recurse -Force "$BackupsDir\\*" $PreservedBackupsTemp -ErrorAction SilentlyContinue
+    # Ensure permanent external backups directory exists safely in User's home
+    $SafeBackupsDir = Join-Path $HOME "AiPhoneDebloater\\backups"
+    New-Item -ItemType Directory -Force -Path $SafeBackupsDir | Out-Null
+
+    # Migrate any legacy backups from install dir or accidental cli folder into safe external home folder
+    $LegacyDirs = @(
+        (Join-Path $InstallDir "backups"),
+        (Join-Path $HOME "cli\\backups")
+    )
+    foreach ($ld in $LegacyDirs) {
+        if (Test-Path $ld) {
+            Copy-Item -Force "$ld\\*" $SafeBackupsDir -ErrorAction SilentlyContinue
+            Remove-Item -Recurse -Force $ld -ErrorAction SilentlyContinue
+        }
     }
 
     # If version changed, purge old tools so fresh ADB binaries are downloaded
@@ -68,23 +76,15 @@ try {
         }
     }
 
-    # Clean existing install except backups
+    # Clean existing install directory completely (backups live safely outside in ~/AiPhoneDebloater/backups)
     if (Test-Path $InstallDir) {
-        Get-ChildItem -Path $InstallDir -Exclude "backups" | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+        Get-ChildItem -Path $InstallDir | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
     } else {
         New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
     }
 
     # Copy updated CLI files
     Copy-Item -Recurse -Force "$SourceSubfolder\\*" $InstallDir
-
-    # Restore preserved backups
-    if (Test-Path $PreservedBackupsTemp) {
-        if (-not (Test-Path $BackupsDir)) {
-            New-Item -ItemType Directory -Force -Path $BackupsDir | Out-Null
-        }
-        Copy-Item -Recurse -Force "$PreservedBackupsTemp\\*" $BackupsDir -ErrorAction SilentlyContinue
-    }
 
     # Copy VERSION file
     if (Test-Path $NewVersionFile) {

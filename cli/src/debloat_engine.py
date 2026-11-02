@@ -55,7 +55,14 @@ RULES_DIR_CANDIDATES = [
     Path("rules"),
     SCRIPT_DIR.parent / "rules",
 ]
-BACKUPS_DIR = PROJECT_ROOT / "cli" / "backups"
+BACKUPS_DIR = Path.home() / "AiPhoneDebloater" / "backups"
+LEGACY_BACKUPS_DIRS = [
+    PROJECT_ROOT / "cli" / "backups",
+    Path.home() / "cli" / "backups",
+    Path.home() / ".ai-phone-debloater" / "backups",
+    Path.cwd() / "backups",
+    Path.cwd() / "cli" / "backups",
+]
 DEFAULT_ADB_PATH_CANDIDATES: List[str] = [
     "adb",
     str(PROJECT_ROOT / "cli" / "tools" / "platform-tools" / "adb.exe"),
@@ -636,15 +643,21 @@ class SnapshotManager:
         return data
 
     def list_backups(self):
-        if not self.backups_dir.exists(): return []
+        all_dirs = [self.backups_dir] + [d for d in LEGACY_BACKUPS_DIRS if d != self.backups_dir and d.exists()]
         results = []
-        for path in sorted(self.backups_dir.glob("snapshot_*.json"), key=lambda p: p.stat().st_mtime, reverse=True):
-            try:
-                with path.open("r", encoding="utf-8") as fh: data = json.load(fh)
-                if not isinstance(data, dict): raise ValueError("not a JSON object")
-                results.append({"path": str(path), "name": path.name, "created_at": data.get("created_at"), "device": data.get("device") or {}, "package_count": data.get("package_count")})
-            except (OSError, ValueError) as exc:
-                self.logger.warn(f"Skipping unreadable snapshot {path.name}: {exc}")
+        seen_names = set()
+        for b_dir in all_dirs:
+            if not b_dir.exists(): continue
+            for path in sorted(b_dir.glob("snapshot_*.json"), key=lambda p: p.stat().st_mtime, reverse=True):
+                if path.name in seen_names: continue
+                seen_names.add(path.name)
+                try:
+                    with path.open("r", encoding="utf-8") as fh: data = json.load(fh)
+                    if not isinstance(data, dict): raise ValueError("not a JSON object")
+                    results.append({"path": str(path), "name": path.name, "created_at": data.get("created_at"), "device": data.get("device") or {}, "package_count": data.get("package_count")})
+                except (OSError, ValueError) as exc:
+                    self.logger.warn(f"Skipping unreadable snapshot {path.name}: {exc}")
+        results.sort(key=lambda r: r.get("created_at") or "", reverse=True)
         return results
 
     def find_backup(self, ident):
@@ -652,14 +665,23 @@ class SnapshotManager:
         if not ident: return None
         p = Path(ident)
         if p.is_file(): return p
-        if not self.backups_dir.exists(): return None
-        cand = self.backups_dir / ident
-        if cand.is_file(): return cand
-        matches = sorted(self.backups_dir.glob("snapshot_*.json"), key=lambda q: q.stat().st_mtime, reverse=True)
-        matches = [q for q in matches if ident in q.name]
-        if len(matches) > 1:
-            raise DebloatError(f"'{ident}' matches {len(matches)} snapshots; be more specific: " + ", ".join(q.name for q in matches[:5]))
-        return matches[0] if matches else None
+        all_dirs = [self.backups_dir] + [d for d in LEGACY_BACKUPS_DIRS if d != self.backups_dir and d.exists()]
+        matches = []
+        for b_dir in all_dirs:
+            cand = b_dir / ident
+            if cand.is_file(): return cand
+            m = sorted(b_dir.glob("snapshot_*.json"), key=lambda q: q.stat().st_mtime, reverse=True)
+            matches.extend([q for q in m if ident in q.name])
+        unique_matches = []
+        seen = set()
+        for q in matches:
+            resolved = str(q.resolve())
+            if resolved not in seen:
+                seen.add(resolved)
+                unique_matches.append(q)
+        if len(unique_matches) > 1:
+            raise DebloatError(f"'{ident}' matches {len(unique_matches)} snapshots; be more specific: " + ", ".join(q.name for q in unique_matches[:5]))
+        return unique_matches[0] if unique_matches else None
 
 class DebloatEngine:
     def __init__(self, adb_path=None, serial=None, rules_dir=None, backups_dir=BACKUPS_DIR, quiet=False, verbose=False, dry_run=False, timeout=30.0,

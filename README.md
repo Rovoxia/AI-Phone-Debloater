@@ -164,7 +164,7 @@ Every Android package evaluated by AI-Phone-Debloater is classified strictly int
    Run `python cli/src/debloat_engine.py --tier 1 --dry-run` to inspect a full table of proposed changes, package descriptions, and reasons before modifying your device.
 
 5. **Automated Rollback Snapshot & Reversible State**  
-   Before any package state is changed, an automated timestamped JSON snapshot (`cli/backups/snapshot_<model>_<timestamp>.json`) is saved. Debloat commands use `disable-user` or `uninstall -k` (which preserves user application data in `/data/user/0/`), enabling instant 1-click restore via `--restore <SNAPSHOT>`.
+   Before any package state is changed, an automated timestamped JSON snapshot (`~/AiPhoneDebloater/backups/snapshot_<model>_<timestamp>.json`) is saved safely in your user home directory. Debloat commands use `disable-user` or `uninstall -k` (which preserves user application data in `/data/user/0/`), enabling instant 1-click restore via `--restore <SNAPSHOT>`.
 
 ---
 
@@ -269,7 +269,7 @@ python cli/src/debloat_engine.py --restore snapshot_SM-S911B_20261101_120000.jso
 Every action performed by AI-Phone-Debloater is 100% reversible:
 
 ### 1. Automated Snapshot Restore (1-Click)
-Before executing changes, the engine creates a timestamped JSON snapshot under `cli/backups/`:
+Before executing changes, the engine creates a timestamped JSON snapshot under `~/AiPhoneDebloater/backups/`:
 ```bash
 python cli/src/debloat_engine.py --restore <SNAPSHOT_FILENAME>
 ```
