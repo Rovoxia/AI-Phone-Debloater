@@ -85,8 +85,8 @@ if [ "$INSTALLED_VERSION" != "$NEW_VERSION" ]; then
 fi
 
 mkdir -p "$INSTALL_DIR"
-# Clean existing install directory completely (backups live safely outside in ~/AiPhoneDebloater/backups)
-rm -rf "\${INSTALL_DIR:?}"/*
+# Clean existing install directory except tools (tools only purged if version changed)
+find "$INSTALL_DIR" -mindepth 1 -maxdepth 1 ! -name 'tools' -exec rm -rf {} + 2>/dev/null || true
 
 # Copy updated CLI files
 cp -R "\${SOURCE_SUBFOLDER}/"* "$INSTALL_DIR/"

@@ -76,9 +76,9 @@ try {
         }
     }
 
-    # Clean existing install directory completely (backups live safely outside in ~/AiPhoneDebloater/backups)
+    # Clean existing install directory except tools (tools only purged if version changed)
     if (Test-Path $InstallDir) {
-        Get-ChildItem -Path $InstallDir | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+        Get-ChildItem -Path $InstallDir | Where-Object { $_.Name -ne "tools" } | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
     } else {
         New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
     }
