@@ -742,7 +742,6 @@ try {
           </div>
 
           <!-- Safety & Best Practices Notice (High Contrast & Summarized) -->
-          <div id="adb-setup" class="scroll-mt-24"></div>
           <div class="mt-8 max-w-4xl mx-auto rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 sm:p-5 text-left shadow-lg">
             <div class="flex items-center gap-2 mb-2">
               <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-400 text-slate-950 text-xs font-black">!</span>
@@ -760,7 +759,6 @@ try {
       <!-- Safety Architecture Section -->
       <section id="safety" class="py-20 md:py-28">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div id="safety-tiers" class="scroll-mt-24"></div>
           <div class="text-center max-w-2xl mx-auto mb-16">
             <h2 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">
               Four-Tier Safety Classification
@@ -967,6 +965,36 @@ try {
                 No. Operates in User 0 without touching read-only system partitions (dm-verity intact). Official OTA updates download and install normally.
               </p>
             </details>
+
+            <details id="safety-tiers" class="scroll-mt-24 group p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#12161f]">
+              <summary class="flex justify-between items-center font-bold text-slate-900 dark:text-white cursor-pointer list-none">
+                <span>What are the package safety tiers and how do they work?</span>
+                <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </summary>
+              <p class="mt-4 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                Rules are partitioned into 4 strict tiers: <strong>Tier 1 (Safe)</strong> — pure bloatware, telemetry, and junk with zero side-effects; <strong>Tier 2 (Advanced)</strong> — OEM companion apps and optional services; <strong>Tier 3 (Extreme)</strong> — system services where replacements may be needed; and <strong>Tier 4 (Critical)</strong> — 61 essential Android framework packages permanently hard-blocked to guarantee zero bootloops.
+              </p>
+            </details>
+
+            <details id="adb-setup" class="scroll-mt-24 group p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#12161f]">
+              <summary class="flex justify-between items-center font-bold text-slate-900 dark:text-white cursor-pointer list-none">
+                <span>How do I enable USB Debugging (ADB) on my Android device?</span>
+                <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </summary>
+              <p class="mt-4 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                Open phone <strong>Settings &gt; About Phone</strong>, tap <strong>Build Number</strong> (or MIUI/HyperOS version) 7 times to unlock Developer Options. Then navigate to <strong>Settings &gt; System &gt; Developer Options</strong> and toggle on <strong>USB Debugging</strong>. On Xiaomi devices, also toggle on <em>Install via USB</em> and <em>USB Debugging (Security settings)</em>. Connect via USB and accept the RSA key prompt.
+              </p>
+            </details>
+
+            <details class="group p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#12161f]">
+              <summary class="flex justify-between items-center font-bold text-slate-900 dark:text-white cursor-pointer list-none">
+                <span>How do OEM debloat rules work across Xiaomi, Samsung, OnePlus, Oppo, and Vivo?</span>
+                <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </summary>
+              <p class="mt-4 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                The engine auto-detects device manufacturer and model via ADB properties (<code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-mono text-xs">ro.product.manufacturer</code>). It merges universal Android carrier rules with curated OEM-specific rule databases covering Xiaomi HyperOS/MIUI, Samsung One UI, OnePlus/Oppo/Realme (ColorOS/OxygenOS), Vivo/iQOO (FuntouchOS), Google Pixel, Motorola, and Transsion. Explore all rules in the <a href="/oems#rules-explorer" class="text-emerald-600 dark:text-emerald-400 underline font-medium">OEM Rules Explorer</a>.
+              </p>
+            </details>
           </div>
         </div>
       </section>
@@ -1045,6 +1073,35 @@ try {
       setupPromptCopy('#copy-master-prompt-btn', '#copy-prompt-btn-text');
       setupPromptCopy('.secondary-prompt-copy-btn');
       setupPromptCopy('.footer-prompt-copy-btn');
+
+      // Auto-open FAQ details when navigating via hash
+      const openTargetFaq = () => {
+        const hash = window.location.hash;
+        if (!hash) return;
+        const target = document.querySelector(hash);
+        if (target && target.tagName === 'DETAILS') {
+          (target as HTMLDetailsElement).open = true;
+          setTimeout(() => {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 50);
+        } else if (target) {
+          const parentDetails = target.closest('details');
+          if (parentDetails) {
+            parentDetails.open = true;
+            setTimeout(() => {
+              parentDetails.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 50);
+          }
+        }
+      };
+
+      window.addEventListener('hashchange', openTargetFaq);
+      // Wait for layout on initial page load if hash present
+      if (window.location.hash) {
+        setTimeout(openTargetFaq, 100);
+      } else {
+        openTargetFaq();
+      }
     </script>
   </body>
 </html>
