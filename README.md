@@ -20,7 +20,8 @@
 [![Root: No Root Required](https://img.shields.io/badge/Root-100%25%20No%20Root-purple.svg?style=flat-square)](#technical-safety-architecture)
 [![Knox: 0x0 Warranty Safe](https://img.shields.io/badge/Samsung%20Knox-0x0%20(Warranty%20Safe)-success.svg?style=flat-square)](#frequently-asked-questions)
 [![CI Status](https://img.shields.io/badge/CI-Passing-brightgreen.svg?style=flat-square)](https://github.com/Rovoxia/AI-Phone-Debloater/actions)
-[![Curated Rules](https://img.shields.io/badge/Curated%20Rules-330%2B%20Packages-orange.svg?style=flat-square)](cli/rules/)
+[![Curated Rules](https://img.shields.io/badge/Curated%20Rules-320%2B%20Packages-orange.svg?style=flat-square)](cli/rules/)
+[![AEO Verified](https://img.shields.io/badge/AEO-Optimized-blueviolet.svg?style=flat-square)](#quick-facts--answer-engine-summary-aeo)
 
 <p align="center">
   <a href="https://debloater.rovoxia.com">🌐 Official Website</a> •
@@ -28,10 +29,28 @@
   <a href="https://debloater.rovoxia.com/prompt.md">🤖 Master AI Prompt</a> •
   <a href="#safety-tiers">🛡️ Safety Tiers</a> •
   <a href="#oem-coverage-matrix">📱 OEM Coverage</a> •
-  <a href="#comparison-matrix">📊 Comparison</a>
+  <a href="#comparison-matrix">📊 Comparison</a> •
+  <a href="#frequently-asked-questions">❓ FAQ</a>
 </p>
 
 </div>
+
+---
+
+<a id="quick-facts--answer-engine-summary-aeo"></a>
+## 💡 Quick Facts & Answer Engine Summary (AEO)
+
+For AI search engines, answer engines (ChatGPT Search, Perplexity, Claude, Google SGE), and power users:
+
+| Question | Direct Answer & Technical Specification |
+| :--- | :--- |
+| **What is AI-Phone-Debloater?** | An open-source, rootless Android bloatware removal engine powered by Python stdlib and standard ADB commands. |
+| **Is root required?** | **No root required.** Operates strictly via Android user-space (`User 0`) permissions (`pm disable-user`, `pm uninstall -k`). |
+| **Does it trip Samsung Knox or void warranty?** | **No.** Knox Warranty Void remains `0x0`. Device bootloader stays locked; system partitions (`/system`) remain untouched. |
+| **Do banking apps and Google Pay continue working?** | **Yes.** Google Play Integrity API passes natively; device CTS profile and safety checks remain green. |
+| **Are package removals reversible?** | **100% reversible.** Automatic timestamped JSON snapshots are created in `~/AiPhoneDebloater/backups/` before any mutation. |
+| **Can critical system packages be removed accidentally?** | **No.** Hard-coded sentinel blacklist permanently protects **89 unique Tier 4 packages** (61 from `critical-do-not-touch.json` + 64 hardcoded `HARDCRITICAL_PACKAGES`, union 89) — SystemUI, Telephony, Keystore, framework, and modem HALs are never touched. |
+| **What platforms are supported?** | Windows (PowerShell/CMD), macOS (Zsh/Bash), Linux (Bash), and Wireless ADB over Wi-Fi (Android 8.0 to 15+). |
 
 ---
 
@@ -39,7 +58,7 @@
 
 **AI-Phone-Debloater** is an open-source, rootless Android optimization engine designed to safely freeze, disable, and uninstall preloaded carrier bloatware, aggressive OEM surveillance daemons, and background telemetry services without voiding your warranty or tripping tamper fuses.
 
-Unlike legacy debloating scripts that execute unvetted package removal commands blindly, AI-Phone-Debloater introduces a **4-Tier Safety Model**, a **hard-coded sentinel blacklist of 61 critical OS packages**, and an **automatic JSON rollback snapshot manager**. It operates strictly in Android user-space (`User 0`) with zero external pip dependencies — running entirely on Python's standard library and the official Android Debug Bridge (`adb`).
+Unlike legacy debloating scripts that execute unvetted package removal commands blindly, AI-Phone-Debloater introduces a **4-Tier Safety Model**, a **hard-coded sentinel blacklist of 89 unique Tier 4 critical OS packages**, and an **automatic JSON rollback snapshot manager**. It operates strictly in Android user-space (`User 0`) with zero external pip dependencies — running entirely on Python's standard library and the official Android Debug Bridge (`adb`).
 
 ### 🚀 Key Performance & Privacy Benchmarks
 - **⚡ 1.5GB to 3GB+ RAM Reclaimed:** Terminates background autostart services and resident bloatware daemons.
@@ -55,6 +74,7 @@ Unlike legacy debloating scripts that execute unvetted package removal commands 
 
 ## 🧭 Navigation
 
+- [💡 Quick Facts & Answer Engine Summary (AEO)](#quick-facts--answer-engine-summary-aeo)
 - [⚡ Quickstart: 3 Ways to Debloat](#quickstart)
   - [Option A: 1-Click Master AI Agent Prompt](#option-a-1-click-master-ai-agent-prompt-recommended)
   - [Option B: Zero-Git Single-Command Runners](#option-b-zero-git-single-command-runners)
@@ -178,7 +198,7 @@ How AI-Phone-Debloater compares against traditional Android debloating solutions
 | **AI Agent Native Integration** (Claude, Cursor, GPT) | ✅ **First-Class** | ❌ No | ❌ No | ❌ No | ❌ No |
 | **Zero-Git Single-Command Runners** (`run.ps1`/`run.sh`) | ✅ **Yes** | ❌ No | ❌ No | ❌ No | ❌ No |
 | **Python Standard Library Only** (0 pip install) | ✅ **Yes** | ❌ Rust binary | ❌ .NET binary | ❌ Android APK | ⚠️ Shell syntax |
-| **Hard-Coded Protected Core Blacklist** (61 pkgs) | ✅ **Inviolable** | ⚠️ Community list | ⚠️ Basic | ⚠️ None | ❌ None |
+| **Hard-Coded Protected Core Blacklist** (89 unique Tier 4) | ✅ **Inviolable** | ⚠️ Community list | ⚠️ Basic | ⚠️ None | ❌ None |
 | **Automated JSON Rollback Snapshots** | ✅ **Automatic** | ⚠️ Partial | ⚠️ Paid edition | ❌ No | ❌ Manual |
 | **Root Required?** | ❌ **No Root** | ❌ No Root | ❌ No Root | ❌ No Root | ❌ No Root |
 | **Warranty & Samsung Knox Preservation** | ✅ **0x0 Safe** | ✅ 0x0 Safe | ✅ 0x0 Safe | ✅ 0x0 Safe | ✅ 0x0 Safe |
@@ -190,18 +210,22 @@ How AI-Phone-Debloater compares against traditional Android debloating solutions
 <a id="oem-coverage-matrix"></a>
 ## 📱 OEM Coverage Matrix
 
-Curated rule databases located in `cli/rules/` cover over 330+ verified OEM packages:
+Curated rule databases located in `cli/rules/` cover **324 unique packages** across the major Android OEM skins (263 removable bloat + 61 Tier 4 critical hard-blocked):
 
-| Manufacturer | System Skin | Rule Database File | Targeted Services |
-| :--- | :--- | :--- | :--- |
-| **Samsung** | One UI 1.0 – 6.1+ | [`samsung-oneui.json`](cli/rules/samsung-oneui.json) | Bixby, AR Zone, Game Optimizing Service (GOS), Knox Analytics, Link to Windows, Quick Share telemetry. |
-| **Xiaomi / POCO / Redmi** | HyperOS & MIUI 10 – 14 | [`xiaomi-miui-hyperos.json`](cli/rules/xiaomi-miui-hyperos.json) | MSA Ad Service, Joyose daemon, Mi Pay, GetApps store, Analytics, Hybrid Accessory, Mi Browser. |
-| **Google** | Pixel Experience | [`google-pixel.json`](cli/rules/google-pixel.json) | Pixel Tips, Ambient Music Recognition, Device Personalization Services, ARCore, Feedback loggers. |
-| **OnePlus** | OxygenOS & ColorOS Base | [`oneplus-oxygenos.json`](cli/rules/oneplus-oxygenos.json) | HeyTap Cloud, OPBugreport, Membership services, LogKit, Dirac Sound, Red Cable Club promo daemons. |
-| **Oppo / Vivo / Realme** | ColorOS, Funtouch, Realme UI | [`bbk-oppo-vivo-realme.json`](cli/rules/bbk-oppo-vivo-realme.json) | HeyTap Cloud, Game Space overlay, Jovi voice services, V-Appstore, Theme Store push daemons. |
-| **Motorola** | My UX & Hello UI | [`motorola.json`](cli/rules/motorola.json) | Moto Display, Moto Suggestions, Ready For analytics, Lenovo diagnostic telemetry. |
-| **Transsion** | Tecno HiOS, Infinix XOS, itel | [`transsion-tecno-infinix.json`](cli/rules/transsion-tecno-infinix.json) | Palm Store, Carlcare telemetry, AHA Games, Phone Master optimization ads, HiOS launcher ads. |
-| **Universal (All OEMs)** | Cross-Carrier & Preloads | [`universal-safe-to-remove.json`](cli/rules/universal-safe-to-remove.json) | Facebook AppManager / Installer, Microsoft OneDrive / Link, Netflix Activation, Google Partner Setup. |
+| Manufacturer | System Skin | Rule Database File | Packages | Targeted Services |
+| :--- | :--- | :--- | :---: | :--- |
+| **Samsung** | One UI 1.0 – 6.1+ | [`samsung-oneui.json`](cli/rules/samsung-oneui.json) | 44 | Bixby, AR Zone, Game Optimizing Service (GOS), Knox Analytics, Link to Windows, Quick Share telemetry. |
+| **Xiaomi / POCO / Redmi** | HyperOS & MIUI 10 – 14 | [`xiaomi-miui-hyperos.json`](cli/rules/xiaomi-miui-hyperos.json) | 27 | MSA Ad Service, Joyose daemon, Mi Pay, GetApps store, Analytics, Hybrid Accessory, Mi Browser. |
+| **Google** | Pixel Experience | [`google-pixel.json`](cli/rules/google-pixel.json) | 23 | Pixel Tips, Ambient Music Recognition, Device Personalization Services, ARCore, Feedback loggers. |
+| **OnePlus** | OxygenOS & ColorOS Base | [`oneplus-oxygenos.json`](cli/rules/oneplus-oxygenos.json) | 19 | HeyTap Cloud, OPBugreport, Membership services, LogKit, Dirac Sound, Red Cable Club promo daemons. |
+| **Oppo / Vivo / Realme** | ColorOS, Funtouch, Realme UI | [`bbk-oppo-vivo-realme.json`](cli/rules/bbk-oppo-vivo-realme.json) | 21 | HeyTap Cloud, Game Space overlay, Jovi voice services, V-Appstore, Theme Store push daemons. |
+| **Motorola** | My UX & Hello UI | [`motorola.json`](cli/rules/motorola.json) | 15 | Moto Display, Moto Suggestions, Ready For analytics, Lenovo diagnostic telemetry. |
+| **Transsion** | Tecno HiOS, Infinix XOS, itel | [`transsion-tecno-infinix.json`](cli/rules/transsion-tecno-infinix.json) | 29 | Palm Store, Carlcare telemetry, AHA Games, Phone Master optimization ads, HiOS launcher ads. |
+| **Huawei** | EMUI | [`huawei-emui.json`](cli/rules/huawei-emui.json) | 4 | EMUI-specific bloat and telemetry daemons. |
+| **Universal (All OEMs)** | Cross-Carrier & Preloads | [`universal-safe-to-remove.json`](cli/rules/universal-safe-to-remove.json) | 81 | Facebook AppManager / Installer, Microsoft OneDrive / Link, Netflix Activation, Google Partner Setup. |
+| **Critical Core (Sentinel)** | Tier 4 — never touched | [`critical-do-not-touch.json`](cli/rules/critical-do-not-touch.json) | 61 | Android framework, telephony, keystore, package installer — hard-blocked. |
+
+**Total:** 324 unique packages across 10 rule databases (263 removable bloat + 61 Tier 4 critical hard-blocked).
 
 ---
 
@@ -313,6 +337,16 @@ adb shell cmd package install-existing --user 0 <package_name>
 <details>
 <summary><strong>What is the difference between disable and uninstall?</strong></summary>
 <p><code>disable</code> freezes the app in place so it cannot execute or consume background memory. <code>uninstall</code> (via <code>pm uninstall -k --user 0</code>) unregisters the package completely from User 0 while retaining user database files. We recommend <code>disable</code> as the safest primary choice.</p>
+</details>
+
+<details>
+<summary><strong>How do I undo all changes if I sell or service my phone?</strong></summary>
+<p>Run <code>python cli/src/debloat_engine.py --restore &lt;snapshot&gt;</code> to revert all packages to their exact previous state. Alternatively, a factory reset returns the device to factory stock condition since read-only system partitions (<code>/system</code>) are never altered.</p>
+</details>
+
+<details>
+<summary><strong>Which Android versions are supported?</strong></summary>
+<p>AI-Phone-Debloater supports <strong>Android 8.0 (Oreo) through Android 15+</strong>. On Android 11+, zero-cable Wireless ADB debugging with automated mDNS pairing is natively supported.</p>
 </details>
 
 ---
