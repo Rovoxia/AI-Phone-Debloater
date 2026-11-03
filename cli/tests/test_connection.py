@@ -531,6 +531,26 @@ class TestQrPairingManager(unittest.TestCase):
         self.assertFalse(s2.is_connect)
 
 
+class TestDiscoveredServiceFlags(unittest.TestCase):
+    """Regression: pairing port must never be used as connect port."""
+
+    def test_pairing_port_is_not_connect_port(self):
+        svc = DiscoveredService(
+            name="phone", service_type="_adb-tls-pairing._tcp",
+            address="192.168.1.50", port=41235,
+        )
+        self.assertTrue(svc.is_pairing)
+        self.assertFalse(svc.is_connect)
+
+    def test_connect_service_is_not_pairing_port(self):
+        svc = DiscoveredService(
+            name="phone", service_type="_adb-tls-connect._tcp",
+            address="192.168.1.50", port=38921,
+        )
+        self.assertTrue(svc.is_connect)
+        self.assertFalse(svc.is_pairing)
+
+
 class TestConnectionDiagnostics(unittest.TestCase):
     """Test Connection Diagnostics suite."""
 

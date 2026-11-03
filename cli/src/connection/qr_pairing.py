@@ -144,13 +144,12 @@ class QrPairingManager:
             # Query mDNS for pairing services
             current_pairing = self.mdns.get_pairing_services()
 
-            # 1. Match exact service name or prefix
+            # 1. Match this session's instance name. Android may append a
+            #    suffix, but a bare "Rovoxia" match would pair the wrong phone.
             for s in current_pairing:
                 if (
                     session.service_name in s.name
                     or s.name in session.service_name
-                    or "AI_Phone_Debloater" in s.name
-                    or "Rovoxia" in s.name
                 ):
                     pairing_service = s
                     break
@@ -229,14 +228,14 @@ class QrPairingManager:
             if connect_endpoint:
                 break
 
-            # B. Check mDNS for connect services
-            current_connect = self.mdns.get_connect_services()
+            # B. Check mDNS for a *connect* service. Never use the pairing
+            #    port here: adb connect to that port hangs.
+            current_connect = [
+                s for s in self.mdns.get_connect_services()
+                if not s.is_pairing and s.port != pairing_service.port
+            ]
             for s in current_connect:
-                if (
-                    s.address == pairing_service.address
-                    or pairing_service.address in s.address
-                    or s.address in pairing_service.address
-                ):
+                if s.address == pairing_service.address:
                     connect_endpoint = s.endpoint
                     break
 

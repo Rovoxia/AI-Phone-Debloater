@@ -153,10 +153,16 @@ class DiscoveredService:
 
     @property
     def is_connect(self) -> bool:
-        """True when the service advertises an ADB-TLS connect endpoint."""
-        if self.is_pairing:
+        """True when the service advertises an ADB connect endpoint.
+
+        Pairing services (``_adb-tls-pairing``) are excluded. Connecting to a
+        pairing port with ``adb connect`` hangs: that socket only speaks the
+        SPAKE2 pairing handshake.
+        """
+        if self.is_pairing or "_adb-tls-pairing" in self.service_type:
             return False
-        return "_adb-tls-connect" in self.service_type or "_adb._tcp" in self.service_type or "_adb" in self.service_type
+        st = self.service_type
+        return "_adb-tls-connect" in st or st == "_adb._tcp" or st.endswith("._adb._tcp")
 
     @property
     def endpoint(self) -> str:
