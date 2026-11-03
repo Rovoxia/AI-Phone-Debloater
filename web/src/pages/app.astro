@@ -3,12 +3,9 @@
 import '../styles/global.css';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
-import AdbSetupCard from '../components/AdbSetupCard.astro';
-import rulesData from '../data/rules-dataset.json';
 
 const TITLE = 'WebApp Workspace — AI-Phone-Debloater';
 const DESCRIPTION = 'Visual ADB package manager and rootless debloater workspace.';
-const rules = rulesData.rules || [];
 ---
 
 <!doctype html>
@@ -20,9 +17,13 @@ const rules = rulesData.rules || [];
     <title>{TITLE}</title>
     <meta name="description" content={DESCRIPTION} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Google Fonts (Optimized) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript>
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    </noscript>
     <script is:inline>
       (function() {
         try {
@@ -39,187 +40,305 @@ const rules = rulesData.rules || [];
 
     <Navbar />
 
-    <main class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+    <main class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10">
+      <section class="flex min-h-[70vh] flex-col items-center justify-center text-center">
+        <div class="mb-8 w-full max-w-md sm:max-w-lg" aria-hidden="true">
+          <svg class="build-scene mx-auto h-auto w-full" viewBox="0 0 420 280" fill="none" xmlns="http://www.w3.org/2000/svg" role="img">
+            <title>A workspace being assembled</title>
 
-      {/* Workspace Header */}
-      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
-        <div>
-          <h1 class="text-2xl font-normal tracking-tight text-slate-900 dark:text-white">WebApp Workspace</h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Connect your Android device via ADB and manage packages visually.</p>
+            {/* Ground line */}
+            <line class="ground" x1="48" y1="248" x2="372" y2="248" />
+
+            {/* Scaffold uprights and cross braces */}
+            <g class="scaffold">
+              <line x1="92" y1="248" x2="92" y2="36" />
+              <line x1="328" y1="248" x2="328" y2="36" />
+              <line x1="92" y1="92" x2="328" y2="92" />
+              <line x1="92" y1="168" x2="328" y2="168" />
+              <line x1="92" y1="168" x2="210" y2="92" />
+              <line x1="210" y1="168" x2="328" y2="92" />
+            </g>
+
+            {/* Crane boom swinging a UI block into place */}
+            <g class="crane">
+              <line x1="328" y1="36" x2="368" y2="36" />
+              <line class="cable" x1="358" y1="36" x2="358" y2="78" />
+              <rect class="hook-block" x="340" y="78" width="36" height="22" rx="4" />
+            </g>
+
+            {/* Phone frame that the workspace is built inside */}
+            <g class="phone">
+              <rect x="128" y="48" width="164" height="200" rx="18" />
+              <rect x="188" y="58" width="44" height="6" rx="3" />
+            </g>
+
+            {/* UI pieces sliding into the screen */}
+            <g class="ui">
+              <rect class="piece piece-sidebar" x="140" y="76" width="36" height="156" rx="6" />
+              <rect class="piece piece-header" x="184" y="76" width="96" height="22" rx="5" />
+              <rect class="piece piece-card-a" x="184" y="108" width="44" height="52" rx="5" />
+              <rect class="piece piece-card-b" x="236" y="108" width="44" height="52" rx="5" />
+              <rect class="piece piece-row-a" x="184" y="170" width="96" height="14" rx="4" />
+              <rect class="piece piece-row-b" x="184" y="192" width="72" height="14" rx="4" />
+              <rect class="piece piece-row-c" x="184" y="214" width="84" height="10" rx="4" />
+            </g>
+
+            {/* Spark that lands once the last piece is in */}
+            <circle class="spark" cx="280" cy="87" r="3" />
+          </svg>
         </div>
-        <a href="/" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-[#181c24] dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
-          <span>&larr; Back to Home</span>
-        </a>
-      </div>
 
-      {/* ADB Setup & Connection Card */}
-      <section id="connection">
-        <AdbSetupCard variant="workspace" />
-      </section>
+        <span class="inline-flex items-center rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-violet-700 dark:text-violet-300">
+          Upcoming
+        </span>
 
-      {/* Live Package Manager Workspace (Hidden until device is scanned) */}
-      <section id="package-workspace" class="hidden space-y-6">
-        <div class="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-[#181c24] shadow-xs space-y-5">
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
-            <div>
-              <h2 class="text-base font-semibold text-slate-900 dark:text-white">Installed Packages</h2>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Filter and select packages to remove safely with auto-snapshots.</p>
-            </div>
-            <div class="flex items-center gap-2 w-full sm:w-auto">
-              <input
-                type="text"
-                id="pkg-search"
-                placeholder="Search package or name…"
-                class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800 dark:border-slate-700 dark:bg-[#121212] dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
-              />
-              <button
-                type="button"
-                id="batch-debloat-btn"
-                class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700 transition-colors cursor-pointer shrink-0 shadow-sm"
-              >
-                <span>Uninstall Selected</span>
-              </button>
-            </div>
-          </div>
+        <h1 class="mt-5 text-2xl font-normal tracking-tight text-slate-900 dark:text-white sm:text-3xl">
+          WebApp Workspace — Coming Soon
+        </h1>
 
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
-              <thead class="bg-slate-50 dark:bg-[#121212] text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[10px] border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <th class="px-3.5 py-3 w-10">
-                    <input type="checkbox" id="select-all-pkgs" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
-                  </th>
-                  <th class="px-3.5 py-3">Package Name</th>
-                  <th class="px-3.5 py-3">App Name</th>
-                  <th class="px-3.5 py-3">Brand</th>
-                  <th class="px-3.5 py-3">Safety Tier</th>
-                  <th class="px-3.5 py-3">Action</th>
-                </tr>
-              </thead>
-              <tbody id="pkg-table-body" class="divide-y divide-slate-200 dark:divide-slate-800">
-                {rules.map((r, idx) => (
-                  <tr class="pkg-row hover:bg-slate-50 dark:hover:bg-white/[0.02]" data-package={r.package} data-name={r.name.toLowerCase()} data-brand={r.brand.toLowerCase()}>
-                    <td class="px-3.5 py-3">
-                      <input type="checkbox" class="pkg-checkbox rounded border-slate-300 text-blue-600 focus:ring-blue-500" value={r.package} />
-                    </td>
-                    <td class="px-3.5 py-3 font-mono text-slate-800 dark:text-slate-200">{r.package}</td>
-                    <td class="px-3.5 py-3 text-slate-600 dark:text-slate-400">{r.name}</td>
-                    <td class="px-3.5 py-3 text-slate-500 uppercase text-[10px] font-bold">{r.brand}</td>
-                    <td class="px-3.5 py-3">
-                      <span class:list={[
-                        "inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-bold",
-                        r.tier === 1 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30' :
-                        r.tier === 2 ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30' :
-                        r.tier === 3 ? 'bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/30' :
-                        'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30'
-                      ]}>
-                        T{r.tier}
-                      </span>
-                    </td>
-                    <td class="px-3.5 py-3">
-                      <button
-                        type="button"
-                        class="uninstall-single-btn rounded bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-rose-600 hover:text-white dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-rose-600 dark:hover:text-white transition-colors"
-                        data-package={r.package}
-                      >
-                        Uninstall
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <p class="mt-3 max-w-xl text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+          We're building something powerful. The visual WebApp workspace is under active construction and will be available soon.
+        </p>
+
+        <div class="mt-8 flex flex-col items-center gap-3 sm:flex-row">
+          <a
+            href="/#cli"
+            class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700"
+          >
+            <span>&larr; Use the CLI instead</span>
+          </a>
+          <a
+            href="https://github.com/Rovoxia/AI-Phone-Debloater"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-[#181c24] dark:text-slate-300 dark:hover:bg-slate-800"
+          >
+            Watch on GitHub
+          </a>
         </div>
       </section>
-
     </main>
 
     <Footer />
-
-    <script>
-      document.addEventListener('DOMContentLoaded', () => {
-        const refreshBtn = document.getElementById('adb-refresh-btn');
-        const scanBtn = document.getElementById('adb-scan-btn');
-        const statusDot = document.getElementById('adb-status-dot');
-        const statusText = document.getElementById('adb-status-text');
-        const connectedBox = document.getElementById('adb-connected-box');
-        const serialSpan = document.getElementById('adb-serial');
-        const deviceStatusSpan = document.getElementById('adb-device-status');
-        const packageWorkspace = document.getElementById('package-workspace');
-        const searchInput = document.getElementById('pkg-search') as HTMLInputElement;
-
-        let isConnected = false;
-
-        function updateConnectionState(connected: boolean, serial = 'SM-S918B') {
-          isConnected = connected;
-          if (connected) {
-            if (statusDot) {
-              statusDot.className = 'h-2.5 w-2.5 rounded-full bg-emerald-500';
-            }
-            if (statusText) statusText.textContent = 'Connected';
-            if (connectedBox) connectedBox.classList.remove('hidden');
-            if (serialSpan) serialSpan.textContent = serial;
-            if (deviceStatusSpan) deviceStatusSpan.textContent = 'authorized';
-          } else {
-            if (statusDot) {
-              statusDot.className = 'h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse';
-            }
-            if (statusText) statusText.textContent = 'Waiting for ADB connection…';
-            if (connectedBox) connectedBox.classList.add('hidden');
-            if (packageWorkspace) packageWorkspace.classList.add('hidden');
-          }
-        }
-
-        if (refreshBtn) {
-          refreshBtn.addEventListener('click', () => {
-            if (statusText) statusText.textContent = 'Detecting devices…';
-            setTimeout(() => {
-              // Simulated successful connection for demo & local bridge
-              updateConnectionState(true, 'R5CW10XYZ9M');
-            }, 800);
-          });
-        }
-
-        if (scanBtn) {
-          scanBtn.addEventListener('click', () => {
-            if (packageWorkspace) {
-              packageWorkspace.classList.remove('hidden');
-              packageWorkspace.scrollIntoView({ behavior: 'smooth' });
-            }
-          });
-        }
-
-        // Package search filter
-        if (searchInput) {
-          searchInput.addEventListener('input', (e) => {
-            const query = (e.target as HTMLInputElement).value.toLowerCase();
-            const rows = document.querySelectorAll('.pkg-row');
-            rows.forEach((row) => {
-              const pkg = row.getAttribute('data-package') || '';
-              const name = row.getAttribute('data-name') || '';
-              const brand = row.getAttribute('data-brand') || '';
-              if (pkg.includes(query) || name.includes(query) || brand.includes(query)) {
-                (row as HTMLElement).style.display = '';
-              } else {
-                (row as HTMLElement).style.display = 'none';
-              }
-            });
-          });
-        }
-
-        // Single uninstall action
-        document.querySelectorAll('.uninstall-single-btn').forEach((btn) => {
-          btn.addEventListener('click', (e) => {
-            const pkg = (e.currentTarget as HTMLElement).getAttribute('data-package');
-            if (confirm(`Uninstall package "${pkg}" via ADB (keeping user data -k)?`)) {
-              alert(`Successfully uninstalled ${pkg} (user 0). Snapshot backed up.`);
-              const row = (e.currentTarget as HTMLElement).closest('tr');
-              if (row) row.remove();
-            }
-          });
-        });
-      });
-    </script>
   </body>
 </html>
+
+<style>
+  .build-scene {
+    overflow: visible;
+  }
+
+  .ground {
+    stroke: #94a3b8;
+    stroke-width: 2;
+    stroke-linecap: round;
+    opacity: 0.7;
+  }
+
+  :global(.dark) .ground {
+    stroke: #475569;
+  }
+
+  .scaffold line {
+    stroke: #a78bfa;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-dasharray: 260;
+    stroke-dashoffset: 260;
+    animation: draw 8s ease-in-out infinite;
+  }
+
+  :global(.dark) .scaffold line {
+    stroke: #8b5cf6;
+  }
+
+  .crane line {
+    stroke: #10b981;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+  }
+
+  .crane {
+    transform-box: fill-box;
+    transform-origin: 0% 0%;
+    animation: swing 8s ease-in-out infinite;
+  }
+
+  .cable {
+    stroke-dasharray: 42;
+    stroke-dashoffset: 42;
+    animation: drop 8s ease-in-out infinite;
+  }
+
+  .hook-block {
+    fill: #10b981;
+    opacity: 0;
+    animation: carry 8s ease-in-out infinite;
+  }
+
+  .phone rect:first-child {
+    stroke: #64748b;
+    stroke-width: 2.5;
+    stroke-dasharray: 760;
+    stroke-dashoffset: 760;
+    animation: draw 8s ease-in-out infinite;
+  }
+
+  :global(.dark) .phone rect:first-child {
+    stroke: #94a3b8;
+  }
+
+  .phone rect:last-child {
+    fill: #94a3b8;
+    opacity: 0;
+    animation: fade-late 8s ease-in-out infinite;
+  }
+
+  .piece {
+    opacity: 0;
+  }
+
+  .piece-sidebar {
+    fill: #10b981;
+    animation: slide-left 8s ease-in-out infinite;
+  }
+
+  .piece-header {
+    fill: #8b5cf6;
+    animation: slide-down 8s ease-in-out infinite;
+  }
+
+  .piece-card-a,
+  .piece-card-b {
+    fill: #34d399;
+    opacity: 0.85;
+  }
+
+  .piece-card-a {
+    animation: slide-up 8s ease-in-out infinite;
+  }
+
+  .piece-card-b {
+    animation: slide-up 8s ease-in-out infinite;
+    animation-delay: 0.18s;
+  }
+
+  .piece-row-a,
+  .piece-row-b,
+  .piece-row-c {
+    fill: #c4b5fd;
+  }
+
+  :global(.dark) .piece-row-a,
+  :global(.dark) .piece-row-b,
+  :global(.dark) .piece-row-c {
+    fill: #6d28d9;
+  }
+
+  .piece-row-a {
+    animation: slide-right 8s ease-in-out infinite;
+  }
+
+  .piece-row-b {
+    animation: slide-right 8s ease-in-out infinite;
+    animation-delay: 0.15s;
+  }
+
+  .piece-row-c {
+    animation: slide-right 8s ease-in-out infinite;
+    animation-delay: 0.3s;
+  }
+
+  .spark {
+    fill: #10b981;
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: spark 8s ease-in-out infinite;
+  }
+
+  @keyframes draw {
+    0% { stroke-dashoffset: 260; }
+    22%, 78% { stroke-dashoffset: 0; }
+    100% { stroke-dashoffset: 260; }
+  }
+
+  .phone rect:first-child {
+    animation-name: draw-frame;
+  }
+
+  @keyframes draw-frame {
+    0% { stroke-dashoffset: 760; }
+    28%, 78% { stroke-dashoffset: 0; }
+    100% { stroke-dashoffset: 760; }
+  }
+
+  @keyframes swing {
+    0%, 18% { transform: rotate(-8deg); }
+    42%, 70% { transform: rotate(0deg); }
+    100% { transform: rotate(-8deg); }
+  }
+
+  @keyframes drop {
+    0%, 16% { stroke-dashoffset: 42; }
+    30%, 62% { stroke-dashoffset: 0; }
+    78%, 100% { stroke-dashoffset: 42; }
+  }
+
+  @keyframes carry {
+    0%, 20% { opacity: 0; transform: translateY(-14px); }
+    34%, 58% { opacity: 1; transform: translateY(0); }
+    72%, 100% { opacity: 0; transform: translateY(-14px); }
+  }
+
+  @keyframes slide-left {
+    0%, 30% { opacity: 0; transform: translateX(-18px); }
+    46%, 76% { opacity: 1; transform: translateX(0); }
+    92%, 100% { opacity: 0; transform: translateX(-18px); }
+  }
+
+  @keyframes slide-down {
+    0%, 36% { opacity: 0; transform: translateY(-16px); }
+    52%, 76% { opacity: 1; transform: translateY(0); }
+    92%, 100% { opacity: 0; transform: translateY(-16px); }
+  }
+
+  @keyframes slide-up {
+    0%, 42% { opacity: 0; transform: translateY(16px); }
+    58%, 76% { opacity: 0.9; transform: translateY(0); }
+    92%, 100% { opacity: 0; transform: translateY(16px); }
+  }
+
+  @keyframes slide-right {
+    0%, 48% { opacity: 0; transform: translateX(18px); }
+    64%, 76% { opacity: 1; transform: translateX(0); }
+    92%, 100% { opacity: 0; transform: translateX(18px); }
+  }
+
+  @keyframes fade-late {
+    0%, 24% { opacity: 0; }
+    36%, 78% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  @keyframes spark {
+    0%, 66% { opacity: 0; transform: scale(0.4); }
+    72% { opacity: 1; transform: scale(1.4); }
+    80%, 100% { opacity: 0; transform: scale(0.4); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .build-scene * {
+      animation: none !important;
+      stroke-dashoffset: 0 !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
+
+    .hook-block,
+    .spark,
+    .cable {
+      opacity: 0 !important;
+    }
+  }
+</style>

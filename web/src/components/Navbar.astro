@@ -1,175 +1,410 @@
 ---
 // src/components/Navbar.astro
+// Single-row sticky header, ultra-clean, SEO-optimized, pixel-perfect across all viewports.
+// Zero-JS interactivity: CSS group-hover/focus-within popovers + native <details> drawer with click-outside backdrop.
+import { readFileSync } from 'node:fs';
+
+const GITHUB_REPO = 'https://github.com/Rovoxia/AI-Phone-Debloater';
+
+let siteVersion = '1.0.0';
+try {
+  siteVersion = readFileSync(new URL('../../../VERSION', import.meta.url), 'utf8').trim() || '1.0.0';
+} catch {}
+
+const oems = [
+  {
+    name: 'Xiaomi HyperOS & MIUI',
+    sub: 'Redmi, Poco & Mi ad-daemon stripping',
+    href: '/oems#hyperos-debloat',
+    badge: 'HyperOS',
+  },
+  {
+    name: 'Samsung Galaxy One UI',
+    sub: 'Knox-safe Galaxy bloatware removal',
+    href: '/oems#samsung-oneui',
+    badge: 'One UI',
+  },
+  {
+    name: 'OnePlus / Oppo / Realme',
+    sub: 'ColorOS & OxygenOS telemetry rules',
+    href: '/oems#coloros-oxygenos',
+    badge: 'ColorOS',
+  },
+  {
+    name: 'Vivo & iQOO (FuntouchOS)',
+    sub: 'FuntouchOS & OriginOS service cleaning',
+    href: '/oems#vivo-funtouch',
+    badge: 'Funtouch',
+  },
+  {
+    name: 'Nothing OS & Google Pixel',
+    sub: 'Stock AOSP & carrier telemetry purging',
+    href: '/oems#pixel-nothing',
+    badge: 'Pixel / AOSP',
+  },
+];
+
+const tools = [
+  {
+    name: 'AI Master Debloat Prompt',
+    sub: 'LLM prompt for deep forensic app auditing',
+    badge: 'Prompt',
+    href: '/#master-prompt',
+  },
+  {
+    name: 'Windows ADB Runner',
+    sub: 'Zero-install PowerShell execution script',
+    badge: '.bat',
+    href: '/#windows-runner',
+  },
+  {
+    name: 'Linux & macOS Runner',
+    sub: 'One-line Bash runner with auto-detect',
+    badge: '.sh',
+    href: '/#unix-runner',
+  },
+  {
+    name: 'Interactive Package Analyzer',
+    sub: 'Search & filter 330+ categorized rules',
+    badge: 'Rules',
+    href: '/oems#rules-explorer',
+  },
+];
+
+const directLinks = [
+  { name: 'Safety', href: '/#safety-tiers' },
+  { name: 'FAQ', href: '/#faq' },
+  { name: 'Releases', href: 'https://github.com/Rovoxia/AI-Phone-Debloater/releases', external: true },
+];
 ---
 
-<header class="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/90 backdrop-blur-md transition-colors dark:border-slate-800/80 dark:bg-[#0b0f17]/90">
-  <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
+<header
+  class="h-16 sticky top-0 z-50 backdrop-blur-xl bg-white/85 border-b border-slate-200/80"
+>
+  <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 flex-nowrap">
 
-    <!-- Brand / App Logo -->
-    <a href="/" class="flex items-center gap-3 group">
-      <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm transition-transform group-hover:scale-105">
-        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="5.5" y="2" width="13" height="20" rx="3" />
-          <line x1="10" y1="5" x2="14" y2="5" />
-          <path d="M12 9c0 1.8-1.3 3-3 3 1.7 0 3 1.2 3 3 0-1.8 1.3-3 3-3-1.7 0-3-1.2-3-3z" fill="currentColor" stroke="none" />
-          <line x1="10.5" y1="18.5" x2="13.5" y2="18.5" />
-        </svg>
-      </div>
-      <div class="flex items-center gap-2">
-        <span class="text-sm sm:text-base font-bold tracking-tight text-slate-900 dark:text-white">AI Phone Debloater</span>
-        <span class="hidden sm:inline-block text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">v1.0</span>
-      </div>
-    </a>
+    <!-- Left Zone: Brand + version badge -->
+    <div class="flex items-center gap-2.5 shrink-0">
+      <a href="/" class="flex items-center gap-2.5 shrink-0 group" aria-label="AI Phone Debloater home">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-xs transition-transform group-hover:scale-105">
+          <svg class="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="5.5" y="2" width="13" height="20" rx="3" />
+            <line x1="10" y1="5" x2="14" y2="5" />
+            <path d="M12 9c0 1.8-1.3 3-3 3 1.7 0 3 1.2 3 3 0-1.8 1.3-3 3-3-1.7 0-3-1.2-3-3z" fill="currentColor" stroke="none" />
+            <line x1="10.5" y1="18.5" x2="13.5" y2="18.5" />
+          </svg>
+        </div>
+        <span class="text-[15px] font-semibold tracking-tight text-slate-900 whitespace-nowrap">AI Phone Debloater</span>
+        <span class="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700 whitespace-nowrap">v{siteVersion}</span>
+      </a>
+    </div>
 
-    <!-- Main Navigation Links -->
-    <nav class="hidden md:flex items-center gap-1 text-sm font-medium text-slate-600 dark:text-slate-300">
-      <a href="/#features" class="rounded-lg px-3 py-1.5 hover:text-slate-950 hover:bg-slate-100 dark:hover:text-white dark:hover:bg-slate-800/60 transition-colors">Features</a>
-      <a href="/#cli" class="rounded-lg px-3 py-1.5 hover:text-slate-950 hover:bg-slate-100 dark:hover:text-white dark:hover:bg-slate-800/60 transition-colors">CLI Run</a>
-      <a href="/#safety" class="rounded-lg px-3 py-1.5 hover:text-slate-950 hover:bg-slate-100 dark:hover:text-white dark:hover:bg-slate-800/60 transition-colors">Safety Tiers</a>
-      <a href="/#rules" class="rounded-lg px-3 py-1.5 hover:text-slate-950 hover:bg-slate-100 dark:hover:text-white dark:hover:bg-slate-800/60 transition-colors">Rules</a>
-      <a href="/#faq" class="rounded-lg px-3 py-1.5 hover:text-slate-950 hover:bg-slate-100 dark:hover:text-white dark:hover:bg-slate-800/60 transition-colors">FAQ</a>
+    <!-- Center Zone: Primary Desktop Navigation (single-word links, 1024px+) -->
+    <nav aria-label="Primary Navigation" itemscope itemtype="https://schema.org/SiteNavigationElement" class="hidden lg:flex items-center gap-1 shrink-0">
+      <ul class="flex items-center gap-1 flex-nowrap">
+
+        <!-- Dropdown 1: OEMs (5 clean OEM guides) -->
+        <li class="group relative">
+          <a
+            href="/oems"
+            class="flex h-9 items-center justify-center gap-1.5 rounded-lg border border-transparent bg-transparent px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-slate-950 hover:border-slate-200 hover:bg-slate-50 transition-colors duration-150 ease-out cursor-outline whitespace-nowrap shrink-0"
+            aria-label="OEM Debloat Guides"
+          >
+            <span>OEMs</span>
+            <svg class="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-focus-within:rotate-180 group-hover:rotate-180 text-slate-400 group-hover:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </a>
+          <!-- Hover bridge wrapper: pt-2 keeps mouse inside group during transit -->
+          <div class="absolute left-0 top-full pt-2 w-[390px] opacity-0 translate-y-1 invisible pointer-events-none group-focus-within:opacity-100 group-focus-within:translate-y-0 group-focus-within:visible group-focus-within:pointer-events-auto group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible group-hover:pointer-events-auto transition-all duration-150 ease-out z-50">
+            <div class="rounded-xl border border-slate-200/80 bg-white/95 backdrop-blur-2xl p-2.5 shadow-xl shadow-slate-900/10 space-y-1">
+              <div class="flex items-center justify-between px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200/60 mb-1">
+                <span>OEM Debloat Guides</span>
+                <span class="text-emerald-600 font-mono font-medium">5 Rulebases</span>
+              </div>
+              {oems.map((oem) => (
+                <a
+                  href={oem.href}
+                  class="group/item flex items-center justify-between rounded-lg px-2.5 py-2 border border-transparent hover:border-slate-200/60 hover:bg-slate-50/80 transition-colors duration-150 ease-out"
+                  itemprop="url"
+                >
+                  <div class="flex items-center gap-3 min-w-0">
+                    <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-50/80 border border-slate-200/60 text-slate-400 group-hover/item:text-emerald-600 group-hover/item:border-emerald-500/30 group-hover/item:bg-emerald-500/10 transition-colors">
+                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="5" y="2" width="14" height="20" rx="2" />
+                        <path d="M12 18h.01" />
+                      </svg>
+                    </div>
+                    <div class="min-w-0">
+                      <div class="text-[13px] font-medium text-slate-800 group-hover/item:text-slate-950 truncate" itemprop="name">
+                        {oem.name}
+                      </div>
+                      <div class="text-[11px] text-slate-500 group-hover/item:text-slate-600 truncate">
+                        {oem.sub}
+                      </div>
+                    </div>
+                  </div>
+                  <span class="text-[10px] font-mono font-medium text-slate-400 bg-slate-50 border border-slate-200/60 px-1.5 py-0.5 rounded shrink-0 ml-2 group-hover/item:text-emerald-600 group-hover/item:border-emerald-500/30 transition-colors">
+                    {oem.badge}
+                  </span>
+                </a>
+              ))}
+              <div class="border-t border-slate-200/60 mt-1.5 pt-2 px-2.5 pb-0.5 flex items-center justify-between text-[11px] text-slate-500">
+                <span>Safe for Android 8&ndash;15</span>
+                <a href="/oems" class="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-700 font-medium transition-colors">
+                  All 330+ Rules &rarr;
+                </a>
+              </div>
+            </div>
+          </div>
+        </li>
+
+        <!-- Dropdown 2: Tools (runners and CLI) -->
+        <li class="group relative">
+          <button
+            type="button"
+            class="flex h-9 items-center justify-center gap-1.5 rounded-lg border border-transparent bg-transparent px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-slate-950 hover:border-slate-200 hover:bg-slate-50 transition-colors duration-150 ease-out cursor-pointer outline-none whitespace-nowrap shrink-0"
+            aria-haspopup="true"
+            aria-expanded="false"
+          >
+            <span>Tools</span>
+            <svg class="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-focus-within:rotate-180 group-hover:rotate-180 text-slate-400 group-hover:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+          <!-- Hover bridge wrapper: pt-2 keeps mouse inside group during transit -->
+          <div class="absolute left-0 top-full pt-2 w-[340px] opacity-0 translate-y-1 invisible pointer-events-none group-focus-within:opacity-100 group-focus-within:translate-y-0 group-focus-within:visible group-focus-within:pointer-events-auto group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible group-hover:pointer-events-auto transition-all duration-150 ease-out z-50">
+            <div class="rounded-xl border border-slate-200/80 bg-white/95 backdrop-blur-2xl p-2.5 shadow-xl shadow-slate-900/10 space-y-1">
+              <div class="flex items-center justify-between px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200/60 mb-1">
+                <span>Runners & Prompts</span>
+                <span class="text-emerald-600 font-mono font-medium">Zero-Install</span>
+              </div>
+              {tools.map((tool) => (
+                <a
+                  href={tool.href}
+                  class="group/item flex items-center justify-between rounded-lg px-2.5 py-2 border border-transparent hover:border-slate-200/60 hover:bg-slate-50/80 transition-colors duration-150 ease-out"
+                  itemprop="url"
+                >
+                  <div class="min-w-0 pr-2">
+                    <div class="text-[13px] font-medium text-slate-800 group-hover/item:text-slate-950 truncate" itemprop="name">
+                      {tool.name}
+                    </div>
+                    <div class="text-[11px] text-slate-500 group-hover/item:text-slate-600 truncate">
+                      {tool.sub}
+                    </div>
+                  </div>
+                  <span class="text-[10px] font-mono font-bold text-slate-400 bg-slate-50 border border-slate-200/60 px-1.5 py-0.5 rounded shrink-0 group-hover/item:text-emerald-600 group-hover/item:border-emerald-500/30 transition-colors">
+                    {tool.badge}
+                  </span>
+                </a>
+              ))}
+              <div class="border-t border-slate-200/60 mt-1.5 pt-2 px-2.5 pb-0.5 flex items-center justify-between text-[11px] text-slate-500">
+                <span>Rootless ADB execution</span>
+                <a href="/#get-started" class="text-emerald-600 hover:text-emerald-700 font-medium transition-colors">
+                  Setup Guide &rarr;
+                </a>
+              </div>
+            </div>
+          </div>
+        </li>
+
+        <!-- Direct links (single word) -->
+        {directLinks.map((link) => (
+          <li>
+            <a
+              href={link.href}
+              target={link.external ? '_blank' : undefined}
+              rel={link.external ? 'noopener noreferrer' : undefined}
+              class="flex h-9 items-center justify-center rounded-lg border border-transparent bg-transparent px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-slate-950 hover:border-slate-200 hover:bg-slate-50 transition-colors duration-150 ease-out cursor-pointer outline-none whitespace-nowrap shrink-0"
+              itemprop="url"
+            >
+              <span itemprop="name">{link.name}</span>
+            </a>
+          </li>
+        ))}
+
+      </ul>
     </nav>
 
-    <!-- Right Controls: GitHub Repo + GitHub Star + Theme Only -->
-    <div class="flex items-center gap-2 sm:gap-2.5">
+    <!-- Right Zone: GitHub + CTA + Mobile menu -->
+    <div class="flex items-center gap-2 sm:gap-2.5 shrink-0">
 
-      <!-- GitHub Repo Link (Icon) -->
+      <!-- GitHub button -->
       <a
-        href="https://github.com/Rovoxia/AI-Phone-Debloater"
+        href={GITHUB_REPO}
         target="_blank"
         rel="noopener noreferrer"
-        class="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-[#151922] dark:text-slate-300 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-2xs"
-        aria-label="GitHub Repository"
-        title="View repository on GitHub"
+        class="flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-slate-200/80 bg-white/80 px-2.5 sm:px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50 hover:text-slate-950 transition-colors duration-150 ease-out cursor-pointer whitespace-nowrap"
+        aria-label="View repository on GitHub"
       >
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-          <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+          />
         </svg>
+        <span class="hidden sm:inline">GitHub</span>
       </a>
 
-      <!-- GitHub Star Button (Separate) -->
+      <!-- Primary CTA button -->
       <a
-        href="https://github.com/Rovoxia/AI-Phone-Debloater"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="inline-flex items-center gap-1.5 h-9 rounded-lg border border-slate-200 bg-white px-2.5 sm:px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-800 dark:bg-[#151922] dark:text-slate-200 dark:hover:bg-slate-800 transition-colors group cursor-pointer"
-        title="Star AI-Phone-Debloater on GitHub"
+        href="/#cli"
+        class="flex h-9 shrink-0 items-center justify-center rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-3 sm:px-3.5 py-1.5 shadow-sm shadow-emerald-600/20 transition-colors duration-150 ease-out cursor-pointer whitespace-nowrap"
       >
-        <svg class="h-3.5 w-3.5 text-amber-500 fill-amber-400 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
-        </svg>
-        <span>Star</span>
-        <span id="gh-stars-count" class="hidden text-[11px] font-mono font-medium text-slate-500 dark:text-slate-400 pl-1 border-l border-slate-200 dark:border-slate-700"></span>
+        <span>Start Debloating &rarr;</span>
       </a>
 
-      <!-- Theme Switcher -->
-      <button
-        id="theme-toggle"
-        type="button"
-        class="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-800 dark:bg-[#151922] dark:text-slate-300 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-        aria-label="Toggle theme"
-        title="Toggle dark / light theme"
-      >
-        <!-- Sun icon (shown in dark mode) -->
-        <svg class="hidden dark:block h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="5" />
-          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-        </svg>
-        <!-- Moon icon (shown in light mode) -->
-        <svg class="block dark:hidden h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-        </svg>
-      </button>
+      <!-- Mobile & Tablet Menu Trigger (visible below 1024px) -->
+      <details class="lg:hidden relative">
+        <summary
+          class="list-none [&::-webkit-details-marker]:hidden flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200/80 bg-white/80 text-slate-600 hover:text-slate-950 hover:bg-slate-50 cursor-pointer outline-none transition-colors"
+          aria-label="Toggle navigation menu"
+        >
+          <!-- Hamburger icon (closed state) -->
+          <svg class="icon-open w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+          <!-- X icon (opened state) -->
+          <svg class="icon-close w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </summary>
 
-      <!-- Mobile Menu Trigger -->
-      <button
-        id="mobile-menu-btn"
-        type="button"
-        class="md:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 dark:border-slate-800 dark:bg-[#151922] dark:text-slate-300 shadow-xs cursor-pointer"
-        aria-label="Toggle mobile menu"
-      >
-        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-        </svg>
-      </button>
+        <!-- Click-outside backdrop overlay to dismiss drawer -->
+        <div
+          class="fixed inset-0 top-16 bg-slate-900/60 backdrop-blur-xs z-40 lg:hidden cursor-pointer"
+          onclick="this.closest('details').removeAttribute('open')"
+          aria-hidden="true"
+        ></div>
 
-    </div>
-  </div>
+        <!-- Drawer Panel: phone full-width, tablet compact right-docked card -->
+        <div class="fixed inset-x-3 sm:inset-x-auto sm:right-6 sm:w-[390px] top-20 z-50 rounded-2xl border border-slate-200/80 bg-white/95 p-4 sm:p-5 shadow-xl shadow-slate-900/10 space-y-4 text-sm max-h-[calc(100vh-6rem)] overflow-y-auto">
 
-  <!-- Mobile Dropdown Navigation -->
-  <div id="mobile-menu" class="hidden md:hidden border-b border-slate-200 bg-white px-4 py-3 space-y-1 text-sm font-medium text-slate-700 dark:border-slate-800 dark:bg-[#0b0f17]/95 dark:text-slate-200">
-    <a href="/#features" class="block rounded-lg px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800">Features</a>
-    <a href="/#cli" class="block rounded-lg px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800">CLI Run</a>
-    <a href="/#safety" class="block rounded-lg px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800">Safety Tiers</a>
-    <a href="/#rules" class="block rounded-lg px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800">Rules Database</a>
-    <a href="/#faq" class="block rounded-lg px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800">FAQ</a>
-    <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex gap-2">
-      <a
-        href="https://github.com/Rovoxia/AI-Phone-Debloater"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="flex items-center justify-center gap-1.5 flex-1 rounded-lg bg-slate-100 dark:bg-slate-800 px-3 py-2 text-center text-xs font-semibold text-slate-800 dark:text-slate-200"
-      >
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-          <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
-        </svg>
-        <span>GitHub</span>
-      </a>
-      <a
-        href="https://github.com/Rovoxia/AI-Phone-Debloater"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="flex items-center justify-center gap-1.5 flex-1 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2 text-center text-xs font-semibold text-amber-700 dark:text-amber-400"
-      >
-        <svg class="h-3.5 w-3.5 text-amber-500 fill-amber-400" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
-        </svg>
-        <span>Star</span>
-      </a>
+          <!-- Section 1: OEM Debloat Guides (all 5 matching footer) -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between px-1">
+              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">OEM Debloat Guides</span>
+              <span class="text-[10px] text-emerald-600 font-mono">5 Brands</span>
+            </div>
+            <div class="space-y-1">
+              {oems.map((oem) => (
+                <a
+                  href={oem.href}
+                  class="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-slate-600 hover:text-slate-950 hover:bg-slate-50 transition-colors duration-150 ease-out"
+                >
+                  <span class="text-xs font-medium">{oem.name}</span>
+                  <span class="text-[10px] font-mono text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200/60">{oem.badge}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <!-- Section 2: Tools & Automation -->
+          <div class="space-y-1.5 pt-2 border-t border-slate-200/60">
+            <div class="flex items-center justify-between px-1">
+              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tools & Runners</span>
+              <span class="text-[10px] text-slate-400 font-mono">CLI & AI</span>
+            </div>
+            <div class="space-y-1">
+              {tools.map((tool) => (
+                <a
+                  href={tool.href}
+                  class="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-slate-600 hover:text-slate-950 hover:bg-slate-50 transition-colors duration-150 ease-out"
+                >
+                  <span class="text-xs font-medium">{tool.name}</span>
+                  <span class="text-[10px] font-mono font-bold text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200/60">{tool.badge}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <!-- Section 3: Safety & Guides -->
+          <div class="space-y-1.5 pt-2 border-t border-slate-200/60">
+            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1 block">Safety & Docs</span>
+            <div class="grid grid-cols-2 gap-1.5">
+              {directLinks.map((link) => (
+                <a
+                  href={link.href}
+                  target={link.external ? '_blank' : undefined}
+                  rel={link.external ? 'noopener noreferrer' : undefined}
+                  class="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-slate-600 hover:text-slate-950 hover:bg-slate-50 transition-colors duration-150 ease-out bg-slate-50/50"
+                >
+                  <span>{link.name}</span>
+                  <span class="text-slate-400">&rarr;</span>
+                </a>
+              ))}
+              <a
+                href="/oems"
+                class="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10 transition-colors duration-150 ease-out bg-emerald-500/5"
+              >
+                <span>330+ Rules</span>
+                <span>&rarr;</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Section 4: Quick Actions -->
+          <div class="space-y-2 pt-2 border-t border-slate-200/80">
+            <a
+              href={GITHUB_REPO}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex items-center justify-between rounded-lg px-3 py-2 border border-slate-200/80 bg-white/80 text-slate-600 hover:text-slate-950 hover:bg-slate-50 transition-colors duration-150 ease-out text-xs"
+            >
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="currentColor">
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+                </svg>
+                <span>GitHub Repository</span>
+              </div>
+              <span class="text-[10px] text-slate-400">Star &star;</span>
+            </a>
+            <a
+              href="/#cli"
+              class="flex h-9 items-center justify-center rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-3.5 py-1.5 shadow-sm shadow-emerald-600/20 transition-colors duration-150 ease-out"
+            >
+              Start Debloating &rarr;
+            </a>
+          </div>
+        </div>
+      </details>
+
     </div>
   </div>
 </header>
 
-<script>
-  // Mobile menu toggle
-  const menuBtn = document.getElementById('mobile-menu-btn');
-  const menu = document.getElementById('mobile-menu');
-  if (menuBtn && menu) {
-    menuBtn.addEventListener('click', () => menu.classList.toggle('hidden'));
-    menu.querySelectorAll('a').forEach((link) => {
-      link.addEventListener('click', () => menu.classList.add('hidden'));
-    });
+<style>
+  /* Ensure details content only displays when open */
+  details > div {
+    display: none;
+  }
+  details[open] > div {
+    display: block;
+    animation: drawerFade 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes drawerFade {
+    from {
+      opacity: 0;
+      transform: translateY(-6px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
   }
 
-  // Theme switcher toggle
-  const themeToggle = document.getElementById('theme-toggle');
-  if (themeToggle) {
-    themeToggle.addEventListener('click', () => {
-      const isDark = document.documentElement.classList.contains('dark');
-      const nextTheme = isDark ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', nextTheme);
-      if (nextTheme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-      try {
-        localStorage.setItem('theme', nextTheme);
-      } catch (e) {}
-    });
+  /* Toggle between hamburger icon and X icon cleanly */
+  details summary .icon-close {
+    display: none;
   }
-
-  // Fetch live GitHub Stars
-  const starCountEl = document.getElementById('gh-stars-count');
-  if (starCountEl) {
-    fetch('https://api.github.com/repos/Rovoxia/AI-Phone-Debloater')
-      .then((res) => res.ok ? res.json() : null)
-      .then((data) => {
-        if (data && typeof data.stargazers_count === 'number') {
-          starCountEl.textContent = data.stargazers_count.toLocaleString();
-          starCountEl.classList.remove('hidden');
-        }
-      })
-      .catch(() => {});
+  details summary .icon-open {
+    display: block;
   }
-</script>
+  details[open] summary .icon-close {
+    display: block;
+  }
+  details[open] summary .icon-open {
+    display: none;
+  }
+</style>

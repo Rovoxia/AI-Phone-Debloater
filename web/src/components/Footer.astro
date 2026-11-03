@@ -3,66 +3,360 @@
 const currentYear = new Date().getFullYear();
 ---
 
-<footer class="border-t border-slate-200 bg-white py-12 text-slate-500 text-sm dark:border-slate-800 dark:bg-[#07090e] dark:text-slate-400">
-  <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+<footer
+  class="border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-[#070a10] [--color-fg-muted:#64748b] [--color-fg-muted-dark:#94a3b8]"
+>
+  <div
+    class="mx-auto max-w-[1440px] px-4 pt-[clamp(3rem,6vw,6rem)] pb-[clamp(2rem,4vw,4rem)]"
+  >
+    <!-- Five-column footer grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 lg:gap-6 mb-[clamp(3rem,6vw,5rem)]">
 
-    <!-- Brand + tagline column -->
-    <div class="flex items-start justify-between gap-8 lg:grid lg:grid-cols-3 lg:gap-12 lg:items-start mb-10">
-
-      <div class="lg:col-span-1 space-y-4">
+      <!-- Column 1: Brand & Trust -->
+      <div class="space-y-4 lg:col-span-1">
         <div class="flex items-center gap-3">
-          <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm">
-            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <div
+            class="flex h-[clamp(2.5rem,5vw,3rem)] w-[clamp(2.5rem,5vw,3rem)] items-center justify-center rounded-xl bg-emerald-600 text-white shadow-lg"
+          >
+            <svg
+              class="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               <rect x="5.5" y="2" width="13" height="20" rx="3" />
               <line x1="10" y1="5" x2="14" y2="5" />
-              <path d="M12 9c0 1.8-1.3 3-3 3 1.7 0 3 1.2 3 3 0-1.8 1.3-3 3-3-1.7 0-3-1.2-3-3z" fill="currentColor" stroke="none" />
+              <path
+                d="M12 9c0 1.8-1.3 3-3 3 1.7 0 3 1.2 3 3 0-1.8 1.3-3 3-3-1.7 0-3-1.2-3-3z"
+                fill="currentColor"
+                stroke="none"
+              />
               <line x1="10.5" y1="18.5" x2="13.5" y2="18.5" />
             </svg>
           </div>
-          <span class="text-sm font-bold tracking-tight text-slate-900 dark:text-white">AI Phone Debloater</span>
+          <div>
+            <h3
+              class="text-[clamp(1rem,1.5vw,1.25rem)] font-bold tracking-tight text-slate-900 dark:text-white"
+            >
+              AI Phone Debloater
+            </h3>
+            <p
+              class="text-[clamp(0.82rem,1.4vw,0.95rem)] leading-relaxed text-slate-600 dark:text-slate-400 max-w-[300px]"
+            >
+              Rootless Android Debloater &amp; bloatware remover powered by ADB and AI. 100% reversible, zero-risk system optimization.
+            </p>
+          </div>
         </div>
-        <p class="text-sm leading-relaxed max-w-[260px]">
-          Safe, rootless Android debloating with ADB — no root, 100% reversible, and 320+ curated OEM safety rules.
-        </p>
-        <div class="flex items-center gap-2">
-          <span class="rounded bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">MIT Open Source</span>
-          <span class="rounded bg-slate-200/70 px-2.5 py-1 text-[10px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">Rootless ADB</span>
+        <div class="flex flex-wrap gap-2">
+          <a
+            href="https://github.com/Rovoxia/AI-Phone-Debloater/stargazers"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-block rounded bg-emerald-500/10 px-3 py-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-tighter hover:bg-emerald-500/20 transition-colors"
+          >
+            Star on GitHub
+          </a>
+          <span
+            class="rounded bg-emerald-500/10 px-3 py-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-tighter"
+          >
+            MIT License
+          </span>
+          <span
+            class="rounded bg-emerald-500/10 px-3 py-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-tighter"
+          >
+            Rootless ADB
+          </span>
         </div>
       </div>
 
-      <!-- Navigation -->
-      <div class="lg:col-span-1 space-y-3">
-        <div class="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider mb-2">Product</div>
+      <!-- Column 2: Runners & Tools -->
+      <div class="space-y-3">
+        <h4
+          class="text-[clamp(0.7rem,1vw,0.85rem)] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3"
+        >
+          Runners &amp; Tools
+        </h4>
         <ul class="space-y-2">
-          <li><a href="/#features" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Features</a></li>
-          <li><a href="/#cli" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">CLI Run</a></li>
-          <li><a href="/#safety" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Safety Tiers</a></li>
-          <li><a href="/#rules" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Rules Database</a></li>
-          <li><a href="/#faq" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">FAQ</a></li>
-          <li><a href="/app" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">WebApp Workspace</a></li>
+          <li>
+            <a
+              href="/#windows-runner"
+              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+            >
+              Windows ADB Runner (.bat)
+            </a>
+          </li>
+          <li>
+            <a
+              href="/#unix-runner"
+              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+            >
+              Linux &amp; macOS Runner (.sh)
+            </a>
+          </li>
+          <li>
+            <a
+              href="/#master-prompt"
+              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+            >
+              AI Master Debloat Prompt
+            </a>
+          </li>
+          <li>
+            <a
+              href="/#analyzer"
+              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+            >
+              Interactive Package Analyzer
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://github.com/Rovoxia/AI-Phone-Debloater/releases"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+            >
+              Latest Release (v1.x)
+            </a>
+          </li>
         </ul>
       </div>
 
-      <!-- External -->
-      <div class="lg:col-span-1 space-y-3">
-        <div class="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider mb-2">Community</div>
+      <!-- Column 3: OEM Debloat Guides -->
+      <div class="space-y-3">
+        <h4
+          class="text-[clamp(0.7rem,1vw,0.85rem)] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3"
+        >
+          OEM Debloat Guides
+        </h4>
         <ul class="space-y-2">
-          <li><a href="https://github.com/Rovoxia/AI-Phone-Debloater" target="_blank" rel="noopener noreferrer" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">GitHub →</a></li>
-          <li><a href="https://rovoxia.com" target="_blank" rel="noopener noreferrer" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Rovoxia →</a></li>
+          <li>
+            <a
+              href="/oems"
+              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+            >
+              All OEMs &amp; Rules Directory
+            </a>
+          </li>
+          <li>
+            <a
+              href="/oems#rules-explorer"
+              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+            >
+              Interactive Package Analyzer
+            </a>
+          </li>
+          <li>
+            <a
+              href="/oems#xiaomi-miui-hyperos"
+              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+            >
+              Xiaomi HyperOS &amp; MIUI
+            </a>
+          </li>
+          <li>
+            <a
+              href="/oems#samsung-oneui"
+              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+            >
+              Samsung Galaxy One UI
+            </a>
+          </li>
+          <li>
+            <a
+              href="/oems#coloros-oxygenos"
+              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+            >
+              OnePlus / Oppo / Realme (ColorOS)
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Column 4: Safety & Documentation -->
+      <div class="space-y-3">
+        <h4
+          class="text-[clamp(0.7rem,1vw,0.85rem)] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3"
+        >
+          Safety &amp; Documentation
+        </h4>
+        <ul class="space-y-2">
+          <li>
+            <a
+              href="/#safety-tiers"
+              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+            >
+              Package Safety Tiers
+            </a>
+          </li>
+          <li>
+            <a
+              href="/#restore-apps"
+              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+            >
+              How to Restore Removed Apps
+            </a>
+          </li>
+          <li>
+            <a
+              href="/#adb-setup"
+              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+            >
+              Enable USB Debugging (ADB)
+            </a>
+          </li>
+          <li>
+            <a
+              href="/#faq"
+              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+            >
+              FAQ
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://github.com/Rovoxia/AI-Phone-Debloater/commits/main"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+            >
+              Release Changelog
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Column 5: Community & Open Source -->
+      <div class="space-y-3">
+        <h4
+          class="text-[clamp(0.7rem,1vw,0.85rem)] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3"
+        >
+          Community &amp; Open Source
+        </h4>
+        <ul class="space-y-2">
+          <li>
+            <a
+              href="https://github.com/Rovoxia/AI-Phone-Debloater"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+            >
+              GitHub Repository
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://github.com/Rovoxia/AI-Phone-Debloater/issues/new?template=package.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+            >
+              Submit Safe/Bloat Package
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://github.com/Rovoxia/AI-Phone-Debloater/issues"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+            >
+              Report a Bug / Issue
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://github.com/Rovoxia/AI-Phone-Debloater/discussions"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+            >
+              Discussions &amp; Support
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://rovoxia.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+            >
+              Rovoxia Ecosystem
+            </a>
+          </li>
         </ul>
       </div>
 
     </div>
 
-    <!-- Bottom line -->
-    <div class="border-t border-slate-200 dark:border-slate-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
-      <div>
-        © {currentYear} <a href="https://rovoxia.com" class="text-slate-900 dark:text-white hover:underline">Rovoxia</a>. MIT License.
+    <!-- Bottom bar -->
+    <div
+      class="border-t border-slate-200 dark:border-slate-800 pt-[clamp(2rem,4vw,3rem)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-[clamp(0.7rem,1vw,0.8rem)] leading-relaxed text-slate-500 dark:text-slate-400"
+    >
+      <div class="flex items-center gap-2">
+        © {currentYear} Rovoxia. Released under the MIT License.
       </div>
-      <div class="max-w-[280px] text-center sm:text-right">
-        Android is a trademark of Google LLC. Brand names are for compatibility reference only.
+      <div
+        class="hidden sm:block text-center sm:text-right max-w-[420px]"
+      >
+        Android is a trademark of Google LLC. OEM brand names are used for compatibility identification only.
       </div>
+      <button
+        onclick="window.scrollTo({top:0,behavior:'smooth'})"
+        class="flex h-9 w-9 items-center justify-center rounded-lg border bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-800 dark:bg-[#151922] dark:text-slate-300 dark:hover:bg-slate-800 transition-colors shadow-sm"
+        aria-label="Back to top"
+        title="Back to top"
+      >
+        <svg
+          class="h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
+        </svg>
+      </button>
     </div>
-
   </div>
 </footer>
+
+<style>
+  /* Back to top button focus visibility */
+  footer button:focus-visible {
+    outline: 2px solid #10b981;
+    outline-offset: 2px;
+  }
+  /* Reduce motion for back-to-top scroll */
+  @media (prefers-reduced-motion: reduce) {
+    button[onclick*="scrollTo"] {
+      scroll-behavior: auto !important;
+    }
+  }
+</style>
+
+<script type="application/ld+json" is:inline>
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "AI Phone Debloater",
+  "operatingSystem": "Windows, Linux, macOS, Android (ADB)",
+  "applicationCategory": "DeveloperApplication, UtilitiesApplication",
+  "url": "https://debloater.rovoxia.com",
+  "downloadUrl": "https://github.com/Rovoxia/AI-Phone-Debloater",
+  "author": {
+    "@type": "Organization",
+    "name": "Rovoxia",
+    "url": "https://github.com/Rovoxia"
+  },
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "description": "AI-powered rootless Android Debloater via ADB. Safely remove OEM bloatware, spyware, and telemetry on Xiaomi HyperOS, MIUI, Samsung OneUI, ColorOS & OxygenOS without root."
+}
+</script>

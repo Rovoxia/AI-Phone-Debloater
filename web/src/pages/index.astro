@@ -98,7 +98,10 @@ try {
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript>
+      <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    </noscript>
 
     <!-- JSON-LD Structured Data for SEO & AEO (Google / Bing / Perplexity / ChatGPT Search) -->
     <script type="application/ld+json" is:inline>
@@ -192,115 +195,192 @@ try {
     <Navbar />
 
     <main>
-      <!-- HERO SECTION: Priority #1 AI Prompt -->
-      <section id="ai-prompt" class="relative pt-12 pb-16 md:pt-20 md:pb-24 overflow-hidden">
+      <!-- HERO SECTION: Priority #1 AI Prompt with Viewport-Fitted Bottom Stats -->
+      <section id="ai-prompt" class="relative min-h-[calc(100vh-4rem)] flex flex-col justify-between overflow-hidden">
+        <!-- Subtle Architectural Engineering Grid Background with Radial Mask Fade -->
+        <div
+          class="absolute inset-0 bg-[linear-gradient(to_right,#0f172a08_1px,transparent_1px),linear-gradient(to_bottom,#0f172a08_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_40%,#000_70%,transparent_100%)] pointer-events-none -z-10"
+          aria-hidden="true"
+        ></div>
+
+        <!-- 5. Subtle Top Radial Glow -->
+        <div
+          class="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[320px] bg-[radial-gradient(45%_40%_at_50%_0%,rgba(16,185,129,0.07),transparent_100%)] pointer-events-none -z-10"
+          aria-hidden="true"
+        ></div>
+
         <!-- Subtle Glow Background -->
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[380px] bg-emerald-500/10 blur-[130px] rounded-full pointer-events-none -z-10 dark:bg-emerald-500/15"></div>
+        <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[360px] bg-emerald-500/10 blur-[130px] rounded-full pointer-events-none -z-10 dark:bg-emerald-500/15" aria-hidden="true"></div>
 
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <!-- Hero Content Container (Expanded Presence & Width) -->
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-5 sm:pt-7 md:pt-8 pb-4 my-auto w-full">
 
-          <!-- Top Badges -->
-          <div class="flex flex-wrap items-center justify-center gap-2.5 mb-6">
-            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 text-xs font-semibold">
-              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              Let AI Do It (1-Click Prompt)
-            </div>
-            <div class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 text-xs font-bold shadow-2xs">
-              <svg class="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          <!-- 2. Consolidated Compound Announcement Pill -->
+          <div class="inline-flex items-center gap-2 p-1 pr-3.5 rounded-full border border-slate-200/90 bg-white/90 dark:border-slate-800 dark:bg-slate-900/80 backdrop-blur-md shadow-xs text-xs mb-3.5 sm:mb-4">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 font-semibold border border-emerald-500/25">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+              330+ OEM Rules
+            </span>
+            <span class="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300 font-medium text-xs">
+              <svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
               </svg>
-              <span>100% No Root Required • Warranty Safe</span>
-            </div>
+              <span>100% Rootless ADB &bull; Warranty-Safe Execution</span>
+            </span>
           </div>
 
-          <!-- Main Title -->
-          <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.15] mb-6">
+          <!-- 3. Headline with Precise Typography & Gradient -->
+          <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-[52px] font-extrabold tracking-[-0.035em] text-slate-900 dark:text-white leading-[1.12] mb-3">
             Debloat Your Phone <br />
-            <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500">
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">
               on Autopilot.
             </span>
           </h1>
 
           <!-- Subtitle -->
-          <p class="text-lg md:text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mb-8 leading-relaxed font-normal">
+          <p class="text-sm sm:text-base md:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mb-4 leading-relaxed font-normal">
             Paste our official master prompt into Claude Code, Cursor, ChatGPT, Gemini, or Copilot. Your AI agent safely scans, classifies, and debloats your phone with 100% reversible execution.
           </p>
 
-          <!-- Primary Actions -->
-          <div class="flex flex-col sm:flex-row items-center justify-center gap-3.5 mb-10">
-            <!-- 1-Click Master Prompt Copy Button (Primary CTA) -->
+          <div id="master-prompt" class="scroll-mt-24"></div>
+
+          <!-- 4. Upgraded CTA Button Hierarchy -->
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4">
+            <!-- Primary CTA: High-craft Emerald button with inner top highlight & copy feedback -->
             <button
               type="button"
               id="copy-master-prompt-btn"
-              class="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-base shadow-lg shadow-emerald-600/25 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer group"
+              class="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl border-t border-white/30 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm shadow-md shadow-emerald-600/25 hover:shadow-lg hover:shadow-emerald-600/35 transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer group"
               data-prompt={masterPrompt}
               title="Copy Master Prompt for Claude Code, ChatGPT, Cursor, etc."
             >
-              <svg class="w-5 h-5 text-emerald-200 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg class="w-4.5 h-4.5 text-emerald-200 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
               </svg>
               <span id="copy-prompt-btn-text">Copy Master AI Prompt</span>
             </button>
 
-            <!-- Jump to Run via CLI (Instant) -->
+            <!-- Secondary CTA: Clean slate-bordered button with terminal icon -->
             <a
               href="#cli"
-              class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold text-base transition-colors shadow-xs"
+              class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-slate-300/80 dark:border-slate-700/80 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold text-sm transition-colors shadow-xs"
             >
-              <svg class="w-5 h-5 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              <svg class="w-4 h-4 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <polyline points="4 17 10 11 4 5" />
+                <line x1="12" y1="19" x2="20" y2="19" />
               </svg>
-              <span>Run via CLI (Instant)</span>
+              <span>Run via CLI</span>
             </a>
 
-            <!-- Jump to Use the Web App (GUI) -->
+            <!-- Third Option: Use WebApp GUI with subtle inline pill inside -->
             <a
-              href="#webapp"
-              class="relative w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold text-base transition-colors shadow-xs"
+              href="/app"
+              class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-slate-300/80 dark:border-slate-700/80 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold text-sm transition-colors shadow-xs"
             >
-              <span class="absolute -top-2 -right-2 px-1.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[9px] font-black uppercase tracking-wider shadow-sm">Beta</span>
-              <svg class="w-5 h-5 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <svg class="w-4 h-4 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <rect x="2" y="3" width="20" height="14" rx="2" />
                 <line x1="8" y1="21" x2="16" y2="21" />
                 <line x1="12" y1="17" x2="12" y2="21" />
               </svg>
               <span>Use WebApp (GUI)</span>
+              <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wide border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                soon
+              </span>
             </a>
           </div>
 
-          <!-- Compatibility Badges -->
-          <div class="flex flex-wrap items-center justify-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <span class="font-medium text-slate-700 dark:text-slate-300 mr-1">Supported AI Agents:</span>
-            <span class="px-2.5 py-1 rounded-md bg-slate-200/70 dark:bg-slate-800 font-mono text-slate-700 dark:text-slate-300">Claude Code</span>
-            <span class="px-2.5 py-1 rounded-md bg-slate-200/70 dark:bg-slate-800 font-mono text-slate-700 dark:text-slate-300">Cursor</span>
-            <span class="px-2.5 py-1 rounded-md bg-slate-200/70 dark:bg-slate-800 font-mono text-slate-700 dark:text-slate-300">ChatGPT</span>
-            <span class="px-2.5 py-1 rounded-md bg-slate-200/70 dark:bg-slate-800 font-mono text-slate-700 dark:text-slate-300">Gemini</span>
-            <span class="px-2.5 py-1 rounded-md bg-slate-200/70 dark:bg-slate-800 font-mono text-slate-700 dark:text-slate-300">Cline</span>
-            <span class="px-2.5 py-1 rounded-md bg-slate-200/70 dark:bg-slate-800 font-mono text-slate-700 dark:text-slate-300">Windsurf</span>
+          <!-- 5. Refined Monochrome Engineering Pills for Supported AI Agents -->
+          <div class="flex flex-wrap items-center justify-center gap-2 text-xs mb-4">
+            <span class="font-medium text-slate-500 dark:text-slate-400 mr-1">Works natively with:</span>
+            {['Claude Code', 'Cursor', 'ChatGPT', 'Gemini', 'Cline', 'Windsurf'].map((agent) => (
+              <span class="px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200/90 font-medium text-slate-700 hover:border-slate-300 hover:bg-white dark:bg-slate-900/60 dark:border-slate-800 dark:text-slate-300 dark:hover:border-slate-700 transition shadow-2xs">
+                {agent}
+              </span>
+            ))}
+          </div>
+
+          <!-- 6. Enterprise Live Terminal / AI Audit Preview Window with Bezel Frame -->
+          <div class="max-w-3xl mx-auto p-2 rounded-2xl bg-slate-900/[0.03] border border-slate-200/80 shadow-sm">
+            <div class="rounded-xl border border-slate-800/80 bg-[#090D16] shadow-2xl shadow-slate-950/20 text-left overflow-hidden">
+              <!-- Terminal Header -->
+              <div class="flex items-center justify-between px-3.5 py-2 border-b border-white/[0.08] bg-white/[0.02]">
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <div class="w-3 h-3 rounded-full bg-[#ff5f56]/90 border border-[#e0443e]"></div>
+                  <div class="w-3 h-3 rounded-full bg-[#ffbd2e]/90 border border-[#dea123]"></div>
+                  <div class="w-3 h-3 rounded-full bg-[#27c93f]/90 border border-[#1aab29]"></div>
+                </div>
+                <div class="font-mono text-[11px] text-slate-400 font-medium tracking-tight truncate px-2">
+                  bash &mdash; adb audit &amp; debloat engine (user-0)
+                </div>
+                <div class="shrink-0">
+                  <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    READ/WRITE: USER-0 SAFE
+                  </span>
+                </div>
+              </div>
+
+              <!-- Terminal Body -->
+              <div class="p-3.5 sm:p-4 font-mono text-xs leading-relaxed space-y-1.5 select-text overflow-x-auto">
+                <!-- Line 1 -->
+                <div class="flex items-center gap-2 whitespace-nowrap">
+                  <span class="text-emerald-400 font-semibold">$</span>
+                  <span class="text-slate-200">adb devices</span>
+                  <span class="text-slate-500">&rarr;</span>
+                  <span class="text-emerald-400 font-medium">1 device connected</span>
+                  <span class="text-slate-400">(Xiaomi HyperOS 2.0)</span>
+                </div>
+                <!-- Line 2 -->
+                <div class="text-slate-400 whitespace-nowrap flex items-center gap-1.5">
+                  <span>🤖</span>
+                  <span>AI Agent auditing 284 installed system packages against 330+ OEM rules...</span>
+                </div>
+                <!-- Line 3 -->
+                <div class="whitespace-nowrap">
+                  <span class="text-emerald-400 font-semibold">[SAFE TO REMOVE]</span>
+                  <span class="text-slate-200"> com.miui.analytics, com.miui.msa.global</span>
+                  <span class="text-slate-500"> (Ad Daemon &amp; Telemetry)</span>
+                </div>
+                <!-- Line 4 -->
+                <div class="whitespace-nowrap">
+                  <span class="text-amber-400 font-semibold">[PROTECTED]</span>
+                  <span class="text-slate-200"> com.xiaomi.finddevice, com.android.systemui</span>
+                  <span class="text-slate-500"> (Core System &mdash; Skipped)</span>
+                </div>
+                <!-- Line 5: Completion Line -->
+                <div class="whitespace-nowrap text-emerald-400 font-medium pt-1.5 border-t border-white/[0.08]">
+                  <span class="font-bold">&check;</span> 18 bloatware &amp; telemetry packages safely disabled in 4.2s <span class="text-slate-400">(Rollback backup saved)</span>
+                </div>
+              </div>
+            </div>
           </div>
 
         </div>
-      </section>
 
-      <!-- Trust & Guarantees Bar -->
-      <section class="border-y border-slate-200 dark:border-slate-800/80 bg-white dark:bg-[#0f131c] py-7">
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            <div>
-              <div class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">100%</div>
-              <div class="text-xs font-bold text-slate-800 dark:text-slate-200 mt-1">No Root Required</div>
-            </div>
-            <div>
-              <div class="text-2xl font-bold text-slate-900 dark:text-white">{totalRules}+</div>
-              <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Verified OEM Rules</div>
-            </div>
-            <div>
-              <div class="text-2xl font-bold text-slate-900 dark:text-white">100%</div>
-              <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Reversible & Safe</div>
-            </div>
-            <div>
-              <div class="text-2xl font-bold text-slate-900 dark:text-white">1-Click</div>
-              <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Instant Rollback Backup</div>
+        <!-- 7. Upgraded 4-Column Metrics Bar (Docked at Bottom Edge of Hero Screen) -->
+        <div class="w-full border-t border-b border-slate-200 dark:border-slate-800/80 bg-white/95 dark:bg-[#0f131c]/95 backdrop-blur-md py-3.5 sm:py-4 shrink-0 mt-auto relative z-10">
+          <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 dark:divide-slate-800/80 text-center">
+              <!-- Metric 1 -->
+              <div class="py-2 sm:py-0 px-3 sm:px-4">
+                <div class="whitespace-nowrap text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">330+</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">Verified OEM Package Rules</div>
+              </div>
+              <!-- Metric 2 -->
+              <div class="py-2 sm:py-0 px-3 sm:px-4">
+                <div class="whitespace-nowrap text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Zero Root</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">Warranty-Safe User-0 ADB</div>
+              </div>
+              <!-- Metric 3 -->
+              <div class="py-2 sm:py-0 px-3 sm:px-4">
+                <div class="whitespace-nowrap text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">1-Click Undo</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">100% Reversible Package Restore</div>
+              </div>
+              <!-- Metric 4 -->
+              <div class="py-2 sm:py-0 px-3 sm:px-4">
+                <div class="whitespace-nowrap text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">6+ OEM Skins</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">HyperOS, OneUI, ColorOS &amp; Stock</div>
+              </div>
             </div>
           </div>
         </div>
@@ -558,6 +638,8 @@ try {
       <section id="cli" class="py-20 md:py-28 bg-[#090d14] text-white relative">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
 
+          <div id="get-started" class="scroll-mt-24"></div>
+
           <div class="text-center max-w-2xl mx-auto mb-14">
             <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-semibold mb-3">
               Run via CLI (Instant)
@@ -574,6 +656,7 @@ try {
           <div class="space-y-5 max-w-4xl mx-auto">
 
             <!-- Windows PowerShell Command -->
+            <div id="windows-runner" class="scroll-mt-24"></div>
             <div class="rounded-2xl bg-[#0f141f] border border-slate-800 p-5 sm:p-6 shadow-xl">
               <div class="flex items-center justify-between mb-3.5">
                 <div class="flex items-center gap-2.5">
@@ -605,6 +688,7 @@ try {
             </div>
 
             <!-- macOS / Linux Bash Command -->
+            <div id="unix-runner" class="scroll-mt-24"></div>
             <div class="rounded-2xl bg-[#0f141f] border border-slate-800 p-5 sm:p-6 shadow-xl">
               <div class="flex items-center justify-between mb-3.5">
                 <div class="flex items-center gap-2.5">
@@ -658,6 +742,7 @@ try {
           </div>
 
           <!-- Safety & Best Practices Notice (High Contrast & Summarized) -->
+          <div id="adb-setup" class="scroll-mt-24"></div>
           <div class="mt-8 max-w-4xl mx-auto rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 sm:p-5 text-left shadow-lg">
             <div class="flex items-center gap-2 mb-2">
               <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-400 text-slate-950 text-xs font-black">!</span>
@@ -672,115 +757,10 @@ try {
         </div>
       </section>
 
-      <!-- OPTION 3: WebApp Section -->
-      <section id="webapp" class="py-20 md:py-28 bg-slate-100/60 dark:bg-[#0c1017]">
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-
-          <div class="text-center max-w-2xl mx-auto mb-14">
-            <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold mb-3">
-              Use the Web App (GUI)
-            </div>
-            <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-4">
-              Prefer a Visual Interface? Open WebApp
-            </h2>
-            <p class="text-slate-600 dark:text-slate-400 text-sm sm:text-base leading-relaxed">
-              Connect your phone via WebADB and manage system packages visually in your browser. Zero terminal knowledge needed.
-            </p>
-          </div>
-
-          <!-- WebApp Visual Mockup Preview -->
-          <div class="relative mx-auto max-w-4xl rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#12161f] shadow-2xl overflow-hidden text-left">
-            <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/50">
-              <div class="flex items-center gap-2">
-                <div class="w-3 h-3 rounded-full bg-rose-500/80"></div>
-                <div class="w-3 h-3 rounded-full bg-amber-500/80"></div>
-                <div class="w-3 h-3 rounded-full bg-emerald-500/80"></div>
-                <span class="ml-2 text-xs font-mono text-slate-400">AI Phone Debloater WebApp Workspace</span>
-              </div>
-              <div class="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Ready to connect
-              </div>
-            </div>
-
-            <!-- Mock UI Body -->
-            <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50/30 dark:bg-slate-900/10">
-              <div class="md:col-span-1 space-y-4">
-                <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#161b26]">
-                  <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Connected Device</div>
-                  <div class="font-bold text-slate-800 dark:text-white text-base">Samsung Galaxy S23</div>
-                  <div class="text-xs text-slate-500 mt-1 font-mono">SM-S911B • One UI 6.1</div>
-                </div>
-                <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#161b26]">
-                  <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Scan Summary</div>
-                  <div class="flex justify-between items-center text-sm py-1 border-b border-slate-100 dark:border-slate-800">
-                    <span class="text-slate-600 dark:text-slate-400">Total Packages</span>
-                    <span class="font-semibold text-slate-800 dark:text-white">384</span>
-                  </div>
-                  <div class="flex justify-between items-center text-sm py-1 border-b border-slate-100 dark:border-slate-800">
-                    <span class="text-emerald-600 dark:text-emerald-400">Safe to Remove</span>
-                    <span class="font-semibold text-emerald-600 dark:text-emerald-400">42</span>
-                  </div>
-                  <div class="flex justify-between items-center text-sm py-1">
-                    <span class="text-rose-500">Critical Core</span>
-                    <span class="font-semibold text-rose-500">112</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="md:col-span-2">
-                <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#161b26] h-full flex flex-col justify-between">
-                  <div>
-                    <div class="flex items-center justify-between mb-4">
-                      <div class="font-bold text-slate-800 dark:text-white text-sm">Recommended Debloat Plan</div>
-                      <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 font-semibold">Tier 1: Safe</span>
-                    </div>
-                    <div class="space-y-2 text-xs">
-                      <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-                        <div>
-                          <div class="font-semibold text-slate-800 dark:text-white">com.facebook.katana</div>
-                          <div class="text-slate-500">Facebook App & Analytics</div>
-                        </div>
-                        <span class="text-emerald-600 font-medium">Safe</span>
-                      </div>
-                      <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-                        <div>
-                          <div class="font-semibold text-slate-800 dark:text-white">com.samsung.android.bixby.agent</div>
-                          <div class="text-slate-500">Samsung Bixby Voice Assistant</div>
-                        </div>
-                        <span class="text-emerald-600 font-medium">Safe</span>
-                      </div>
-                      <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-                        <div>
-                          <div class="font-semibold text-slate-800 dark:text-white">com.microsoft.skydrive</div>
-                          <div class="text-slate-500">Microsoft OneDrive Sync</div>
-                        </div>
-                        <span class="text-emerald-600 font-medium">Safe</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                    <span class="text-xs text-slate-400">Automatic backup snapshot is enabled</span>
-                    <a
-                      href="/app"
-                      class="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-md transition-colors"
-                    >
-                      <span>Launch WebApp Workspace</span>
-                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                      </svg>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
       <!-- Safety Architecture Section -->
       <section id="safety" class="py-20 md:py-28">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div id="safety-tiers" class="scroll-mt-24"></div>
           <div class="text-center max-w-2xl mx-auto mb-16">
             <h2 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">
               Four-Tier Safety Classification
@@ -815,7 +795,7 @@ try {
               </p>
             </div>
 
-            <div class="p-6 rounded-2xl border border-rose-500/30 bg-white dark:bg-[#12161f] shadow-sm">
+            <div id="faq-safety" class="scroll-mt-24 p-6 rounded-2xl border border-rose-500/30 bg-white dark:bg-[#12161f] shadow-sm">
               <span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-300 mb-3">Tier 4 • Critical</span>
               <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">Hard-Blocked</h3>
               <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -886,6 +866,31 @@ try {
                 </tbody>
               </table>
             </div>
+
+            <!-- Full OEM directory link -->
+            <div class="p-3.5 bg-slate-50 dark:bg-slate-900/60 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+              <span class="text-slate-500 dark:text-slate-400">
+                Detailed package rules across Xiaomi, Samsung, OnePlus, Oppo, Vivo, Google Pixel &amp; more.
+              </span>
+              <a
+                href="/oems"
+                class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-colors shrink-0"
+              >
+                <span>Browse All Supported OEMs</span>
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </a>
+            </div>
+
+            <div id="analyzer" class="scroll-mt-24"></div>
+            <div id="hyperos-debloat" class="scroll-mt-24"></div>
+            <div id="hyperos-miui" class="scroll-mt-24"></div>
+            <div id="samsung-oneui" class="scroll-mt-24"></div>
+            <div id="coloros-oxygenos" class="scroll-mt-24"></div>
+            <div id="vivo-funtouch" class="scroll-mt-24"></div>
+            <div id="vivo-pixel-stock" class="scroll-mt-24"></div>
+            <div id="pixel-nothing" class="scroll-mt-24"></div>
           </div>
         </div>
       </section>
@@ -923,7 +928,7 @@ try {
               </p>
             </details>
 
-            <details class="group p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#12161f]">
+            <details id="restore-apps" class="scroll-mt-24 group p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#12161f]">
               <summary class="flex justify-between items-center font-bold text-slate-900 dark:text-white cursor-pointer list-none">
                 <span>Can I restore an uninstalled app later?</span>
                 <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
