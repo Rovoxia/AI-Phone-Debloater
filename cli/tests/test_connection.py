@@ -72,6 +72,7 @@ from connection.models import (
     TransportType,
 )
 from connection.qr_generator import (
+    _data_codewords,
     generate_android_qr_payload,
     generate_qr_matrix,
     render_qr_for_terminal,
@@ -172,6 +173,24 @@ class TestQrGenerator(unittest.TestCase):
         self.assertGreater(len(rendered), 100)
         # Verify half-block characters
         self.assertTrue(any(c in rendered for c in ("▀", "▄", "█", " ")))
+
+    def test_qr_standards_compliance(self):
+        # 1. Byte mode indicator must strictly be 0100 (4), not Kanji 1000 (8)
+        data = b"WIFI:T:ADB;S:test;P:123456;;"
+        codewords = _data_codewords(data, version=4, total_data_codewords=80)
+        # First nibble of first codeword is mode indicator
+        mode = (codewords[0] >> 4) & 0x0F
+        self.assertEqual(mode, 0x04)  # 0100 = Byte mode
+
+        # 2. Format information placement consistency between primary and redundant copies
+        payload = "WIFI:T:ADB;S:studio-rovoxia-1234;P:654321;;"
+        matrix = generate_qr_matrix(payload, ec_level="M")
+        size = len(matrix)
+
+        # Bit 14 (MSB): primary at (8, 0), redundant at (8, size - 1)
+        self.assertEqual(matrix[8][0], matrix[8][size - 1])
+        # Bit 0 (LSB): primary at (0, 8), redundant at (size - 1, 8)
+        self.assertEqual(matrix[0][8], matrix[size - 1][8])
 
 
 class TestDiscoveryAndSecurityValidation(unittest.TestCase):

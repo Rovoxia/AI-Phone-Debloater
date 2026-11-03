@@ -154,6 +154,10 @@ class QrPairingManager:
                         pairing_service = s
                         break
 
+            # 3. Fallback: if only one pairing service exists on the local network, select it
+            if not pairing_service and len(current_pairing) == 1:
+                pairing_service = current_pairing[0]
+
             if pairing_service:
                 logger.info(
                     f"Phone detected! Pairing service: {pairing_service.name} at {pairing_service.endpoint}"

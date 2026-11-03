@@ -201,7 +201,7 @@ class MdnsDiscovery:
         services: List[DiscoveredService] = []
         for line in stdout.splitlines():
             line = line.strip()
-            if not line:
+            if not line or line.startswith("List of"):
                 continue
             parts = line.split()
             if len(parts) < 3:

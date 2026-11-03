@@ -225,6 +225,24 @@ def _select_version(data_bytes: bytes, ec_level: str) -> int:
 
 
 # ---------------------------------------------------------------------------
+# Remainder bits per version (ISO/IEC 18004 Table 1)
+# ---------------------------------------------------------------------------
+
+_REMAINDER_BITS = {
+    1: 0,
+    2: 7,
+    3: 7,
+    4: 7,
+    5: 7,
+    6: 7,
+    7: 0,
+    8: 0,
+    9: 0,
+    10: 0,
+}
+
+
+# ---------------------------------------------------------------------------
 # Bit stream -> data codewords
 # ---------------------------------------------------------------------------
 
@@ -232,7 +250,7 @@ def _data_codewords(data_bytes: bytes, version: int, total_data_codewords: int) 
     count_bits = 8 if version <= 9 else 16
     bit_stream: List[int] = []
     # Mode indicator: Byte mode = 0100
-    bit_stream.extend((1, 0, 0, 0))
+    bit_stream.extend((0, 1, 0, 0))
     # Character count
     count = len(data_bytes)
     for i in range(count_bits - 1, -1, -1):
@@ -320,11 +338,6 @@ def _place_alignment(
     matrix: List[List[bool]], function: List[List[bool]], version: int, size: int
 ) -> None:
     centers = _ALIGNMENT_CENTERS[version]
-    finder_areas = [
-        (0, 0, 6, 6),
-        (0, size - 7, 6, size - 1),
-        (size - 7, 0, size - 1, 6),
-    ]
     pattern = [
         [1, 1, 1, 1, 1],
         [1, 0, 0, 0, 1],
@@ -332,20 +345,19 @@ def _place_alignment(
         [1, 0, 0, 0, 1],
         [1, 1, 1, 1, 1],
     ]
-    for cx in centers:
-        for cy in centers:
-            # Skip alignment patterns overlapping a finder pattern.
-            overlap = False
-            for fr0, fc0, fr1, fc1 in finder_areas:
-                if not (cx + 2 < fr0 or cx - 2 > fr1 or cy + 2 < fc0 or cy - 2 > fc1):
-                    overlap = True
-                    break
-            if overlap:
+    for r_center in centers:
+        for c_center in centers:
+            # Skip the 3 corners where finder patterns are located
+            if (
+                (r_center == centers[0] and c_center == centers[0])
+                or (r_center == centers[0] and c_center == centers[-1])
+                or (r_center == centers[-1] and c_center == centers[0])
+            ):
                 continue
             for dr in range(5):
                 for dc in range(5):
-                    r = cy - 2 + dr
-                    c = cx - 2 + dc
+                    r = r_center - 2 + dr
+                    c = c_center - 2 + dc
                     if 0 <= r < size and 0 <= c < size:
                         matrix[r][c] = bool(pattern[dr][dc])
                         function[r][c] = True
@@ -405,12 +417,13 @@ def _place_format_info(
     size: int,
 ) -> None:
     code = _bch_format(_LEVEL_CODE[ec_level], mask)
-    # Top-left copy:
+    # Top-left copy: Bit 14 (MSB) at (8, 0) down to Bit 0 (LSB) at (0, 8)
     coords_tl = [
         (8, 0), (8, 1), (8, 2), (8, 3), (8, 4), (8, 5), (8, 7), (8, 8),
         (7, 8), (5, 8), (4, 8), (3, 8), (2, 8), (1, 8), (0, 8),
     ]
-    for bit_idx, (r, c) in enumerate(coords_tl):
+    for i, (r, c) in enumerate(coords_tl):
+        bit_idx = 14 - i
         if r < size and c < size:
             matrix[r][c] = bool((code >> bit_idx) & 1)
 
@@ -557,6 +570,10 @@ def generate_qr_matrix(data: str, ec_level: str = "M") -> List[List[bool]]:
         for i in range(7, -1, -1):
             bit_stream.append((cw >> i) & 1)
 
+    rem_bits = _REMAINDER_BITS.get(version, 0)
+    if rem_bits:
+        bit_stream.extend([0] * rem_bits)
+
     matrix = [[False] * size for _ in range(size)]
     function = [[False] * size for _ in range(size)]
 
@@ -617,7 +634,7 @@ def _pad_quiet_zone(
 
 
 def render_terminal_double_half_block(
-    matrix: List[List[bool]], quiet_zone: int = 2, invert: bool = False
+    matrix: List[List[bool]], quiet_zone: int = 4, invert: bool = False
 ) -> str:
     """Render a QR matrix using Unicode half-blocks (two matrix rows per line).
 
@@ -651,7 +668,7 @@ def render_terminal_double_half_block(
 
 
 def render_terminal_ascii(
-    matrix: List[List[bool]], quiet_zone: int = 2, invert: bool = False
+    matrix: List[List[bool]], quiet_zone: int = 4, invert: bool = False
 ) -> str:
     """Fallback ASCII renderer (two chars per module, one matrix row per line)."""
     padded = _pad_quiet_zone(matrix, quiet_zone)
@@ -664,7 +681,7 @@ def render_terminal_ascii(
 
 
 def render_qr_for_terminal(
-    payload: str, ec_level: str = "M", quiet_zone: int = 2
+    payload: str, ec_level: str = "M", quiet_zone: int = 4
 ) -> str:
     """Generate a QR matrix for *payload* and render it for the terminal."""
     matrix = generate_qr_matrix(payload, ec_level)
