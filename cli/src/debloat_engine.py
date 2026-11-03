@@ -35,6 +35,40 @@ if hasattr(sys.stderr, "reconfigure"):
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
 
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+try:
+    from connection import (
+        AdbClient,
+        ConnectionDiagnostics,
+        ConnectionManager,
+        ConnectionUI,
+        DeviceRegistry,
+        ConnectionError as ConnError,
+        DeviceAmbiguousError as ConnDeviceAmbiguous,
+        DeviceNotFoundError as ConnDeviceNotFound,
+        DeviceOfflineError as ConnDeviceOffline,
+        DeviceUnauthorizedError as ConnDeviceUnauthorized,
+        OperationCancelledError as ConnCancelled,
+        PairingError as ConnPairingError,
+    )
+except ImportError:
+    from .connection import (  # type: ignore
+        AdbClient,
+        ConnectionDiagnostics,
+        ConnectionManager,
+        ConnectionUI,
+        DeviceRegistry,
+        ConnectionError as ConnError,
+        DeviceAmbiguousError as ConnDeviceAmbiguous,
+        DeviceNotFoundError as ConnDeviceNotFound,
+        DeviceOfflineError as ConnDeviceOffline,
+        DeviceUnauthorizedError as ConnDeviceUnauthorized,
+        OperationCancelledError as ConnCancelled,
+        PairingError as ConnPairingError,
+    )
+
 def load_version() -> str:
     for cand in (PROJECT_ROOT / "VERSION", SCRIPT_DIR.parent / "VERSION", Path.cwd() / "VERSION"):
         if cand.is_file():
@@ -229,7 +263,7 @@ class Progress:
         if self._thread: self._thread.join(timeout=0.4)
 
 class DebloatError(RuntimeError): pass
-class AdbError(DebloatError): pass
+class AdbError(DebloatError, ConnError): pass
 
 # Android package names: dot-separated Java identifiers ("android" has no dot).
 # Anything else is rejected before it can reach a device shell command line.
@@ -676,7 +710,9 @@ class DebloatEngine:
         self.timeout = timeout
         self.rules_dir = rules_dir
         self.manufacturer_override = manufacturer
-        self.adb = Adb(adb_path, serial or os.environ.get("ANDROID_SERIAL"), timeout, self.logger)
+        self.connection_mgr = ConnectionManager(adb_path=adb_path, timeout=timeout, logger_obj=self.logger)
+        self.connection_ui = ConnectionUI(self.connection_mgr)
+        self.adb = Adb(self.connection_mgr.adb.adb_path, serial or os.environ.get("ANDROID_SERIAL"), timeout, self.logger)
         self.device = DeviceInfo(self.adb, self.logger)
         self.rules = RuleSet(self.logger)
         self.snapshot_mgr = SnapshotManager(Path(backups_dir), self.logger)
@@ -803,41 +839,95 @@ class DebloatEngine:
         self.logger.header("ADB Discovery & Device Detection")
         self._connected = False
         self._rules_loaded = False
-        with Progress(self.logger, "Searching for connected ADB devices"): devices = self.adb.devices()
-        if not devices and not self.adb.serial:
-            w_addr = self.auto_discover()
-            if w_addr and self.connect_wireless(w_addr): devices = self.adb.devices()
-        if not devices:
-            raise AdbError("No ADB devices found. Connect via USB (with USB debugging enabled) or Wi-Fi (--wireless IP:Port).")
+
+        dev = None
         if self.adb.serial:
-            match = [d for d in devices if d["serial"] == self.adb.serial]
-            if not match:
-                raise AdbError(f"Device '{self.adb.serial}' not found. Attached: " + ", ".join(f"{d['serial']} ({d['state']})" for d in devices))
-            dev = match[0]
+            target = self.adb.serial
+            with Progress(self.logger, f"Connecting to specified device {target}"):
+                try:
+                    if ":" in target:
+                        dev = self.connection_mgr.connect_wifi(target, timeout=self.timeout)
+                    else:
+                        dev = self.connection_mgr.connect_usb(serial=target, timeout=self.timeout)
+                except Exception as exc:
+                    raise AdbError(f"Failed to connect to specified device '{target}': {exc}") from exc
         else:
-            ready = [d for d in devices if d["state"] == "device"]
-            if not ready:
-                raise AdbError("No usable device: " + ", ".join(f"{d['serial']} is {d['state']}" for d in devices)
-                               + ". If 'unauthorized', accept the USB debugging prompt on the phone.")
-            if len(ready) == 1: dev = ready[0]
-            else:
+            # Centralized auto-detection priority:
+            with Progress(self.logger, "Searching for connected ADB devices"):
+                attached = self.connection_mgr.get_attached_devices()
+
+            ready = [d for d in attached if d.is_authorized()]
+
+            if len(ready) == 1:
+                dev = ready[0]
+                self.connection_mgr.set_active_device(dev)
+            elif len(ready) > 1:
                 if not self._tty():
-                    raise AdbError("Multiple devices attached; pass --serial (one of: " + ", ".join(d["serial"] for d in ready) + ")")
-                print("Multiple devices detected:")
-                for i, d in enumerate(ready, 1): print(f"  [{i}] {d['serial']} ({d.get('model', d['state'])})")
-                choice = ask("Select device number: ").strip()
-                if not (choice.isdigit() and 1 <= int(choice) <= len(ready)):
-                    raise AdbError(f"Invalid selection '{choice}'. Enter a number 1-{len(ready)}")
-                dev = ready[int(choice) - 1]
-        if dev["state"] != "device":
-            hint = " Accept the USB debugging prompt on the phone." if dev["state"] == "unauthorized" else ""
-            raise AdbError(f"Device {dev['serial']} is '{dev['state']}', not ready.{hint}")
-        self.adb.serial = dev["serial"]
-        self.device.serial = dev["serial"]
-        self.device.state = dev.get("state", "device")
-        with Progress(self.logger, f"Querying hardware parameters for {self.device.serial}"): self.device.populate()
+                    raise AdbError(
+                        "Multiple devices attached; pass --serial (one of: "
+                        + ", ".join(d.serial for d in ready)
+                        + ")"
+                    )
+                dev = self.connection_ui.select_device_interactive(ready)
+            elif attached:
+                # Devices attached but in unauthorized or offline state
+                unauth = [d for d in attached if d.state == "unauthorized"]
+                if unauth:
+                    raise AdbError(
+                        f"Device {unauth[0].serial} is unauthorized. Accept the USB debugging prompt on the phone."
+                    )
+                raise AdbError(
+                    "No usable device: "
+                    + ", ".join(f"{d.serial} is {d.state}" for d in attached)
+                    + ". If 'unauthorized', accept the USB debugging prompt on the phone."
+                )
+            else:
+                # 0 devices attached
+                if self._tty():
+                    self.logger.info("No Android devices currently detected.")
+                    dev = self.connection_ui.connection_wizard()
+                    if not dev:
+                        raise AdbError("No device connected. Operation cancelled.")
+                else:
+                    # Non-interactive fallback: attempt to reconnect remembered device
+                    remembered = self.connection_mgr.reconnect_remembered(timeout=10.0)
+                    if remembered and remembered.is_authorized():
+                        dev = remembered
+                    else:
+                        raise AdbError(
+                            "No ADB devices found. Connect via USB (with USB debugging enabled) or Wi-Fi (--wireless IP:Port)."
+                        )
+
+        if not dev or not dev.is_authorized():
+            raise AdbError(
+                f"Device {dev.serial if dev else 'unknown'} is in state '{dev.state if dev else 'unknown'}', not ready."
+            )
+
+        self.connection_mgr.set_active_device(dev)
+        self.adb.serial = dev.serial
+        self.device.serial = dev.serial
+        self.device.state = dev.state
+        self.device.manufacturer = dev.manufacturer or "unknown"
+        self.device.model = dev.model or "unknown"
+        self.device.release = dev.release or "unknown"
+        self.device.sdk_int = dev.sdk_int or "unknown"
+        self.device.security_patch = dev.security_patch or "unknown"
+        self.device.build_id = dev.build_id or "unknown"
+        self.device.architecture = dev.architecture or "unknown"
+
         self._connected = True
         self.logger.ok(f"Connected: {self.device.summary()}")
+
+    def switch_transport(self, target_transport: str):
+        """Switch active connection between USB and Wi-Fi."""
+        self.ensure_connected()
+        with Progress(self.logger, f"Switching connection transport to {target_transport}"):
+            new_dev = self.connection_mgr.switch_transport(target_transport)
+        self.adb.serial = new_dev.serial
+        self.device.serial = new_dev.serial
+        self.device.state = new_dev.state
+        self.logger.ok(f"Transport switched to {target_transport}: {new_dev.serial}")
+        return new_dev
 
     def load_rules(self, manufacturer=None):
         manufacturer = manufacturer or self.manufacturer_override
@@ -917,6 +1007,11 @@ class DebloatEngine:
             self.logger.warn("Cancelled; no changes made.")
             report["cancelled"] = True
             return report
+
+        # Pre-mutation safety check: verify active device with ConnectionManager
+        is_valid, reason = self.connection_mgr.validate_active_device()
+        if not is_valid:
+            raise DebloatError(f"Safety verification failed before {action}: {reason}")
         if auto_snapshot:
             try:
                 report["snapshot"] = str(self.snapshot_mgr.create(self.device, packages_meta or actionable, self.adb, targeted_pkgs=actionable))
@@ -991,6 +1086,9 @@ class DebloatEngine:
         if self.dry_run:
             self.logger.info(f"[DRY-RUN] Would restore {pkg} (install-existing{' + enable' if enable else ''}).")
             return True, "dry-run"
+        is_valid, reason = self.connection_mgr.validate_active_device()
+        if not is_valid:
+            return False, f"Safety check failed: {reason}"
         try:
             if not self.adb.is_installed_user(pkg, 0):
                 rc, out, err = self.adb.install_existing(pkg, self.timeout)
@@ -1107,7 +1205,10 @@ class DebloatEngine:
             print(f"{bold('7')}  List backups")
             print(f"{bold('8')}  Restore from backup")
             print(f"{bold('9')}  Restore single package")
-            print(f"{bold('w')}  Wireless ADB connect / pair (Wi-Fi)")
+            print(f"{bold('w')}  Wireless ADB connect / QR pairing (Wi-Fi)")
+            print(f"{bold('d')}  Run connection diagnostics")
+            print(f"{bold('s')}  Switch connection transport (USB <-> Wi-Fi)")
+            print(f"{bold('c')}  Device connection wizard / select device")
             print(f"{bold('0')}  Exit")
             try:
                 choice = input("\nSelect: ").strip()
@@ -1143,12 +1244,16 @@ class DebloatEngine:
                     else: self.logger.error(f"Restore FAILED: {pkg}: {msg}")
                 elif choice.lower() == "w":
                     print("\nWireless ADB Setup:")
-                    print("  1) Auto-discover (mDNS + LAN scan)")
-                    print("  2) Connect to IP:Port")
-                    print("  3) Pair Android 11+ Wireless Debugging")
-                    sub = ask("\nSelect (1/2/3): ").strip()
+                    print("  1) Pair via QR code (Android 11+ Wireless Debugging)")
+                    print("  2) Connect directly to IP:Port")
+                    print("  3) Pair with 6-digit code and connect")
+                    print("  4) Auto-discover endpoints via mDNS / LAN")
+                    sub = ask("\nSelect (1/2/3/4, Enter to cancel): ").strip()
                     if sub == "1":
-                        self._reconnect_wireless(self.auto_discover())
+                        dev = self.connection_ui.handle_qr_flow()
+                        if dev:
+                            self._connected = False
+                            self.ensure_ready()
                     elif sub == "2":
                         self._reconnect_wireless(ask("IP:Port: ").strip())
                     elif sub == "3":
@@ -1156,6 +1261,24 @@ class DebloatEngine:
                         pc = ask("Pairing Code: ").strip()
                         if pa and pc and self.pair_wireless(pa, pc):
                             self._reconnect_wireless(ask("Connect IP:Port: ").strip())
+                    elif sub == "4":
+                        self._reconnect_wireless(self.auto_discover())
+                elif choice.lower() == "d":
+                    self.connection_ui.handle_diagnostics_flow()
+                elif choice.lower() == "s":
+                    target = ask("Switch to transport [usb/wireless]: ").strip().lower()
+                    if target in ("usb", "wireless"):
+                        try:
+                            self.switch_transport(target)
+                        except Exception as exc:
+                            self.logger.error(f"Switch transport failed: {exc}")
+                    else:
+                        self.logger.warn("Invalid transport. Enter 'usb' or 'wireless'.")
+                elif choice.lower() == "c":
+                    dev = self.connection_ui.connection_wizard()
+                    if dev:
+                        self._connected = False
+                        self.ensure_ready()
                 elif choice == "0": break
                 elif choice: self.logger.warn(f"Unknown option '{choice}'")
             except (DebloatError, OSError) as exc: self.logger.error(str(exc))
@@ -1169,6 +1292,9 @@ def build_parser():
     p.add_argument("--tier", type=int, choices=[1, 2, 3], help="Target safety tier (1=Safe, 2=Advanced, 3=Extreme)")
     p.add_argument("--action", choices=["disable", "uninstall"], default=None, help="Debloat action for --tier (default: disable)")
     p.add_argument("--wireless", "-w", help="Connect to wireless ADB device (IP:Port)")
+    p.add_argument("--qr-pair", action="store_true", help="Connect wirelessly via Android 11+ QR code pairing")
+    p.add_argument("--diagnostics", action="store_true", help="Run comprehensive connection diagnostics (ADB, USB, Wireless)")
+    p.add_argument("--switch-transport", choices=["usb", "wireless"], help="Switch active connection between USB and Wi-Fi")
     p.add_argument("--manufacturer", "-m", help="Force OEM rules (e.g., samsung, xiaomi, oneplus)")
     p.add_argument("--dry-run", action="store_true", help="Simulate without making changes")
     p.add_argument("--quiet", "-q", action="store_true", help="Suppress output")
@@ -1190,14 +1316,24 @@ def main(argv=None):
         parser.error("--restore cannot be combined with --scan/--tier/--export-json/--output")
     if args.action and not args.tier:
         parser.error("--action requires --tier")
-    has_action = bool(args.scan or args.tier or args.restore or export)
+    has_action = bool(args.scan or args.tier or args.restore or export or args.diagnostics or args.qr_pair or args.switch_transport)
     if not has_action and not args.interactive and not DebloatEngine._tty():
-        parser.error("no action given and stdin is not a terminal; use --scan, --tier N or --restore SNAPSHOT")
+        parser.error("no action given and stdin is not a terminal; use --scan, --tier N, --diagnostics, --qr-pair or --restore SNAPSHOT")
 
     logger = Logger(args.quiet, args.verbose)
     try:
         engine = DebloatEngine(adb_path=args.adb_path, serial=args.serial, quiet=args.quiet, verbose=args.verbose,
                                dry_run=args.dry_run, assume_yes=args.yes, manufacturer=args.manufacturer)
+        if args.diagnostics:
+            engine.connection_ui.handle_diagnostics_flow()
+            return 0
+        if args.qr_pair:
+            dev = engine.connection_ui.handle_qr_flow()
+            return 0 if dev else 1
+        if args.switch_transport:
+            engine.ensure_connected()
+            engine.switch_transport(args.switch_transport)
+            return 0
         if args.wireless and not engine.connect_wireless(args.wireless):
             return 1
         if args.restore:
