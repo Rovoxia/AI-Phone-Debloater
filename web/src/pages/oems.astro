@@ -42,7 +42,7 @@ const oemProfiles = [
     badge: 'ColorOS',
     tagline: 'Disable HeyTap services, aggressive App Market notifications, background analytics, and carrier bloatware.',
     anchor: 'coloros-oxygenos',
-    ruleCount: (rulesData.stats.oemBreakdown['BBK'] || 23) + (rulesData.stats.oemBreakdown['OnePlus'] || 20),
+    ruleCount: 13,
     color: 'amber',
     features: ['HeyTap Market & Cloud', 'Oppo Roaming', 'OnePlus Membership', 'Theme Store Push Ads', 'Quick Device Connect']
   },
@@ -53,7 +53,7 @@ const oemProfiles = [
     badge: 'Funtouch',
     tagline: 'Clean Jovi voice assistant, V-Appstore auto-installers, lockscreen poster services, and background telemetry.',
     anchor: 'vivo-funtouch',
-    ruleCount: 18,
+    ruleCount: 10,
     color: 'indigo',
     features: ['Jovi Assistant', 'V-Appstore & Game Center', 'iManager Background Tasks', 'Vivo Cloud Services', 'Lockscreen Glance']
   },
@@ -333,37 +333,37 @@ const allRules = rulesData.rules;
           <!-- Filter Pills -->
           <div class="flex flex-wrap items-center gap-2 mb-6 text-xs" id="filter-container">
             <span class="text-slate-400 text-xs font-medium mr-1">Brand:</span>
-            <button class="oem-filter active px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-medium transition-colors" data-brand="all">
+            <button type="button" class="oem-filter active px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-medium transition-colors cursor-pointer" data-brand="all">
               All ({allRules.length})
             </button>
-            <button class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors" data-brand="Xiaomi">
+            <button type="button" class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer" data-brand="Xiaomi">
               Xiaomi ({rulesData.stats.oemBreakdown['Xiaomi'] || 28})
             </button>
-            <button class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors" data-brand="Samsung">
+            <button type="button" class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer" data-brand="Samsung">
               Samsung ({rulesData.stats.oemBreakdown['Samsung'] || 45})
             </button>
-            <button class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors" data-brand="BBK">
-              Oppo / Realme ({rulesData.stats.oemBreakdown['BBK'] || 23})
+            <button type="button" class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer" data-brand="BBK">
+              Oppo / Realme (13)
             </button>
-            <button class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors" data-brand="OnePlus">
+            <button type="button" class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer" data-brand="OnePlus">
               OnePlus ({rulesData.stats.oemBreakdown['OnePlus'] || 20})
             </button>
-            <button class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors" data-brand="Vivo">
-              Vivo / iQOO (18)
+            <button type="button" class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer" data-brand="Vivo">
+              Vivo / iQOO (10)
             </button>
-            <button class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors" data-brand="Google">
+            <button type="button" class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer" data-brand="Google">
               Google Pixel ({rulesData.stats.oemBreakdown['Google'] || 25})
             </button>
-            <button class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors" data-brand="Motorola">
+            <button type="button" class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer" data-brand="Motorola">
               Motorola ({rulesData.stats.oemBreakdown['Motorola'] || 15})
             </button>
-            <button class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors" data-brand="Transsion">
+            <button type="button" class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer" data-brand="Transsion">
               Tecno / Infinix ({rulesData.stats.oemBreakdown['Transsion'] || 29})
             </button>
-            <button class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors" data-brand="Universal">
+            <button type="button" class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer" data-brand="Universal">
               Universal ({rulesData.stats.oemBreakdown['Universal'] || 81})
             </button>
-            <button class="oem-filter px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 hover:border-rose-300 transition-colors" data-brand="Core System">
+            <button type="button" class="oem-filter px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 hover:border-rose-300 transition-colors cursor-pointer" data-brand="Core System">
               Critical (61)
             </button>
           </div>
@@ -394,6 +394,8 @@ const allRules = rulesData.rules;
                       : 'bg-orange-100 text-orange-800 dark:bg-orange-500/20 dark:text-orange-300';
                     const actionLabel = isCrit ? '⛔ Hard-Blocked' : rule.recommended_action === 'uninstall' ? 'Uninstall' : 'Disable';
                     const actionClass = isCrit ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300';
+                    const isVivoPkg = rule.brand === 'BBK' && (rule.package.toLowerCase().includes('vivo') || (rule.name || '').toLowerCase().includes('vivo'));
+                    const displayBrand = isVivoPkg ? 'Vivo' : rule.brand === 'BBK' ? 'Oppo/Realme' : rule.brand;
 
                     return (
                       <tr
@@ -426,7 +428,7 @@ const allRules = rulesData.rules;
                         </td>
                         <td class="py-2.5 px-3 sm:px-4 font-sans text-slate-500 dark:text-slate-400 hidden md:table-cell whitespace-nowrap">
                           <span class="text-[11px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                            {rule.brand}
+                            {displayBrand}
                           </span>
                         </td>
                         <td class="py-2.5 px-3 sm:px-4 whitespace-nowrap">
@@ -464,6 +466,7 @@ const allRules = rulesData.rules;
       <div id="motorola" class="scroll-mt-24"></div>
       <div id="transsion" class="scroll-mt-24"></div>
       <div id="universal" class="scroll-mt-24"></div>
+      <div id="critical" class="scroll-mt-24"></div>
       <div id="analyzer" class="scroll-mt-24"></div>
       <div id="rules" class="scroll-mt-24"></div>
 
@@ -526,9 +529,9 @@ const allRules = rulesData.rules;
           filterBtns.forEach(btn => {
             const btnBrand = btn.getAttribute('data-brand');
             if (btnBrand === brand) {
-              btn.className = 'oem-filter active px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-medium transition-colors';
+              btn.className = 'oem-filter active px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-medium transition-colors cursor-pointer';
             } else {
-              btn.className = 'oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors';
+              btn.className = 'oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer';
             }
           });
           applyFilters();
@@ -543,7 +546,11 @@ const allRules = rulesData.rules;
             const name = row.getAttribute('data-name') || '';
             const brand = row.getAttribute('data-brand') || '';
 
-            const matchBrand = (currentBrand === 'all') || (brand === currentBrand);
+            const isVivoPkg = brand === 'BBK' && (pkg.includes('vivo') || name.includes('vivo'));
+            const matchBrand = (currentBrand === 'all')
+              || (currentBrand === 'Vivo' && isVivoPkg)
+              || (currentBrand === 'BBK' && brand === 'BBK' && !isVivoPkg)
+              || (brand === currentBrand);
             const matchQuery = !query || pkg.includes(query) || name.includes(query);
 
             if (matchBrand && matchQuery) {
