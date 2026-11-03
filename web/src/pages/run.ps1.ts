@@ -13,6 +13,29 @@ Write-Host "========================================================" -Foregroun
 Write-Host "  AI-Phone-Debloater Zero-Git Runner (Windows)" -ForegroundColor Green
 Write-Host "========================================================" -ForegroundColor Cyan
 
+# Bootstrap Python 3 if missing (required to run the debloat engine)
+$Py = $null
+foreach ($cmd in @("python", "py", "python3")) {
+    if ($null -eq $Py) {
+        try {
+            $ver = & $cmd -c "import sys; print(sys.version_info[0])" 2>$null
+            if ($ver -eq "3") { $Py = $cmd }
+        } catch {}
+    }
+}
+if ($null -eq $Py) {
+    Write-Host "[INFO] Python 3 not found. Downloading official Python installer..." -ForegroundColor Yellow
+    $PyInstaller = Join-Path $env:TEMP "python-installer.exe"
+    $PyUrl = "https://www.python.org/ftp/python/3.12.7/python-3.12.7-amd64.exe"
+    Invoke-WebRequest -Uri $PyUrl -OutFile $PyInstaller
+    Write-Host "[INFO] Installing Python silently (this may take a minute)..." -ForegroundColor Yellow
+    Start-Process -FilePath $PyInstaller -ArgumentList "/quiet InstallAllUsers=0 PrependPath=1 Include_test=0" -Wait
+    Remove-Item $PyInstaller -ErrorAction SilentlyContinue
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "User") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "Machine")
+    $Py = "python"
+    Write-Host "[OK] Python 3 installed." -ForegroundColor Green
+}
+
 $TempDir  = Join-Path $env:TEMP ([Guid]::NewGuid().ToString())
 $ZipFile  = Join-Path $TempDir "repo.zip"
 

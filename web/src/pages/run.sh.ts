@@ -15,6 +15,42 @@ echo "========================================================"
 echo "  AI-Phone-Debloater Zero-Git Runner (Linux/macOS)"
 echo "========================================================"
 
+# Bootstrap Python 3 if missing (required to run the debloat engine)
+if ! command -v python3 >/dev/null 2>&1 && ! command -v python >/dev/null 2>&1; then
+    echo "[INFO] Python 3 not found. Installing Python via system package manager..."
+    OS="$(uname -s)"
+    case "$OS" in
+        Linux)
+            if command -v apt-get >/dev/null 2>&1; then
+                sudo apt-get update -qq && sudo apt-get install -y -qq python3
+            elif command -v apk >/dev/null 2>&1; then
+                sudo apk add python3
+            elif command -v pacman >/dev/null 2>&1; then
+                sudo pacman -Sy --noconfirm python
+            elif command -v dnf >/dev/null 2>&1; then
+                sudo dnf install -y python3
+            elif command -v yum >/dev/null 2>&1; then
+                sudo yum install -y python3
+            else
+                echo "[ERROR] No supported package manager found. Install Python 3 manually from https://www.python.org/." >&2
+                exit 1
+            fi
+            ;;
+        Darwin)
+            if command -v brew >/dev/null 2>&1; then
+                brew install python
+            else
+                echo "[ERROR] Homebrew not found. Install Python 3 from https://www.python.org/." >&2
+                exit 1
+            fi
+            ;;
+        *)
+            echo "[ERROR] Unsupported OS: $OS. Install Python 3 manually from https://www.python.org/." >&2
+            exit 1
+            ;;
+    esac
+fi
+
 for cmd in curl; do
     if ! command -v "$cmd" &> /dev/null; then
         echo "[ERROR] Required tool '$cmd' is not installed." >&2
