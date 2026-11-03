@@ -371,12 +371,18 @@ class ConnectionManager:
                 except Exception:
                     continue
 
-            # 3. Try last known endpoint as fallback
+            # 3. Try last known endpoint as fallback (USB or wireless)
             if target_record.last_endpoint:
                 try:
                     dev = self.connect_wifi(target_record.last_endpoint, timeout=timeout)
-                    if dev.physical_id == target_record.physical_id:
+                    if dev and dev.physical_id == target_record.physical_id:
                         return dev
+                    # Mismatch: disconnect the wrong device silently
+                    if dev and dev.serial != target_record.last_endpoint:
+                        try:
+                            self.wireless.disconnect(target_record.last_endpoint)
+                        except Exception:
+                            pass
                 except Exception:
                     pass
 
@@ -448,7 +454,10 @@ class ConnectionManager:
                 self.wireless.enable_tcpip(5555, serial=current.serial)
                 time.sleep(1.0)
 
-                # Query device IP address over shell
+                # Query device IP address over shell, with fallback to mDNS
+                new_endpoint = None
+
+                # Try shell-based IP detection first
                 rc, out, _ = self.adb.run_shell("ip route", serial=current.serial)
                 ip_match = None
                 for line in out.splitlines():
@@ -464,13 +473,23 @@ class ConnectionManager:
                     rc, out, _ = self.adb.run_shell("getprop dhcp.wlan0.ipaddress", serial=current.serial)
                     ip_match = out.strip()
 
-                if not ip_match:
+                if ip_match:
+                    new_endpoint = f"{ip_match}:5555"
+
+                # Fallback: check mDNS for existing connect services
+                if not new_endpoint:
+                    connect_services = self.mdns.get_connect_services()
+                    for s in connect_services:
+                        if s.address == current.serial or s.address == current.endpoint.split(":")[0]:
+                            new_endpoint = s.endpoint
+                            break
+
+                if not new_endpoint:
                     raise ConnectionError(
                         "Could not automatically detect the phone's Wi-Fi IP address. "
-                        "Please check Wi-Fi settings on the phone."
+                        "Check Wi-Fi settings on the phone or use mDNS discovery."
                     )
 
-                new_endpoint = f"{ip_match}:5555"
                 new_device = self.connect_wifi(new_endpoint)
 
                 # Verify same physical device

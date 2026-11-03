@@ -117,7 +117,7 @@ class DeviceRegistry:
             existing.manufacturer = info.manufacturer or existing.manufacturer
             existing.model = info.model or existing.model
             existing.last_transport = info.transport_type
-            existing.last_endpoint = info.endpoint or (info.serial if info.is_wireless() else "")
+            existing.last_endpoint = info.endpoint if info.endpoint else (info.serial if info.is_wireless() else "")
             existing.last_connected = now_iso
             if friendly_name:
                 existing.friendly_name = friendly_name
@@ -129,7 +129,7 @@ class DeviceRegistry:
                 manufacturer=info.manufacturer,
                 model=info.model,
                 last_transport=info.transport_type,
-                last_endpoint=info.endpoint or (info.serial if info.is_wireless() else ""),
+                last_endpoint=info.endpoint if info.endpoint else (info.serial if info.is_wireless() else ""),
                 last_connected=now_iso,
                 auto_reconnect=True,
             )

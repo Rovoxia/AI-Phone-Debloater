@@ -497,6 +497,28 @@ class AdbClient:
 
         raise DeviceNotFoundError(f"device not found: {serial}")
 
+    def get_device_serial(self, serial: str) -> str:
+        """Return the serial for a single device, raising specific errors."""
+        dev = self.lookup_device(serial)
+        if dev is None:
+            raise DeviceNotFoundError(f"device not found: {serial}")
+        return dev["serial"]
+
+    def lookup_device(self, serial: str) -> Optional[Dict[str, str]]:
+        """Search the device listing for a serial. Returns dict or None."""
+        devices = self.list_devices()
+        for dev in devices:
+            if dev["serial"] == serial:
+                return dev
+        return None
+
+    def get_device_model(self, serial: str) -> str:
+        """Return the model property for a serial, empty string if not found."""
+        dev = self.lookup_device(serial)
+        if dev is None:
+            return ""
+        return dev.get("model", "")
+
     def resolve_serial(self) -> str:
         """Return the single attached device serial, or raise.
 
@@ -515,7 +537,6 @@ class AdbClient:
 
     def getprop(self, prop: str, serial: Optional[str] = None, timeout: Optional[float] = None) -> str:
         """Query an Android system property via `getprop <prop>`."""
-        import re
         if not re.match(r"^[A-Za-z0-9._-]+$", prop):
             return ""
         try:
@@ -523,6 +544,13 @@ class AdbClient:
             return out.strip() if rc == 0 else ""
         except Exception:
             return ""
+
+    def is_device_online(self, serial: str) -> bool:
+        """Return True when the device reports state 'device' (authorized)."""
+        try:
+            return self.get_device_state(serial) == "device"
+        except (DeviceNotFoundError, ConnectionError):
+            return False
 
     def close(self) -> None:
         """Placeholder for symmetry with transport layers that hold resources.
