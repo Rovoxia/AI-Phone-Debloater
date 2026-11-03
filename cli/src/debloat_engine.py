@@ -91,16 +91,6 @@ RULES_DIR_CANDIDATES = [
 ]
 BACKUPS_DIR = Path.home() / "AiPhoneDebloater" / "backups"
 LOCAL_BACKUPS_DIR = PROJECT_ROOT / "cli" / "backups"
-DEFAULT_ADB_PATH_CANDIDATES: List[str] = [
-    "adb",
-    str(PROJECT_ROOT / "cli" / "tools" / "platform-tools" / "adb.exe"),
-    str(PROJECT_ROOT / "cli" / "tools" / "platform-tools" / "adb"),
-    r"C:\platform-tools\adb.exe",
-    str(Path.cwd() / "tools" / "platform-tools" / "adb.exe"),
-    str(Path.cwd() / "platform-tools" / "adb"),
-    str(Path.cwd() / "platform-tools" / "adb.exe"),
-    os.path.expandvars(r"%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe"),
-]
 
 TIMESTAMP_FORMAT = "%Y%m%d_%H%M%S"
 
@@ -108,6 +98,7 @@ TIMESTAMP_FORMAT = "%Y%m%d_%H%M%S"
 MANUFACTURER_ALIASES: Dict[str, str] = {"redmi": "xiaomi", "poco": "xiaomi", "iqoo": "vivo"}
 
 HARDCRITICAL_PACKAGES: Dict[str, str] = {
+    # Android core framework (in both CRIT and HARDCRITICAL)
     "android": "Android core framework",
     "com.android.systemui": "System UI (nav bar, status bar, notifications)",
     "com.android.phone": "Telephony stack",
@@ -172,6 +163,34 @@ HARDCRITICAL_PACKAGES: Dict[str, str] = {
     "com.samsung.android.mdxservice": "Samsung mobile device exchange",
     "com.samsung.android.app.rss": "Samsung RSS feed",
     "com.samsung.android.app.sbrowser": "Samsung Internet browser",
+
+    # AOSP system packages (in CRIT JSON only - add to HARDCRITICAL)
+    "com.android.server": "System Server",
+    "com.android.server.activitymanager": "Activity Manager Service",
+    "com.android.server.input": "Input Service",
+    "com.android.server.display": "Display Service",
+    "com.android.server.power": "Power Manager Service",
+    "com.android.server.audio": "Audio Service",
+    "com.android.server.pm": "Package Manager Service",
+    "com.android.server.appops": "AppOps Service",
+    "com.android.server.backup": "Backup Service",
+    "com.android.server.account": "Account Service",
+    "com.android.server.location": "Location Service",
+    "com.android.server.wifi": "Wi-Fi Service",
+    "com.android.server.bluetooth": "Bluetooth Service",
+    "com.android.server.nfc": "NFC Service",
+    "com.android.server.telephony": "Telephony Service",
+    "com.android.cellbroadcastreceiver": "Cell Broadcast Receiver",
+    "com.android.externalstorage": "External Storage",
+    "com.android.keychain": "Keychain Service",
+    "com.android.locksettings": "Lock Settings",
+    "com.android.fingerprint": "Fingerprint Service",
+    "com.android.biometrics": "Biometrics Service",
+    "com.android.systemui.navbar": "System UI Navigation Bar",
+    "com.google.android.gsf": "Google Services Framework",
+    "com.google.android.gms.auth": "Google Auth Services",
+    "com.google.android.gms.account": "Google Account Services",
+    "com.google.android.ext.services": "Google Extra Services",
 }
 
 class Color:
@@ -296,7 +315,7 @@ def ask(prompt: str) -> str:
 def run_cmd(cmd, timeout=30.0, check=False, capture=True, env=None):
     full_env = os.environ.copy()
     if env: full_env.update(env)
-    printable = subprocess.list2cmdline([str(c) for c in cmd])
+    printable = " ".join(str(c) for c in cmd)
     try:
         # stdin=DEVNULL: "adb shell" would otherwise swallow our own piped stdin (answers to prompts).
         proc = subprocess.run(cmd, capture_output=capture, stdin=subprocess.DEVNULL, text=True, encoding="utf-8", errors="replace", timeout=timeout, env=full_env)
@@ -322,21 +341,10 @@ class Adb:
                 raise AdbError(f"adb not found at --adb-path {adb_path}")
             self.adb_path = resolved
         else:
-            self.adb_path = self._discover_adb()
+            # Delegate to ConnectionManager's AdbClient for discovery
+            self.adb_path = self.connection_mgr.adb.adb_path
         if not self.adb_path:
             raise AdbError("adb not found. Install Android platform-tools, put adb on PATH, set AI_PHONE_DEBLOATER_ADB_PATH or pass --adb-path.")
-
-    @staticmethod
-    def _discover_adb():
-        env_path = os.environ.get("AI_PHONE_DEBLOATER_ADB_PATH")
-        candidates = [env_path] if env_path else []
-        candidates.extend(DEFAULT_ADB_PATH_CANDIDATES)
-        for cand in candidates:
-            if not cand: continue
-            found = shutil.which(cand)
-            if found: return str(found)
-            if Path(cand).is_file(): return str(Path(cand))
-        return None
 
     def _base(self):
         base = [self.adb_path]
@@ -401,7 +409,7 @@ class Adb:
         if uninstalled: args.append("-u")
         if user is not None: args += ["--user", str(int(user))]
         if filter_text: args.append(validate_package(filter_text))
-        rc, out, err = self.shell(" ".join(args))
+        rc, out, err = self.shell(args)
         pkgs = self._parse_packages(out)
         if rc != 0 or (not pkgs and re.search(r"(?i)error|exception|failure", f"{out}\n{err}")):
             raise AdbError(f"pm list packages failed: {(err or out).strip()}")
@@ -494,10 +502,9 @@ class RuleSet:
         try:
             tier = int(raw)
         except (TypeError, ValueError):
-            tier = None
+            raise ValueError(f"{source}: {entry.get('package')} has invalid tier {raw!r} (must be 1, 2 or 3)")
         if tier not in (1, 2, 3):
-            self.logger.warn(f"{source}: {entry.get('package')} has invalid tier {raw!r}; entry ignored")
-            return None
+            raise ValueError(f"{source}: {entry.get('package')} has invalid tier {raw!r} (must be 1, 2 or 3)")
         return tier
 
     @staticmethod
@@ -532,7 +539,11 @@ class RuleSet:
             for entry in self._entries(data):
                 pkg = entry.get("package")
                 if not is_valid_package(pkg): continue
-                tier = self._entry_tier(entry, univ_path.name)
+                try:
+                    tier = self._entry_tier(entry, univ_path.name)
+                except ValueError as exc:
+                    self.logger.error(str(exc))
+                    continue
                 if tier is not None:
                     self._add_safe(pkg, tier, entry.get("description", ""), univ_path.name)
         oem_files = []
@@ -554,8 +565,11 @@ class RuleSet:
                 if pkg in self.critical:
                     self.logger.verbose_log(f"{rf.name}: {pkg} is on the critical blacklist; rule ignored")
                     continue
-                tier = self._entry_tier(entry, rf.name)
-                if tier is None: continue
+                try:
+                    tier = self._entry_tier(entry, rf.name)
+                except ValueError as exc:
+                    self.logger.error(str(exc))
+                    continue
                 reason = entry.get("description", entry.get("reason", ""))
                 self._add_safe(pkg, tier, reason, rf.name)
 
@@ -741,50 +755,7 @@ class DebloatEngine:
         self.ensure_connected()
         if not self._rules_loaded: self.load_rules(self.manufacturer_override)
 
-    def scan_lan_adb(self, timeout=0.2):
-        import socket
-        from concurrent.futures import ThreadPoolExecutor
-        local_ip = ""
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.connect(("8.8.8.8", 80))
-            local_ip = s.getsockname()[0]
-            s.close()
-        except Exception: return []
-        if not local_ip or local_ip.startswith("127."): return []
-        prefix = ".".join(local_ip.split(".")[:3])
-        found = []
-        def probe(hn):
-            ip = f"{prefix}.{hn}"
-            if ip == local_ip: return
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(timeout)
-            try:
-                if sock.connect_ex((ip, 5555)) == 0: found.append(f"{ip}:5555")
-            except Exception: pass
-            finally: sock.close()
-        with ThreadPoolExecutor(max_workers=64) as p: p.map(probe, range(1, 255))
-        return found
-
-    def discover_wireless(self):
-        self.logger.info("Searching for wireless ADB devices via mDNS and LAN...")
-        devices = []
-        try:
-            rc, out, _ = self.adb._run([self.adb.adb_path, "mdns", "services"])
-        except AdbError as exc:
-            self.logger.verbose_log(f"mDNS discovery unavailable: {exc}")
-            rc, out = 1, ""
-        for line in out.splitlines():
-            line = line.strip()
-            # Pairing endpoints (_adb-tls-pairing) cannot be connected to; only connect endpoints are useful.
-            if not line or "pairing" in line.lower(): continue
-            parts = line.replace("(", " ").replace(")", " ").split()
-            if len(parts) >= 2:
-                addr = parts[-1]
-                if ":" in addr and addr.count(".") >= 3: devices.append({"serial": addr, "state": "device", "name": parts[0]})
-        if not devices:
-            for ep in self.scan_lan_adb(): devices.append({"serial": ep, "state": "device", "name": "LAN-Device"})
-        return devices
+    
 
     def auto_discover(self):
         """Interactive only: the user must pick/confirm the endpoint, never auto-connect to an unknown LAN host."""
@@ -806,33 +777,51 @@ class DebloatEngine:
         if choice: self.logger.warn(f"Invalid selection '{choice}'")
         return None
 
+    def auto_discover(self):
+        """Interactive only: the user must pick/confirm the endpoint, never auto-connect to an unknown LAN host."""
+        if not self._tty():
+            return None
+        try:
+            services = self.connection_mgr.discover_wireless_devices()
+        except OSError as exc:
+            self.logger.warn(f"Wireless discovery failed: {exc}")
+            return None
+        if not services:
+            self.logger.info("No wireless ADB devices found.")
+            return None
+        self.logger.info(f"Found {len(services)} wireless device(s):")
+        for i, s in enumerate(services, 1): print(f"  [{i}] {s.name} @ {s.endpoint}")
+        choice = ask(f"Select wireless device number (1-{len(services)}, Enter to cancel): ").strip()
+        if choice.isdigit() and 1 <= int(choice) <= len(services):
+            return services[int(choice) - 1].endpoint
+        if choice: self.logger.warn(f"Invalid selection '{choice}'")
+        return None
+
     def connect_wireless(self, address):
         address = (address or "").strip()
         if not re.match(r"^[A-Za-z0-9._\-\[\]:]+$", address):
             self.logger.error(f"Invalid wireless address: {address!r} (expected IP:Port)")
             return False
         if ":" not in address: address += ":5555"
-        self.logger.info(f"Connecting to wireless ADB at {address}...")
-        rc, out, err = self.adb.connect_wireless(address)
-        # "adb connect" exits 0 even on "failed to connect to ..."/"cannot connect to ...".
-        first = out.strip().lower()
-        if rc == 0 and (first.startswith("connected to") or first.startswith("already connected to")):
-            self.logger.ok(f"Connected to wireless ADB: {address}")
-            self.adb.serial = address
-            self._connected = False  # force device re-selection/probe on next use
-            return True
-        self.logger.error(f"Wireless connection failed: {out.strip() or err.strip()}")
-        return False
+        try:
+            dev = self.connection_mgr.connect_wifi(address, timeout=self.timeout)
+        except Exception as exc:
+            self.logger.error(f"Wireless connection failed: {exc}")
+            return False
+        self.logger.ok(f"Connected to wireless ADB: {address}")
+        self.adb.serial = dev.serial
+        self._connected = False
+        return True
 
     def pair_wireless(self, address, code):
         if not re.match(r"^[A-Za-z0-9._\-\[\]:]+$", address or "") or not re.match(r"^\d{6}$", (code or "").strip()):
             self.logger.error("Pairing needs IP:Port and the 6-digit pairing code.")
             return False
-        rc, out, err = self.adb.pair_wireless(address, code.strip())
-        if rc == 0 and "successfully paired" in out.lower():
+        ok, msg = self.connection_mgr.pair_wireless_code(address, code.strip(), timeout=20.0)
+        if ok:
             self.logger.ok(f"Successfully paired with {address}")
             return True
-        self.logger.error(f"Pairing failed: {out.strip() or err.strip()}")
+        self.logger.error(f"Pairing failed: {msg}")
         return False
 
     def connect(self):

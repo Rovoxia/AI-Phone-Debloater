@@ -90,6 +90,11 @@ class DeviceIdentityManager:
         """
         Determine if two DeviceInfo records (e.g. one USB and one Wi-Fi) correspond to
         the exact same physical device.
+
+        Build IDs change on OTA updates, so a strict build_id equality would
+        treat a post-OTA device as a different phone. When the model, manufacturer,
+        and architecture all match, we tolerate a build_id change and still
+        consider it the same physical device.
         """
         if not dev1 or not dev2:
             return False
@@ -106,21 +111,19 @@ class DeviceIdentityManager:
         if dev1.physical_id in ("unknown", "") or dev2.physical_id in ("unknown", ""):
             return False
 
-        # If both have detailed metadata, check if manufacturer, model, build_id, and architecture match
+        # If both have detailed metadata, check if manufacturer, model, and architecture match.
+        # build_id is allowed to differ: it changes across OTA updates on the same hardware.
         if (
             dev1.manufacturer
             and dev2.manufacturer
             and dev1.model
             and dev2.model
-            and dev1.build_id
-            and dev2.build_id
-            and dev1.build_id != "unknown"
-            and dev2.build_id != "unknown"
+            and dev1.architecture
+            and dev2.architecture
         ):
             return (
                 dev1.manufacturer.lower() == dev2.manufacturer.lower()
                 and dev1.model.lower() == dev2.model.lower()
-                and dev1.build_id == dev2.build_id
                 and dev1.architecture == dev2.architecture
             )
 

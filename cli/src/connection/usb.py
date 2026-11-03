@@ -102,8 +102,7 @@ class UsbConnectionHandler:
                 logger.info(f"Device {serial} is now authorized and ready.")
                 return self.identity.populate(serial, state="device")
             elif current_state == "offline":
-                logger.debug(f"Device {serial} is temporarily offline. Attempting reconnect kick...")
-                self.adb.run_adb(["reconnect", "offline"])
+                logger.debug(f"Device {serial} is temporarily offline. Retrying on next poll.")
 
             if progress_cb:
                 progress_cb(f"Waiting for RSA authorization prompt on phone... ({remaining}s remaining)", remaining)
