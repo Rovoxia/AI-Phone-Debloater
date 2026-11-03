@@ -512,7 +512,7 @@ class TestConnectionManager(unittest.TestCase):
         mock_client.is_server_running.return_value = True
         mock_client_cls.return_value = mock_client
 
-        mgr = ConnectionManager(adb_path="dummy_adb")
+        mgr = ConnectionManager(adb_path="dummy_adb", registry=MagicMock())
         self.assertEqual(mgr.state, ConnectionState.DISCONNECTED)
 
         # 1. Pre-mutation validation fails when no device is connected

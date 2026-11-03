@@ -55,6 +55,7 @@ class ConnectionManager:
         adb_path: Optional[str] = None,
         timeout: float = 30.0,
         logger_obj: Optional[Any] = None,
+        registry: Optional[DeviceRegistry] = None,
     ) -> None:
         self.timeout = float(timeout)
         self.custom_logger = logger_obj
@@ -67,7 +68,7 @@ class ConnectionManager:
 
         # Specialized subsystem handlers
         self.identity = DeviceIdentityManager(self.adb)
-        self.registry = DeviceRegistry()
+        self.registry = registry or DeviceRegistry()
         self.mdns = MdnsDiscovery(self.adb, logger_obj=logger_obj)
         self.lan = LanDiscovery(logger_obj=logger_obj)
         self.usb = UsbConnectionHandler(self.adb, self.identity, logger_obj=logger_obj)
