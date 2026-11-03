@@ -20,8 +20,8 @@
 [![Root: No Root Required](https://img.shields.io/badge/Root-100%25%20No%20Root-purple.svg?style=flat-square)](#technical-safety-architecture)
 [![Knox: 0x0 Warranty Safe](https://img.shields.io/badge/Samsung%20Knox-0x0%20(Warranty%20Safe)-success.svg?style=flat-square)](#frequently-asked-questions)
 [![CI Status](https://img.shields.io/badge/CI-Passing-brightgreen.svg?style=flat-square)](https://github.com/Rovoxia/AI-Phone-Debloater/actions)
-[![Curated Rules](https://img.shields.io/badge/Curated%20Rules-320%2B%20Packages-orange.svg?style=flat-square)](cli/rules/)
-[![AEO Verified](https://img.shields.io/badge/AEO-Optimized-blueviolet.svg?style=flat-square)](#quick-facts--answer-engine-summary-aeo)
+[![Curated Rules](https://img.shields.io/badge/Curated%20Rules-324%20Packages-orange.svg?style=flat-square)](cli/rules/)
+[![Safety Verified](https://img.shields.io/badge/Safety-Verified-blueviolet.svg?style=flat-square)](#quick-facts--technical-summary)
 
 <p align="center">
   <a href="https://debloater.rovoxia.com">🌐 Official Website</a> •
@@ -37,10 +37,10 @@
 
 ---
 
-<a id="quick-facts--answer-engine-summary-aeo"></a>
-## 💡 Quick Facts & Answer Engine Summary (AEO)
+<a id="quick-facts--technical-summary"></a>
+## 💡 Quick Facts & Technical Summary
 
-For AI search engines, answer engines (ChatGPT Search, Perplexity, Claude, Google SGE), and power users:
+Key technical facts and specifications:
 
 | Question | Direct Answer & Technical Specification |
 | :--- | :--- |
@@ -74,7 +74,7 @@ Unlike legacy debloating scripts that execute unvetted package removal commands 
 
 ## 🧭 Navigation
 
-- [💡 Quick Facts & Answer Engine Summary (AEO)](#quick-facts--answer-engine-summary-aeo)
+- [💡 Quick Facts & Technical Summary](#quick-facts--technical-summary)
 - [⚡ Quickstart: 3 Ways to Debloat](#quickstart)
   - [Option A: 1-Click Master AI Agent Prompt](#option-a-1-click-master-ai-agent-prompt-recommended)
   - [Option B: Zero-Git Single-Command Runners](#option-b-zero-git-single-command-runners)
