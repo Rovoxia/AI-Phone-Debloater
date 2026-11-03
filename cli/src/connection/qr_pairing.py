@@ -62,9 +62,8 @@ class QrPairingManager:
         Create a new, cryptographic QR pairing session with a random service instance
         name and one-time password.
         """
-        # Service instance name starts with studio- so Android recognizes the standard IDE pairing flow
-        random_id = secrets.token_hex(4)
-        service_name = f"studio-rovoxia-{random_id}"
+        random_id = secrets.token_hex(3)
+        service_name = f"AI_Phone_Debloater_Rovoxia_{random_id}"
 
         # 6-digit numeric pairing password
         password = f"{secrets.randbelow(900000) + 100000:06d}"
@@ -100,6 +99,7 @@ class QrPairingManager:
         session: Optional[PairingSession] = None,
         timeout: float = 120.0,
         progress_cb: Optional[Callable[[str, int], None]] = None,
+        port_prompt_cb: Optional[Callable[[str], Optional[int]]] = None,
     ) -> DeviceInfo:
         """
         Full QR pairing and connection lifecycle:
@@ -122,6 +122,9 @@ class QrPairingManager:
         initial_connect_services = {
             s.endpoint for s in self.mdns.get_connect_services()
         }
+        initial_attached_serials = {
+            d.get("serial", "") for d in self.adb.list_devices()
+        }
 
         pairing_service: Optional[DiscoveredService] = None
 
@@ -141,9 +144,14 @@ class QrPairingManager:
             # Query mDNS for pairing services
             current_pairing = self.mdns.get_pairing_services()
 
-            # 1. Match exact service name
+            # 1. Match exact service name or prefix
             for s in current_pairing:
-                if session.service_name in s.name or s.name in session.service_name:
+                if (
+                    session.service_name in s.name
+                    or s.name in session.service_name
+                    or "AI_Phone_Debloater" in s.name
+                    or "Rovoxia" in s.name
+                ):
                     pairing_service = s
                     break
 
@@ -201,47 +209,82 @@ class QrPairingManager:
         connect_endpoint: Optional[str] = None
         connect_start = time.time()
 
-        # Allow up to 25 seconds for the connection service to be published
-        while (time.time() - connect_start) < 25.0:
+        # Allow up to 20 seconds for connection service to publish or auto-connect
+        while (time.time() - connect_start) < 20.0:
             if self._cancel_flag.is_set():
                 raise OperationCancelledError("Operation cancelled.")
 
+            # A. Check if ADB daemon already auto-connected upon successful pairing
+            for d in self.adb.list_devices():
+                ser = d.get("serial", "")
+                st = d.get("state", "")
+                if st == "device" and (
+                    pairing_service.address in ser
+                    or (":" in ser and ser not in initial_attached_serials)
+                ):
+                    logger.info(f"Device already connected via ADB daemon: {ser}")
+                    connect_endpoint = ser
+                    break
+
+            if connect_endpoint:
+                break
+
+            # B. Check mDNS for connect services
             current_connect = self.mdns.get_connect_services()
-            # Look for connect service from the paired phone IP
             for s in current_connect:
-                if s.address == pairing_service.address:
+                if (
+                    s.address == pairing_service.address
+                    or pairing_service.address in s.address
+                    or s.address in pairing_service.address
+                ):
                     connect_endpoint = s.endpoint
                     break
 
-            # Or newly appeared connect service
             if not connect_endpoint:
                 for s in current_connect:
                     if s.endpoint not in initial_connect_services:
                         connect_endpoint = s.endpoint
                         break
 
+            if not connect_endpoint and len(current_connect) == 1:
+                connect_endpoint = current_connect[0].endpoint
+
             if connect_endpoint:
                 break
+
             time.sleep(1.0)
 
+        # C. If mDNS did not detect the port, invoke fallback port callback if provided
+        if not connect_endpoint and port_prompt_cb:
+            custom_port = port_prompt_cb(pairing_service.address)
+            if custom_port:
+                connect_endpoint = f"{pairing_service.address}:{custom_port}"
+
         if not connect_endpoint:
-            # Fallback: prompt or try standard port 5555 on the paired IP
-            logger.debug(f"Connect service not visible via mDNS; trying default port 5555 on {pairing_service.address}")
-            connect_endpoint = f"{pairing_service.address}:5555"
-
-        if progress_cb:
-            progress_cb(f"Connecting to wireless debugging endpoint {connect_endpoint}...", 10)
-
-        connected_ok, connect_msg = self.wireless.connect(connect_endpoint, timeout=20.0)
-        if not connected_ok:
-            # Retry once after a brief pause
-            time.sleep(1.5)
-            connected_ok, connect_msg = self.wireless.connect(connect_endpoint, timeout=20.0)
-
-        if not connected_ok:
             raise PairingError(
-                f"Pairing succeeded but connection to {connect_endpoint} failed: {connect_msg}"
+                f"Pairing succeeded with {pairing_service.address}, but mDNS connection port "
+                f"was not advertised by your Wi-Fi network. Check the port shown under 'IP address & Port' "
+                f"on your phone's Wireless debugging screen, and connect via option 2 (Manual IP:Port)."
             )
+
+        # Connect if not already in adb list_devices
+        already_attached = any(
+            d.get("serial") == connect_endpoint and d.get("state") == "device"
+            for d in self.adb.list_devices()
+        )
+        if not already_attached:
+            if progress_cb:
+                progress_cb(f"Connecting to wireless debugging endpoint {connect_endpoint}...", 10)
+
+            connected_ok, connect_msg = self.wireless.connect(connect_endpoint, timeout=20.0)
+            if not connected_ok:
+                time.sleep(1.5)
+                connected_ok, connect_msg = self.wireless.connect(connect_endpoint, timeout=20.0)
+
+            if not connected_ok:
+                raise PairingError(
+                    f"Pairing succeeded but connection to {connect_endpoint} failed: {connect_msg}"
+                )
 
         # -------------------------------------------------------------------
         # Phase 4: Validate authorized device state

@@ -228,6 +228,15 @@ class TestDiscoveryAndSecurityValidation(unittest.TestCase):
         self.assertEqual(host, "fe80::1")
         self.assertEqual(port, 41235)
 
+        # Domain names and mDNS .local hostnames
+        host, port = validate_endpoint("android.local:5555")
+        self.assertEqual(host, "android.local")
+        self.assertEqual(port, 5555)
+
+        host, port = validate_endpoint("pixel-phone.lan:41235")
+        self.assertEqual(host, "pixel-phone.lan")
+        self.assertEqual(port, 41235)
+
     def test_validate_endpoint_injection_attempts(self):
         bad_endpoints = [
             "192.168.1.50:5555; rm -rf /",
@@ -486,11 +495,40 @@ class TestQrPairingManager(unittest.TestCase):
         session = mgr.create_pairing_session(ttl_seconds=60.0)
 
         self.assertIsInstance(session, PairingSession)
-        self.assertTrue(session.service_name.startswith("studio-rovoxia-"))
+        self.assertTrue(session.service_name.startswith("AI_Phone_Debloater_Rovoxia_"))
         self.assertEqual(len(session.password), 6)
         self.assertTrue(session.password.isdigit())
         self.assertIn(f"S:{session.service_name}", session.qr_payload)
         self.assertIn(f"P:{session.password}", session.qr_payload)
+
+    def test_mdns_discovery_with_spaces_in_name(self):
+        mock_client = MagicMock()
+        mock_client.run_adb.return_value = (
+            0,
+            "List of discovered mdns services\n"
+            "Samsung Galaxy S24 Ultra    _adb-tls-connect._tcp    192.168.1.105:38921\n"
+            "AI_Phone_Debloater_Rovoxia 123    _adb-tls-pairing._tcp    192.168.1.105:41235\n",
+            "",
+        )
+        discovery = MdnsDiscovery(mock_client)
+        services = discovery.discover_services()
+        self.assertEqual(len(services), 2)
+
+        s1 = services[0]
+        self.assertEqual(s1.name, "Samsung Galaxy S24 Ultra")
+        self.assertEqual(s1.service_type, "_adb-tls-connect._tcp")
+        self.assertEqual(s1.address, "192.168.1.105")
+        self.assertEqual(s1.port, 38921)
+        self.assertTrue(s1.is_connect)
+        self.assertFalse(s1.is_pairing)
+
+        s2 = services[1]
+        self.assertEqual(s2.name, "AI_Phone_Debloater_Rovoxia 123")
+        self.assertEqual(s2.service_type, "_adb-tls-pairing._tcp")
+        self.assertEqual(s2.address, "192.168.1.105")
+        self.assertEqual(s2.port, 41235)
+        self.assertTrue(s2.is_pairing)
+        self.assertFalse(s2.is_connect)
 
 
 class TestConnectionDiagnostics(unittest.TestCase):

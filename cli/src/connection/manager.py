@@ -284,11 +284,15 @@ class ConnectionManager:
         session: PairingSession,
         timeout: float = 120.0,
         progress_cb: Optional[Callable[[str, int], None]] = None,
+        port_prompt_cb: Optional[Callable[[str], Optional[int]]] = None,
     ) -> DeviceInfo:
         """Wait for phone scan, complete pairing and connection."""
         try:
             device = self.qr_pairing.execute_qr_pairing_flow(
-                session=session, timeout=timeout, progress_cb=progress_cb
+                session=session,
+                timeout=timeout,
+                progress_cb=progress_cb,
+                port_prompt_cb=port_prompt_cb,
             )
             self.set_active_device(device)
             return device

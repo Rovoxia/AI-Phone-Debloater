@@ -256,10 +256,25 @@ class ConnectionUI:
             sys.stdout.write(f"\r  {cyan('[3/5]')} {msg}   ")
             sys.stdout.flush()
 
+        def on_port_prompt(phone_ip: str) -> Optional[int]:
+            print()
+            print(f"\n  {green(bold('[+] Encrypted pairing confirmed with phone!'))}")
+            print(f"  {yellow('Notice: Wi-Fi network did not forward mDNS connection port.')}")
+            print(f"  {cyan('Look at your phone screen under Settings -> Wireless debugging:')}")
+            try:
+                raw_port = ask(f"  Enter the 5-digit port shown under 'IP address & Port' (e.g. 39441): ").strip()
+                if ":" in raw_port:
+                    raw_port = raw_port.split(":")[-1]
+                if raw_port.isdigit() and 1 <= int(raw_port) <= 65535:
+                    return int(raw_port)
+            except Exception:
+                pass
+            return None
+
         print(f"  {cyan('[3/5]')} Waiting for phone to scan QR code...")
         try:
             device = self.mgr.execute_qr_pairing_wait(
-                session, timeout=120.0, progress_cb=on_progress
+                session, timeout=120.0, progress_cb=on_progress, port_prompt_cb=on_port_prompt
             )
             print()
             print(f"  {cyan('[4/5]')} Cryptographic pairing confirmed!")

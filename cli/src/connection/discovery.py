@@ -66,6 +66,29 @@ def validate_ip_address(ip: str) -> bool:
         return False
 
 
+def validate_host(host: str) -> bool:
+    """Return True when ``host`` is a valid IPv4, IPv6, or RFC 1123 / mDNS domain name."""
+    if not isinstance(host, str) or not host.strip():
+        return False
+    h = host.strip()
+    if h.startswith("[") and h.endswith("]"):
+        h = h[1:-1]
+    # Check IP address (strip IPv6 zone index if present, e.g. fe80::1%wlan0)
+    base_ip = h.split("%")[0]
+    if validate_ip_address(base_ip):
+        return True
+    # If 4 decimal dot-separated blocks, it must be a valid IPv4 (reject 192.168.1.999)
+    if re.fullmatch(r"\d+\.\d+\.\d+\.\d+", h):
+        return False
+    # RFC 1123 hostname / mDNS domain (.local) validation
+    if len(h) > 253:
+        return False
+    domain_re = re.compile(
+        r"^(?:[a-zA-Z0-9](?:[a-zA-Z0-9_-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9_-]{0,61}[a-zA-Z0-9])?$"
+    )
+    return bool(domain_re.match(h))
+
+
 def validate_port(port: int) -> bool:
     """Return True when ``port`` is an integer in the valid range 1..65535."""
     try:
@@ -131,9 +154,9 @@ def validate_endpoint(endpoint: str) -> Tuple[str, int]:
             f"port out of range 1-65535: {port}"
         )
 
-    if not validate_ip_address(host):
+    if not validate_host(host):
         raise SecurityValidationError(
-            f"invalid IP address: {host!r}"
+            f"invalid host or IP address: {host!r}"
         )
 
     return host, port
@@ -206,12 +229,17 @@ class MdnsDiscovery:
             parts = line.split()
             if len(parts) < 3:
                 continue
-            name, service_type, endpoint = parts[0], parts[1], parts[2]
-            # Strip trailing dots from the service type.
-            service_type = service_type.rstrip(".")
+            endpoint = parts[-1]
+            service_type = parts[-2].rstrip(".")
+            name = " ".join(parts[:-2])
             raw = line
             try:
-                address, port_str = endpoint.rsplit(":", 1)
+                if endpoint.startswith("[") and "]:" in endpoint:
+                    address, port_str = endpoint[1:].split("]:", 1)
+                elif ":" in endpoint:
+                    address, port_str = endpoint.rsplit(":", 1)
+                else:
+                    address, port_str = endpoint, "0"
                 port = int(port_str)
             except (ValueError, IndexError):
                 address, port = endpoint, 0
