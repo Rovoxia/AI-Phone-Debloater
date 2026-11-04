@@ -331,7 +331,7 @@ def run_cmd(cmd, timeout=30.0, check=False, capture=True, env=None):
     return proc.returncode, stdout, stderr
 
 class Adb:
-    def __init__(self, adb_path=None, serial=None, timeout=30.0, logger=None):
+    def __init__(self, adb_path=None, serial=None, timeout=30.0, logger=None, connection_mgr=None):
         self.logger = logger or Logger()
         self.timeout = timeout
         self.serial = serial or None
@@ -342,7 +342,11 @@ class Adb:
             self.adb_path = resolved
         else:
             # Delegate to ConnectionManager's AdbClient for discovery
-            self.adb_path = self.connection_mgr.adb.adb_path
+            self.connection_mgr = connection_mgr
+            if connection_mgr:
+                self.adb_path = connection_mgr.adb.adb_path
+            else:
+                raise AdbError("adb not found. Install Android platform-tools, put adb on PATH, set AI_PHONE_DEBLOATER_ADB_PATH or pass --adb-path.")
         if not self.adb_path:
             raise AdbError("adb not found. Install Android platform-tools, put adb on PATH, set AI_PHONE_DEBLOATER_ADB_PATH or pass --adb-path.")
 
