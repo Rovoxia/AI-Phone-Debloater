@@ -17,6 +17,39 @@ for cmd in python3 python; do
 done
 
 if [ -z "$PY" ]; then
+    echo "[INFO] Python 3 not found. Attempting auto-install via system package manager..."
+    OS="$(uname -s)"
+    case "$OS" in
+        Linux)
+            if command -v apt-get >/dev/null 2>&1; then
+                sudo apt-get update -qq && sudo apt-get install -y -qq python3 || true
+            elif command -v apk >/dev/null 2>&1; then
+                sudo apk add python3 || true
+            elif command -v pacman >/dev/null 2>&1; then
+                sudo pacman -Sy --noconfirm python || true
+            elif command -v dnf >/dev/null 2>&1; then
+                sudo dnf install -y python3 || true
+            elif command -v yum >/dev/null 2>&1; then
+                sudo yum install -y python3 || true
+            fi
+            ;;
+        Darwin)
+            if command -v brew >/dev/null 2>&1; then
+                brew install python || true
+            fi
+            ;;
+    esac
+    for cmd in python3 python; do
+        if command -v "$cmd" >/dev/null 2>&1; then
+            if "$cmd" -c 'import sys; exit(0 if sys.version_info[0] >= 3 else 1)' >/dev/null 2>&1; then
+                PY="$cmd"
+                break
+            fi
+        fi
+    done
+fi
+
+if [ -z "$PY" ]; then
     echo "[ERROR] Python 3 not found on system. Install Python 3 manually from https://www.python.org/downloads/"
     exit 1
 fi
