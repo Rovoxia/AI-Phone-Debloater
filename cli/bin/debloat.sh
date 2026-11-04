@@ -104,7 +104,10 @@ else
 fi
 
 echo "Launching AI-Phone-Debloater v$APP_VERSION..."
-if [ "$#" -eq 0 ]; then
+if [ "$#" -eq 0 ] && [ ! -t 0 ]; then
+    # Piped input detected (e.g. curl | bash) → non-interactive mode
+    set -- --scan
+elif [ "$#" -eq 0 ]; then
     set -- --interactive
 fi
 exec "$PY" "$CLI_DIR/src/debloat_engine.py" "$@"
