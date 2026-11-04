@@ -27,7 +27,7 @@ if exist "%CLI_DIR%\tools\python\python.exe" (
 )
 
 if not defined PY (
-    for %%p in (python py python3) do (
+    for %%p in (python python3 py) do (
         if not defined PY (
             %%p -c "import sys; sys.exit(0 if sys.version_info[0]>=3 else 1)" >nul 2>&1
             if not errorlevel 1 set "PY=%%p"
@@ -49,7 +49,10 @@ if not defined PY (
         "Start-Process -FilePath $installer -ArgumentList '/quiet InstallAllUsers=0 PrependPath=1 Include_test=0' -Wait;" ^
         "Remove-Item $installer -Force -ErrorAction SilentlyContinue;" ^
         "Write-Host '[OK] Python installation complete.'"
-    for %%p in (python py python3) do (
+    )
+    echo [INFO] Python 3 installed but not on PATH yet; refreshing PATH...
+    set "PATH=%PATH%;C:\Python312;C:\Python312\Scripts;C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python312;C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python312\Scripts"
+    for %%p in (python python3 py) do (
         if not defined PY (
             %%p -c "import sys; sys.exit(0 if sys.version_info[0]>=3 else 1)" >nul 2>&1
             if not errorlevel 1 set "PY=%%p"

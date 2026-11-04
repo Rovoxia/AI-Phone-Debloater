@@ -17,7 +17,7 @@ for cmd in python3 python; do
 done
 
 if [ -z "$PY" ]; then
-    echo "[ERROR] Python 3 not found. Please install Python 3."
+    echo "[ERROR] Python 3 not found on system. Install Python 3 manually from https://www.python.org/downloads/"
     exit 1
 fi
 
