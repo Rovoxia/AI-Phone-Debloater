@@ -457,6 +457,11 @@ class RuleSet:
         self.logger = logger or Logger()
         self.critical = set(HARDCRITICAL_PACKAGES.keys())
         self.critical_reasons = dict(HARDCRITICAL_PACKAGES)
+
+    @property
+    def total_unique_packages(self) -> int:
+        return len(self.critical)
+
         self.safe = {}
         self.loaded_files = []
 
