@@ -260,9 +260,10 @@ class TestAdbClient(unittest.TestCase):
 
     @patch("shutil.which")
     def test_discover_adb_explicit(self, mock_which):
-        with tempfile.NamedTemporaryFile(suffix=".exe", delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".exe" if os.name == "nt" else "", delete=False) as f:
             temp_adb = f.name
         try:
+            os.chmod(temp_adb, 0o755)
             client = AdbClient(adb_path=temp_adb)
             self.assertEqual(client.adb_path, temp_adb)
         finally:
@@ -276,9 +277,10 @@ class TestAdbClient(unittest.TestCase):
         mock_proc.stderr = ""
         mock_run.return_value = mock_proc
 
-        with tempfile.NamedTemporaryFile(delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".exe" if os.name == "nt" else "", delete=False) as f:
             temp_adb = f.name
         try:
+            os.chmod(temp_adb, 0o755)
             client = AdbClient(adb_path=temp_adb)
             rc, out, _err = client.run_adb(["devices"])
             self.assertEqual(rc, 0)
@@ -303,9 +305,10 @@ class TestAdbClient(unittest.TestCase):
         mock_proc.stderr = ""
         mock_run.return_value = mock_proc
 
-        with tempfile.NamedTemporaryFile(delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".exe" if os.name == "nt" else "", delete=False) as f:
             temp_adb = f.name
         try:
+            os.chmod(temp_adb, 0o755)
             client = AdbClient(adb_path=temp_adb)
             devices = client.list_devices()
             self.assertEqual(len(devices), 3)
