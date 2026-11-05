@@ -134,7 +134,7 @@ adb shell cmd package install-existing <package_name>
 
 ## 📂 OEM Rulebook Reference (`cli/rules/`)
 
-Cross-reference device packages against these curated rule files (320+ rules):
+Cross-reference device packages against these curated rule files (324 rules):
 * `samsung-oneui.json` — Samsung One UI (Bixby, AR Zone, GOS, Knox Analytics, Link to Windows)
 * `xiaomi-miui-hyperos.json` — Xiaomi MIUI / HyperOS (MSA Ad Service, Analytics, Joyose, Mi Pay, GetApps)
 * `oneplus-oxygenos.json` — OnePlus OxygenOS (HeyTap, OPBugreport, Membership, LogKit)

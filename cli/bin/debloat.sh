@@ -104,10 +104,18 @@ else
 fi
 
 echo "Launching AI-Phone-Debloater v$APP_VERSION..."
+# When invoked through a pipe (e.g. `curl ... | bash`), stdin is the script
+# pipe, not a terminal. Redirect it back from the controlling tty so the
+# interactive menu works; if there is no tty the engine reports a clean
+# error instead of crashing on a missing ADB device.
 if [ "$#" -eq 0 ] && [ ! -t 0 ]; then
-    # Piped input detected (e.g. curl | bash) → non-interactive mode
-    set -- --scan
+    if [ -r /dev/tty ] && [ -w /dev/tty ]; then
+        exec "$PY" "$CLI_DIR/src/debloat_engine.py" --interactive </dev/tty
+    else
+        exec "$PY" "$CLI_DIR/src/debloat_engine.py"
+    fi
 elif [ "$#" -eq 0 ]; then
-    set -- --interactive
+    exec "$PY" "$CLI_DIR/src/debloat_engine.py" --interactive
+else
+    exec "$PY" "$CLI_DIR/src/debloat_engine.py" "$@"
 fi
-exec "$PY" "$CLI_DIR/src/debloat_engine.py" "$@"

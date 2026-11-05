@@ -91,7 +91,11 @@ fi
 
 if [ -f "$LAUNCHER" ]; then
     echo "[INFO] Launching debloater interactive engine..."
-    exec bash "$LAUNCHER"
+    if [ -r /dev/tty ] && [ -w /dev/tty ]; then
+        exec bash "$LAUNCHER" </dev/tty
+    else
+        exec bash "$LAUNCHER"
+    fi
 else
     echo "[ERROR] Launcher script not found at bin/debloat.sh or root." >&2
     exit 1
