@@ -49,7 +49,7 @@ Key technical facts and specifications:
 | **Does it trip Samsung Knox or void warranty?** | **No.** Knox Warranty Void remains `0x0`. Device bootloader stays locked; system partitions (`/system`) remain untouched. |
 | **Do banking apps and Google Pay continue working?** | **Yes.** Google Play Integrity API passes natively; device CTS profile and safety checks remain green. |
 | **Are package removals reversible?** | **100% reversible.** Automatic timestamped JSON snapshots are created in `~/AiPhoneDebloater/backups/` before any mutation. |
-| **Can critical system packages be removed accidentally?** | **No.** Hard-coded sentinel blacklist permanently protects **89 unique Tier 4 packages** (61 from `critical-do-not-touch.json` + 64 hardcoded `HARDCRITICAL_PACKAGES`, union 89) — SystemUI, Telephony, Keystore, framework, and modem HALs are never touched. |
+| **Can critical system packages be removed accidentally?** | **No.** Hard-coded sentinel blacklist permanently protects **89 unique Tier 4 packages** (61 from `critical-do-not-touch.json` + 89 in `HARDCRITICAL_PACKAGES`, union 89) — SystemUI, Telephony, Keystore, framework, and modem HALs are never touched. |
 | **What platforms are supported?** | Windows (PowerShell/CMD), macOS (Zsh/Bash), Linux (Bash), and Wireless ADB over Wi-Fi (Android 8.0 to 15+). |
 
 ---
