@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 AI-Phone-Debloater — Wireless QR Pairing Engine
 ===============================================
@@ -18,7 +17,8 @@ import logging
 import secrets
 import threading
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
+from typing import Any
 
 from .adb_client import AdbClient
 from .device_identity import DeviceIdentityManager
@@ -44,17 +44,17 @@ class QrPairingManager:
     def __init__(
         self,
         adb_client: AdbClient,
-        identity_manager: Optional[DeviceIdentityManager] = None,
-        wireless_handler: Optional[WirelessConnectionHandler] = None,
-        mdns_discovery: Optional[MdnsDiscovery] = None,
-        logger_obj: Optional[Any] = None,
+        identity_manager: DeviceIdentityManager | None = None,
+        wireless_handler: WirelessConnectionHandler | None = None,
+        mdns_discovery: MdnsDiscovery | None = None,
+        logger_obj: Any | None = None,
     ) -> None:
         self.adb = adb_client
         self.identity = identity_manager or DeviceIdentityManager(adb_client)
         self.wireless = wireless_handler or WirelessConnectionHandler(adb_client, self.identity)
         self.mdns = mdns_discovery or MdnsDiscovery(adb_client)
         self.custom_logger = logger_obj
-        self._active_session: Optional[PairingSession] = None
+        self._active_session: PairingSession | None = None
         self._cancel_flag = threading.Event()
 
     def create_pairing_session(self, ttl_seconds: float = 120.0) -> PairingSession:
@@ -96,10 +96,10 @@ class QrPairingManager:
 
     def execute_qr_pairing_flow(
         self,
-        session: Optional[PairingSession] = None,
+        session: PairingSession | None = None,
         timeout: float = 120.0,
-        progress_cb: Optional[Callable[[str, int], None]] = None,
-        port_prompt_cb: Optional[Callable[[str], Optional[int]]] = None,
+        progress_cb: Callable[[str, int], None] | None = None,
+        port_prompt_cb: Callable[[str], int | None] | None = None,
     ) -> DeviceInfo:
         """
         Full QR pairing and connection lifecycle:
@@ -126,7 +126,7 @@ class QrPairingManager:
             d.get("serial", "") for d in self.adb.list_devices()
         }
 
-        pairing_service: Optional[DiscoveredService] = None
+        pairing_service: DiscoveredService | None = None
 
         # -------------------------------------------------------------------
         # Phase 1: Wait for phone to scan QR code and advertise pairing service
@@ -205,7 +205,7 @@ class QrPairingManager:
         if progress_cb:
             progress_cb("Pairing succeeded! Discovering connection port...", int(timeout - (time.time() - start_time)))
 
-        connect_endpoint: Optional[str] = None
+        connect_endpoint: str | None = None
         connect_start = time.time()
 
         # Allow up to 20 seconds for connection service to publish or auto-connect

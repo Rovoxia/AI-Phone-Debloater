@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 AI-Phone-Debloater — Wireless TCP/IP Transport Handler
 ======================================================
@@ -11,7 +10,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from .adb_client import AdbClient
 from .device_identity import DeviceIdentityManager
@@ -20,7 +19,6 @@ from .exceptions import (
     ConnectionError,
     DeviceNotFoundError,
     DeviceUnauthorizedError,
-    PairingError,
     SecurityValidationError,
 )
 from .models import DeviceInfo, TransportType
@@ -34,14 +32,14 @@ class WirelessConnectionHandler:
     def __init__(
         self,
         adb_client: AdbClient,
-        identity_manager: Optional[DeviceIdentityManager] = None,
-        logger_obj: Optional[Any] = None,
+        identity_manager: DeviceIdentityManager | None = None,
+        logger_obj: Any | None = None,
     ) -> None:
         self.adb = adb_client
         self.identity = identity_manager or DeviceIdentityManager(adb_client)
         self.custom_logger = logger_obj
 
-    def connect(self, address: str, timeout: float = 15.0) -> Tuple[bool, str]:
+    def connect(self, address: str, timeout: float = 15.0) -> tuple[bool, str]:
         """
         Connect to a wireless device via `adb connect HOST:PORT`.
         Validates endpoint before executing command.
@@ -62,17 +60,17 @@ class WirelessConnectionHandler:
         logger.warning(f"Wireless connection to {endpoint} failed: {error_msg}")
         return False, error_msg
 
-    def disconnect(self, address: Optional[str] = None, timeout: float = 10.0) -> bool:
+    def disconnect(self, address: str | None = None, timeout: float = 10.0) -> bool:
         """Disconnect from a specific wireless device or all TCP/IP devices."""
         args = ["disconnect"]
         if address:
             host, port = validate_endpoint(address)
             args.append(f"{host}:{port}")
 
-        rc, out, err = self.adb.run_adb(args, timeout=timeout)
+        rc, _out, _err = self.adb.run_adb(args, timeout=timeout)
         return rc == 0
 
-    def pair_with_code(self, address: str, code: str, timeout: float = 20.0) -> Tuple[bool, str]:
+    def pair_with_code(self, address: str, code: str, timeout: float = 20.0) -> tuple[bool, str]:
         """
         Pair with an Android 11+ device using a 6-digit numeric pairing code.
         Format: `adb pair HOST:PORT CODE`.
@@ -97,7 +95,7 @@ class WirelessConnectionHandler:
         logger.warning(f"Pairing with {endpoint} failed: {error_msg}")
         return False, error_msg
 
-    def enable_tcpip(self, port: int = 5555, serial: Optional[str] = None) -> bool:
+    def enable_tcpip(self, port: int = 5555, serial: str | None = None) -> bool:
         """
         Restart adbd on the target device listening on TCP/IP on the specified port.
         Used when transitioning from USB to Wi-Fi.
@@ -109,7 +107,7 @@ class WirelessConnectionHandler:
         rc, out, err = self.adb.run_adb(["tcpip", str(port)], serial=serial, timeout=15.0)
         return rc == 0 and ("restarting in tcp mode" in (out + err).lower() or rc == 0)
 
-    def list_wireless_devices(self) -> List[Dict[str, str]]:
+    def list_wireless_devices(self) -> list[dict[str, str]]:
         """List currently connected wireless ADB devices."""
         all_devs = self.adb.list_devices()
         return [

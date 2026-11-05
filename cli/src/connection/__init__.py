@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 AI-Phone-Debloater — Centralized Connection Architecture
 =========================================================
@@ -51,46 +50,46 @@ from .usb import UsbConnectionHandler
 from .wireless import WirelessConnectionHandler
 
 __all__ = [
-    # Manager & UI
-    "ConnectionManager",
-    "ConnectionUI",
     # Subsystems
     "AdbClient",
-    "DeviceIdentityManager",
-    "DeviceRegistry",
+    "AdbNotFoundError",
+    "AdbServerError",
+    "AdbVersionError",
     "ConnectionDiagnostics",
+    # Exceptions
+    "ConnectionError",
+    # Manager & UI
+    "ConnectionManager",
+    # Models & Enums
+    "ConnectionState",
+    "ConnectionUI",
+    "DeviceAmbiguousError",
+    "DeviceIdentityManager",
+    "DeviceInfo",
+    "DeviceNotFoundError",
+    "DeviceOfflineError",
+    "DeviceRegistry",
+    "DeviceState",
+    "DeviceUnauthorizedError",
+    "DiagnosticItem",
+    "DiagnosticReport",
+    "DiscoveredService",
+    "DiscoveryError",
+    "LanDiscovery",
+    "MdnsDiscovery",
+    "OperationCancelledError",
+    "PairingError",
+    "PairingSession",
+    "PairingTimeoutError",
+    "QrPairingManager",
+    "RememberedDevice",
+    "SecurityValidationError",
+    "TransportType",
     "UsbConnectionHandler",
     "WirelessConnectionHandler",
-    "QrPairingManager",
-    "MdnsDiscovery",
-    "LanDiscovery",
-    "validate_endpoint",
     # QR Code Utilities
     "generate_android_qr_payload",
     "generate_qr_matrix",
     "render_qr_for_terminal",
-    # Exceptions
-    "ConnectionError",
-    "AdbNotFoundError",
-    "AdbVersionError",
-    "AdbServerError",
-    "DeviceNotFoundError",
-    "DeviceUnauthorizedError",
-    "DeviceOfflineError",
-    "DeviceAmbiguousError",
-    "PairingError",
-    "PairingTimeoutError",
-    "DiscoveryError",
-    "SecurityValidationError",
-    "OperationCancelledError",
-    # Models & Enums
-    "ConnectionState",
-    "TransportType",
-    "DeviceState",
-    "DeviceInfo",
-    "DiscoveredService",
-    "PairingSession",
-    "DiagnosticItem",
-    "DiagnosticReport",
-    "RememberedDevice",
+    "validate_endpoint",
 ]

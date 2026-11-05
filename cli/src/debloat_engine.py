@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 AI-Phone-Debloater — Core Debloat Engine
 =======================================
@@ -19,17 +18,17 @@ import threading
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 if hasattr(sys.stdout, "reconfigure"):
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    except Exception:
+    except (AttributeError, ValueError):
         pass
 if hasattr(sys.stderr, "reconfigure"):
     try:
         sys.stderr.reconfigure(encoding="utf-8", errors="replace")
-    except Exception:
+    except (AttributeError, ValueError):
         pass
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -39,35 +38,9 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 try:
-    from connection import (
-        AdbClient,
-        ConnectionDiagnostics,
-        ConnectionManager,
-        ConnectionUI,
-        DeviceRegistry,
-        ConnectionError as ConnError,
-        DeviceAmbiguousError as ConnDeviceAmbiguous,
-        DeviceNotFoundError as ConnDeviceNotFound,
-        DeviceOfflineError as ConnDeviceOffline,
-        DeviceUnauthorizedError as ConnDeviceUnauthorized,
-        OperationCancelledError as ConnCancelled,
-        PairingError as ConnPairingError,
-    )
+    from connection import ConnectionError, ConnectionManager, ConnectionUI
 except ImportError:
-    from .connection import (  # type: ignore
-        AdbClient,
-        ConnectionDiagnostics,
-        ConnectionManager,
-        ConnectionUI,
-        DeviceRegistry,
-        ConnectionError as ConnError,
-        DeviceAmbiguousError as ConnDeviceAmbiguous,
-        DeviceNotFoundError as ConnDeviceNotFound,
-        DeviceOfflineError as ConnDeviceOffline,
-        DeviceUnauthorizedError as ConnDeviceUnauthorized,
-        OperationCancelledError as ConnCancelled,
-        PairingError as ConnPairingError,
-    )
+    from .connection import ConnectionError, ConnectionManager, ConnectionUI
 
 def load_version() -> str:
     for cand in (PROJECT_ROOT / "VERSION", SCRIPT_DIR.parent / "VERSION", Path.cwd() / "VERSION"):
@@ -76,7 +49,7 @@ def load_version() -> str:
                 val = cand.read_text(encoding="utf-8").strip()
                 if val:
                     return val
-            except Exception:
+            except (OSError, ValueError):
                 pass
     return "1.0.0"
 
@@ -95,9 +68,9 @@ LOCAL_BACKUPS_DIR = PROJECT_ROOT / "cli" / "backups"
 TIMESTAMP_FORMAT = "%Y%m%d_%H%M%S"
 
 # Device manufacturer (first word of ro.product.manufacturer) -> word used in the OEM rule files.
-MANUFACTURER_ALIASES: Dict[str, str] = {"redmi": "xiaomi", "poco": "xiaomi", "iqoo": "vivo"}
+MANUFACTURER_ALIASES: dict[str, str] = {"redmi": "xiaomi", "poco": "xiaomi", "iqoo": "vivo"}
 
-HARDCRITICAL_PACKAGES: Dict[str, str] = {
+HARDCRITICAL_PACKAGES: dict[str, str] = {
     # Android core framework (in both CRIT and HARDCRITICAL)
     "android": "Android core framework",
     "com.android.systemui": "System UI (nav bar, status bar, notifications)",
@@ -151,7 +124,6 @@ HARDCRITICAL_PACKAGES: Dict[str, str] = {
     "com.android.ipsec": "IPsec stack",
     "com.android.vpn": "VPN services",
     "com.android.smspush": "SMS push",
-    "com.android.cellbroadcastreceiver": "Cell broadcast (emergency alerts)",
     "com.android.ims": "IP Multimedia Subsystem",
     "com.android.ims.rcsservice": "RCS service",
     "com.google.android.webview": "Android System WebView",
@@ -216,7 +188,7 @@ def _supports_color() -> bool:
             if kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
                 mode.value |= 0x0004
                 return kernel32.SetConsoleMode(handle, mode) != 0
-        except Exception:
+        except (OSError, AttributeError):
             pass
         return False
     return sys.stdout.isatty()
@@ -282,7 +254,7 @@ class Progress:
         if self._thread: self._thread.join(timeout=0.4)
 
 class DebloatError(RuntimeError): pass
-class AdbError(DebloatError, ConnError): pass
+class AdbError(DebloatError): pass
 
 # Android package names: dot-separated Java identifiers ("android" has no dot).
 # Anything else is rejected before it can reach a device shell command line.
@@ -318,7 +290,7 @@ def run_cmd(cmd, timeout=30.0, check=False, capture=True, env=None):
     printable = " ".join(str(c) for c in cmd)
     try:
         # stdin=DEVNULL: "adb shell" would otherwise swallow our own piped stdin (answers to prompts).
-        proc = subprocess.run(cmd, capture_output=capture, stdin=subprocess.DEVNULL, text=True, encoding="utf-8", errors="replace", timeout=timeout, env=full_env)
+        proc = subprocess.run(cmd, capture_output=capture, stdin=subprocess.DEVNULL, text=True, encoding="utf-8", errors="replace", timeout=timeout, env=full_env, check=False)
     except FileNotFoundError as exc:
         raise AdbError(f"executable not found: {cmd[0]}") from exc
     except subprocess.TimeoutExpired as exc:
@@ -420,7 +392,7 @@ class Adb:
         return pkgs
 
     def pm_path(self, package: str):
-        rc, out, _ = self.shell(f"pm path {validate_package(package)}")
+        _rc, out, _ = self.shell(f"pm path {validate_package(package)}")
         m = re.search(r"package:([^\s]+)", out)
         return m.group(1) if m else ""
 
@@ -563,7 +535,7 @@ class RuleSet:
         if manufacturer:
             matched = [(rf, d) for rf, d in oem_files if self._matches_manufacturer(rf, d, manufacturer)]
             if not matched:
-                self.logger.warn(f"No OEM rule file matches manufacturer '{manufacturer}'; using universal rules only.")
+                self.logger.warning(f"No OEM rule file matches manufacturer '{manufacturer}'; using universal rules only.")
             oem_files = matched
         for rf, data in oem_files:
             self.loaded_files.append(str(rf))
@@ -697,10 +669,10 @@ class SnapshotManager:
                 seen.add(path.name)
                 try:
                     with path.open("r", encoding="utf-8") as fh: data = json.load(fh)
-                    if not isinstance(data, dict): raise ValueError("not a JSON object")
+                    if not isinstance(data, dict): raise TypeError("not a JSON object")
                     results.append({"path": str(path), "name": path.name, "created_at": data.get("created_at"), "device": data.get("device") or {}, "package_count": data.get("package_count")})
                 except (OSError, ValueError) as exc:
-                    self.logger.warn(f"Skipping unreadable snapshot {path.name}: {exc}")
+                    self.logger.warning(f"Skipping unreadable snapshot {path.name}: {exc}")
         results.sort(key=lambda r: r.get("created_at") or "", reverse=True)
         return results
 
@@ -742,7 +714,7 @@ class DebloatEngine:
         self._confirmed = bool(assume_yes)
         self._connected = False
         self._rules_loaded = False
-        self.last_scan: Optional[List[Dict[str, Any]]] = None
+        self.last_scan: list[dict[str, Any]] | None = None
 
     @staticmethod
     def _tty():
@@ -750,7 +722,8 @@ class DebloatEngine:
             if sys.stdin is None or not sys.stdin.isatty(): return False
             if sys.platform == "win32":
                 # isatty() is also True for NUL on Windows; only a real console has a console mode.
-                import ctypes, msvcrt
+                import ctypes
+                import msvcrt
                 handle = msvcrt.get_osfhandle(sys.stdin.fileno())
                 return bool(ctypes.windll.kernel32.GetConsoleMode(ctypes.c_void_p(handle), ctypes.byref(ctypes.c_uint32())))
             return True
@@ -771,29 +744,9 @@ class DebloatEngine:
         if not self._tty():
             return None
         try:
-            w_devices = self.discover_wireless()
-        except OSError as exc:
-            self.logger.warn(f"Wireless discovery failed: {exc}")
-            return None
-        if not w_devices:
-            self.logger.info("No wireless ADB devices found.")
-            return None
-        self.logger.info(f"Found {len(w_devices)} wireless device(s):")
-        for i, d in enumerate(w_devices, 1): print(f"  [{i}] {d.get('name', d['serial'])} @ {d['serial']}")
-        choice = ask(f"Select wireless device number (1-{len(w_devices)}, Enter to cancel): ").strip()
-        if choice.isdigit() and 1 <= int(choice) <= len(w_devices):
-            return w_devices[int(choice) - 1]["serial"]
-        if choice: self.logger.warn(f"Invalid selection '{choice}'")
-        return None
-
-    def auto_discover(self):
-        """Interactive only: the user must pick/confirm the endpoint, never auto-connect to an unknown LAN host."""
-        if not self._tty():
-            return None
-        try:
             services = self.connection_mgr.discover_wireless_devices()
         except OSError as exc:
-            self.logger.warn(f"Wireless discovery failed: {exc}")
+            self.logger.warning(f"Wireless discovery failed: {exc}")
             return None
         if not services:
             self.logger.info("No wireless ADB devices found.")
@@ -803,7 +756,7 @@ class DebloatEngine:
         choice = ask(f"Select wireless device number (1-{len(services)}, Enter to cancel): ").strip()
         if choice.isdigit() and 1 <= int(choice) <= len(services):
             return services[int(choice) - 1].endpoint
-        if choice: self.logger.warn(f"Invalid selection '{choice}'")
+        if choice: self.logger.warning(f"Invalid selection '{choice}'")
         return None
 
     def connect_wireless(self, address):
@@ -814,7 +767,7 @@ class DebloatEngine:
         if ":" not in address: address += ":5555"
         try:
             dev = self.connection_mgr.connect_wifi(address, timeout=self.timeout)
-        except Exception as exc:
+        except ConnectionError as exc:
             self.logger.error(f"Wireless connection failed: {exc}")
             return False
         self.logger.ok(f"Connected to wireless ADB: {address}")
@@ -988,7 +941,7 @@ class DebloatEngine:
                 continue
             if self.rules.is_critical(pkg):
                 report["skipped_protected"].append({"package": pkg, "reason": "critical"})
-                self.logger.warn(f"Protected (critical), skipped: {pkg}")
+                self.logger.warning(f"Protected (critical), skipped: {pkg}")
                 continue
             actionable.append(pkg)
         if not actionable:
@@ -1002,7 +955,7 @@ class DebloatEngine:
             report["planned"] = list(actionable)
             return report
         if require_confirm and not self._confirm(f"Proceed with {action} on {len(actionable)} package(s)?"):
-            self.logger.warn("Cancelled; no changes made.")
+            self.logger.warning("Cancelled; no changes made.")
             report["cancelled"] = True
             return report
 
@@ -1016,7 +969,7 @@ class DebloatEngine:
             except (OSError, DebloatError) as exc:
                 raise DebloatError(f"Safety snapshot failed, aborting before any change: {exc}") from exc
         else:
-            self.logger.warn("No backup snapshot (--no-backup); restore will need the package names.")
+            self.logger.warning("No backup snapshot (--no-backup); restore will need the package names.")
         for pkg in actionable:
             try:
                 rc, out, err = self.adb.uninstall_user(pkg, self.timeout) if action == "uninstall" else self.adb.disable_user(pkg, self.timeout)
@@ -1107,7 +1060,7 @@ class DebloatEngine:
         self.ensure_connected()
         snap_dev = data.get("device") or {}
         if snap_dev.get("serial") and snap_dev.get("serial") != self.device.serial and snap_dev.get("model") != self.device.model:
-            self.logger.warn(f"Snapshot was taken on {snap_dev.get('manufacturer', '?')} {snap_dev.get('model', '?')} ({snap_dev.get('serial')}), "
+            self.logger.warning(f"Snapshot was taken on {snap_dev.get('manufacturer', '?')} {snap_dev.get('model', '?')} ({snap_dev.get('serial')}), "
                              f"restoring to {self.device.model} ({self.device.serial}).")
         entries = [e for e in data.get("packages", []) if isinstance(e, dict)]
         if selected_pkgs is not None:
@@ -1160,7 +1113,7 @@ class DebloatEngine:
             found = self.snapshot_mgr.find_backup(sel)
             target = str(found) if found else None
         if not target:
-            self.logger.warn("Invalid selection.")
+            self.logger.warning("Invalid selection.")
             return
         data = self.snapshot_mgr.load(Path(target))
         pkgs = [p for p in data.get("packages", []) if isinstance(p, dict)]
@@ -1178,18 +1131,18 @@ class DebloatEngine:
             if chosen_pkgs:
                 self.restore(target, action="auto", selected_pkgs=chosen_pkgs)
             else:
-                self.logger.warn("No valid packages selected.")
+                self.logger.warning("No valid packages selected.")
         elif sub_sel in ("", "a"):
             self.restore(target, action="auto")
         else:
-            self.logger.warn("Invalid option; nothing restored.")
+            self.logger.warning("Invalid option; nothing restored.")
 
     def interactive(self):
         self.logger.header(f"AI-Phone-Debloater v{__version__} — Interactive Mode")
         try:
             self.ensure_ready()
         except DebloatError as exc:
-            self.logger.warn(f"Initial connection: {exc}")
+            self.logger.warning(f"Initial connection: {exc}")
             self.logger.info("Tip: Select 'w' to connect wirelessly.")
 
         while True:
@@ -1234,7 +1187,7 @@ class DebloatEngine:
                 elif choice == "9":
                     pkg = ask("Package name: ").strip()
                     if not pkg:
-                        self.logger.warn("No package name entered")
+                        self.logger.warning("No package name entered")
                         continue
                     self.ensure_connected()
                     ok, msg = self.restore_package(pkg, enable=True)
@@ -1268,17 +1221,17 @@ class DebloatEngine:
                     if target in ("usb", "wireless"):
                         try:
                             self.switch_transport(target)
-                        except Exception as exc:
+                        except (OSError, AdbError) as exc:
                             self.logger.error(f"Switch transport failed: {exc}")
                     else:
-                        self.logger.warn("Invalid transport. Enter 'usb' or 'wireless'.")
+                        self.logger.warning("Invalid transport. Enter 'usb' or 'wireless'.")
                 elif choice.lower() == "c":
                     dev = self.connection_ui.connection_wizard()
                     if dev:
                         self._connected = False
                         self.ensure_ready()
                 elif choice == "0": break
-                elif choice: self.logger.warn(f"Unknown option '{choice}'")
+                elif choice: self.logger.warning(f"Unknown option '{choice}'")
             except (DebloatError, OSError) as exc: self.logger.error(str(exc))
             except KeyboardInterrupt: print(); break
 

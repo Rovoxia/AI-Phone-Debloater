@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 AI-Phone-Debloater — Connection User Interface
 ==============================================
@@ -10,21 +9,20 @@ Matches the existing ANSI-color palette and styling of Rovoxia Debloater.
 
 from __future__ import annotations
 
+import logging
 import os
 import sys
 import time
 from pathlib import Path
-from typing import Any, List, Optional
+
+logger = logging.getLogger(__name__)
 
 from .exceptions import (
     ConnectionError,
-    DeviceAmbiguousError,
     DeviceNotFoundError,
-    DeviceOfflineError,
     DeviceUnauthorizedError,
     OperationCancelledError,
     PairingError,
-    PairingTimeoutError,
 )
 from .manager import ConnectionManager
 from .models import DeviceInfo
@@ -45,7 +43,7 @@ def _supports_color() -> bool:
             if kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
                 mode.value |= 0x0004
                 return kernel32.SetConsoleMode(handle, mode) != 0
-        except Exception:
+        except (OSError, AttributeError):
             pass
         return False
     return sys.stdout.isatty()
@@ -121,7 +119,7 @@ class ConnectionUI:
         print(f"  {green(bold('=' * 58))}")
         print()
 
-    def select_device_interactive(self, devices: List[DeviceInfo]) -> DeviceInfo:
+    def select_device_interactive(self, devices: list[DeviceInfo]) -> DeviceInfo:
         """Present interactive selection menu when multiple devices are detected."""
         print()
         print(cyan(bold("Multiple Android devices detected:")))
@@ -144,7 +142,7 @@ class ConnectionUI:
                 return selected
             print(yellow(f"Invalid selection '{choice}'. Enter 1 to {len(devices)}."))
 
-    def connection_wizard(self) -> Optional[DeviceInfo]:
+    def connection_wizard(self) -> DeviceInfo | None:
         """
         Main interactive connection menu presenting the two primary connection options
         (USB and Wi-Fi QR pairing), plus diagnostics and remembered reconnection.
@@ -256,19 +254,19 @@ class ConnectionUI:
             sys.stdout.write(f"\r  {cyan('[3/5]')} {msg}   ")
             sys.stdout.flush()
 
-        def on_port_prompt(phone_ip: str) -> Optional[int]:
+        def on_port_prompt(phone_ip: str) -> int | None:
             print()
             print(f"\n  {green(bold('[+] Encrypted pairing confirmed with phone!'))}")
             print(f"  {yellow('Notice: Wi-Fi network did not forward mDNS connection port.')}")
             print(f"  {cyan('Look at your phone screen under Settings -> Wireless debugging:')}")
             try:
-                raw_port = ask(f"  Enter the 5-digit port shown under 'IP address & Port' (e.g. 39441): ").strip()
+                raw_port = ask("  Enter the 5-digit port shown under 'IP address & Port' (e.g. 39441): ").strip()
                 if ":" in raw_port:
                     raw_port = raw_port.split(":")[-1]
                 if raw_port.isdigit() and 1 <= int(raw_port) <= 65535:
                     return int(raw_port)
-            except Exception:
-                pass
+            except (OSError, ValueError) as exc:
+                logger.debug(f"Port input failed: {exc}")
             return None
 
         print(f"  {cyan('[3/5]')} Waiting for phone to scan QR code...")
@@ -288,7 +286,7 @@ class ConnectionUI:
         finally:
             print()
 
-    def handle_manual_wifi_flow(self) -> Optional[DeviceInfo]:
+    def handle_manual_wifi_flow(self) -> DeviceInfo | None:
         """Manual IP:Port or 6-digit code flow."""
         print()
         print(bold("Wireless Debugging Options:"))
@@ -339,7 +337,7 @@ class ConnectionUI:
 
         return None
 
-    def handle_reconnect_remembered_flow(self) -> Optional[DeviceInfo]:
+    def handle_reconnect_remembered_flow(self) -> DeviceInfo | None:
         """Display remembered devices and attempt auto-reconnect."""
         devices = self.mgr.registry.load_all()
         if not devices:
