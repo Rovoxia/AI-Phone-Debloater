@@ -9,6 +9,7 @@ import json
 import sys
 from pathlib import Path
 
+
 def main() -> int:
     repo_root = Path(__file__).resolve().parent.parent.parent
     rules_dir = repo_root / "cli" / "rules"
@@ -48,8 +49,8 @@ def main() -> int:
         try:
             with open(r, "r", encoding="utf-8") as f:
                 data = json.load(f)
-        except Exception as exc:
-            errors.append(f"Invalid JSON in {r.name}: {exc}")
+        except ValueError as exc:
+            errors.append(f"Invalid JSON in {r.name}: {exc!r}")
             continue
 
         if not ("name" in data or "description" in data):

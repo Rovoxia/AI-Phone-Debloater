@@ -15,14 +15,16 @@ Matrix cells: True = dark/black module, False = light/white module.
 
 from __future__ import annotations
 
-from typing import List
+import logging
+
+logger = logging.getLogger(__name__)
 
 __all__ = [
-    "generate_qr_matrix",
     "generate_android_qr_payload",
-    "render_terminal_double_half_block",
-    "render_terminal_ascii",
+    "generate_qr_matrix",
     "render_qr_for_terminal",
+    "render_terminal_ascii",
+    "render_terminal_double_half_block",
     "verify_qr_generator",
 ]
 
@@ -68,7 +70,7 @@ def gf_pow(a: int, n: int) -> int:
 # Reed-Solomon error correction
 # ---------------------------------------------------------------------------
 
-def _poly_mul(p: List[int], q: List[int]) -> List[int]:
+def _poly_mul(p: list[int], q: list[int]) -> list[int]:
     r = [0] * (len(p) + len(q) - 1)
     for i in range(len(p)):
         pi = p[i]
@@ -79,14 +81,14 @@ def _poly_mul(p: List[int], q: List[int]) -> List[int]:
     return r
 
 
-def rs_generator_poly(ec_size: int) -> List[int]:
+def rs_generator_poly(ec_size: int) -> list[int]:
     gen = [1]
     for i in range(ec_size):
         gen = _poly_mul(gen, [1, gf_pow(2, i)])
     return gen
 
 
-def rs_encode(data: List[int], ec_size: int) -> List[int]:
+def rs_encode(data: list[int], ec_size: int) -> list[int]:
     gen = rs_generator_poly(ec_size)
     msg = list(data) + [0] * ec_size
     for i in range(len(data)):
@@ -246,9 +248,9 @@ _REMAINDER_BITS = {
 # Bit stream -> data codewords
 # ---------------------------------------------------------------------------
 
-def _data_codewords(data_bytes: bytes, version: int, total_data_codewords: int) -> List[int]:
+def _data_codewords(data_bytes: bytes, version: int, total_data_codewords: int) -> list[int]:
     count_bits = 8 if version <= 9 else 16
-    bit_stream: List[int] = []
+    bit_stream: list[int] = []
     # Mode indicator: Byte mode = 0100
     bit_stream.extend((0, 1, 0, 0))
     # Character count
@@ -273,7 +275,7 @@ def _data_codewords(data_bytes: bytes, version: int, total_data_codewords: int) 
             bit_stream.append((pad >> i) & 1)
         pad = 0x11 if pad == 0xEC else 0xEC
     # Pack into codewords
-    codewords: List[int] = []
+    codewords: list[int] = []
     for i in range(0, len(bit_stream), 8):
         cw = 0
         for b in bit_stream[i:i + 8]:
@@ -287,17 +289,17 @@ def _data_codewords(data_bytes: bytes, version: int, total_data_codewords: int) 
 # ---------------------------------------------------------------------------
 
 def _interleaved_codewords(
-    codewords: List[int], ec_level: str, version: int
-) -> List[int]:
+    codewords: list[int], ec_level: str, version: int
+) -> list[int]:
     ec_per_block, groups = _EC_TABLE[version][ec_level]
-    blocks: List[tuple[List[int], List[int]]] = []
+    blocks: list[tuple[list[int], list[int]]] = []
     idx = 0
     for num_blocks, dpb in groups:
         for _ in range(num_blocks):
             block = codewords[idx:idx + dpb]
             idx += dpb
             blocks.append((block, rs_encode(block, ec_per_block)))
-    result: List[int] = []
+    result: list[int] = []
     # Interleave data codewords (round-robin across blocks)
     max_data = max(len(b[0]) for b in blocks)
     for i in range(max_data):
@@ -315,7 +317,7 @@ def _interleaved_codewords(
 # Function pattern placement
 # ---------------------------------------------------------------------------
 
-def _place_finders(matrix: List[List[bool]], function: List[List[bool]], size: int) -> None:
+def _place_finders(matrix: list[list[bool]], function: list[list[bool]], size: int) -> None:
     positions = [(0, 0), (0, size - 7), (size - 7, 0)]
     for r0, c0 in positions:
         for dr in range(7):
@@ -335,7 +337,7 @@ def _place_finders(matrix: List[List[bool]], function: List[List[bool]], size: i
 
 
 def _place_alignment(
-    matrix: List[List[bool]], function: List[List[bool]], version: int, size: int
+    matrix: list[list[bool]], function: list[list[bool]], version: int, size: int
 ) -> None:
     centers = _ALIGNMENT_CENTERS[version]
     pattern = [
@@ -363,7 +365,7 @@ def _place_alignment(
                         function[r][c] = True
 
 
-def _place_timing(matrix: List[List[bool]], function: List[List[bool]], size: int) -> None:
+def _place_timing(matrix: list[list[bool]], function: list[list[bool]], size: int) -> None:
     for i in range(8, size - 7):
         val = bool((i - 8) % 2 == 0)
         matrix[6][i] = val
@@ -372,7 +374,7 @@ def _place_timing(matrix: List[List[bool]], function: List[List[bool]], size: in
         function[i][6] = True
 
 
-def _place_dark(matrix: List[List[bool]], function: List[List[bool]], version: int, size: int) -> None:
+def _place_dark(matrix: list[list[bool]], function: list[list[bool]], version: int, size: int) -> None:
     r = 4 * version + 9
     c = 8
     if 0 <= r < size and 0 <= c < size:
@@ -380,7 +382,7 @@ def _place_dark(matrix: List[List[bool]], function: List[List[bool]], version: i
         function[r][c] = True
 
 
-def _mark_format_areas(function: List[List[bool]], size: int) -> None:
+def _mark_format_areas(function: list[list[bool]], size: int) -> None:
     for i in range(9):
         if i < size:
             function[8][i] = True
@@ -410,7 +412,7 @@ def _bch_format(level_code: int, mask: int) -> int:
 
 
 def _place_format_info(
-    matrix: List[List[bool]],
+    matrix: list[list[bool]],
     version: int,
     mask: int,
     ec_level: str,
@@ -443,15 +445,15 @@ def _place_format_info(
 # Data placement (zigzag, two columns at a time)
 # ---------------------------------------------------------------------------
 
-def _data_coords(size: int) -> List[tuple[int, int]]:
-    coords: List[tuple[int, int]] = []
+def _data_coords(size: int) -> list[tuple[int, int]]:
+    coords: list[tuple[int, int]] = []
     col = size - 1
     up = True
     while col > 0:
         if col == 6:  # timing pattern column
             col -= 1
             continue
-        rows = range(size - 1, -1, -1) if up else range(0, size)
+        rows = range(size - 1, -1, -1) if up else range(size)
         for r in rows:
             for c in (col, col - 1):
                 if 0 <= c < size:
@@ -462,9 +464,9 @@ def _data_coords(size: int) -> List[tuple[int, int]]:
 
 
 def _fill_data(
-    matrix: List[List[bool]],
-    function: List[List[bool]],
-    bit_stream: List[int],
+    matrix: list[list[bool]],
+    function: list[list[bool]],
+    bit_stream: list[int],
     mask: int,
     size: int,
 ) -> None:
@@ -484,7 +486,7 @@ def _fill_data(
 # Mask penalty evaluation (N1-N4)
 # ---------------------------------------------------------------------------
 
-def _n1_run_penalty(seq: List[bool]) -> int:
+def _n1_run_penalty(seq: list[bool]) -> int:
     p = 0
     i = 0
     n = len(seq)
@@ -499,7 +501,7 @@ def _n1_run_penalty(seq: List[bool]) -> int:
     return p
 
 
-def _count_n3(seq: List[bool]) -> int:
+def _count_n3(seq: list[bool]) -> int:
     n = len(seq)
     cnt = 0
     for i in range(n - 6):
@@ -511,13 +513,12 @@ def _count_n3(seq: List[bool]) -> int:
             and seq[i + 4]
             and not seq[i + 5]
             and seq[i + 6]
-        ):
-            if (i == 0 or not seq[i - 1]) and (i + 7 >= n or not seq[i + 7]):
-                cnt += 1
+        ) and (i == 0 or not seq[i - 1]) and (i + 7 >= n or not seq[i + 7]):
+            cnt += 1
     return cnt
 
 
-def _penalty(matrix: List[List[bool]], size: int) -> int:
+def _penalty(matrix: list[list[bool]], size: int) -> int:
     p = 0
     # N1: runs of 5+ identical modules in rows and columns
     for r in range(size):
@@ -548,7 +549,7 @@ def _penalty(matrix: List[List[bool]], size: int) -> int:
 # Public: matrix generation
 # ---------------------------------------------------------------------------
 
-def generate_qr_matrix(data: str, ec_level: str = "M") -> List[List[bool]]:
+def generate_qr_matrix(data: str, ec_level: str = "M") -> list[list[bool]]:
     """Generate a QR code matrix for *data*.
 
     Returns a square 2D list of bools (True = dark module). Auto-selects the
@@ -560,12 +561,12 @@ def generate_qr_matrix(data: str, ec_level: str = "M") -> List[List[bool]]:
     data_bytes = data.encode("utf-8")
     version = _select_version(data_bytes, ec_level)
     size = 17 + 4 * version
-    ec_per_block, groups = _EC_TABLE[version][ec_level]
+    _ec_per_block, groups = _EC_TABLE[version][ec_level]
     total_data = sum(num * dpb for num, dpb in groups)
 
     codewords = _data_codewords(data_bytes, version, total_data)
     interleaved = _interleaved_codewords(codewords, ec_level, version)
-    bit_stream: List[int] = []
+    bit_stream: list[int] = []
     for cw in interleaved:
         for i in range(7, -1, -1):
             bit_stream.append((cw >> i) & 1)
@@ -621,8 +622,8 @@ def generate_android_qr_payload(service_name: str, password: str) -> str:
 # ---------------------------------------------------------------------------
 
 def _pad_quiet_zone(
-    matrix: List[List[bool]], quiet_zone: int
-) -> List[List[bool]]:
+    matrix: list[list[bool]], quiet_zone: int
+) -> list[list[bool]]:
     if quiet_zone <= 0:
         return matrix
     size = len(matrix)
@@ -634,7 +635,7 @@ def _pad_quiet_zone(
 
 
 def render_terminal_double_half_block(
-    matrix: List[List[bool]], quiet_zone: int = 4, invert: bool = False
+    matrix: list[list[bool]], quiet_zone: int = 4, invert: bool = False
 ) -> str:
     """Render a QR matrix using Unicode half-blocks (two matrix rows per line).
 
@@ -644,9 +645,9 @@ def render_terminal_double_half_block(
     padded = _pad_quiet_zone(matrix, quiet_zone)
     rows = len(padded)
     cols = len(padded[0]) if rows else 0
-    out: List[str] = []
+    out: list[str] = []
     for r in range(0, rows, 2):
-        line_chars: List[str] = []
+        line_chars: list[str] = []
         upper = padded[r]
         lower = padded[r + 1] if r + 1 < rows else [False] * cols
         for c in range(cols):
@@ -668,13 +669,13 @@ def render_terminal_double_half_block(
 
 
 def render_terminal_ascii(
-    matrix: List[List[bool]], quiet_zone: int = 4, invert: bool = False
+    matrix: list[list[bool]], quiet_zone: int = 4, invert: bool = False
 ) -> str:
     """Fallback ASCII renderer (two chars per module, one matrix row per line)."""
     padded = _pad_quiet_zone(matrix, quiet_zone)
     dark_ch = "  " if invert else "##"
     light_ch = "##" if invert else "  "
-    out: List[str] = []
+    out: list[str] = []
     for row in padded:
         out.append("".join(dark_ch if cell else light_ch for cell in row))
     return "\n".join(out)
@@ -706,7 +707,8 @@ def verify_qr_generator() -> bool:
             m = generate_qr_matrix("A" * n, "M")
             if not m or not m[0] or len(m) != len(m[0]):
                 ok = False
-        except Exception:
+        except (OSError, RuntimeError) as exc:
+            logger.debug(f"QR matrix generation failed for size {n}: {exc}")
             ok = False
 
     # WIFI payload (the example from the spec: ~44 chars)
@@ -715,7 +717,8 @@ def verify_qr_generator() -> bool:
         m = generate_qr_matrix(wifi, "M")
         if not m or not m[0]:
             ok = False
-    except Exception:
+    except (OSError, RuntimeError) as exc:
+        logger.debug(f"QR matrix generation failed for wifi: {exc}")
         ok = False
 
     # Terminal renderer output is non-empty with expected line count

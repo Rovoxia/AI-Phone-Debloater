@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 AI-Phone-Debloater — Connection Layer Data Models
 =================================================
@@ -20,9 +19,8 @@ Usage::
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Dict, List
 
 
 class ConnectionState(Enum):
@@ -53,7 +51,7 @@ class TransportType(Enum):
     UNKNOWN = "unknown"
 
     @classmethod
-    def from_serial(cls, serial: str) -> "TransportType":
+    def from_serial(cls, serial: str) -> TransportType:
         if not serial:
             return cls.UNKNOWN
         s = serial.strip()
@@ -235,14 +233,14 @@ class DiagnosticItem:
 class DiagnosticReport:
     """A device diagnostic report produced by scanning one or more devices."""
 
-    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    items: List[DiagnosticItem] = field(default_factory=list)
-    summary: Dict[str, int] = field(default_factory=dict)
-    logs: List[str] = field(default_factory=list)
+    timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
+    items: list[DiagnosticItem] = field(default_factory=list)
+    summary: dict[str, int] = field(default_factory=dict)
+    logs: list[str] = field(default_factory=list)
 
     def to_text(self) -> str:
         """Render the report as a plain-text block for console/log output."""
-        lines: List[str] = [
+        lines: list[str] = [
             f"Diagnostic Report — {self.timestamp}",
             "-" * 60,
         ]
@@ -298,7 +296,7 @@ class RememberedDevice:
         }
 
     @classmethod
-    def from_dict(cls, d: dict) -> "RememberedDevice":
+    def from_dict(cls, d: dict) -> RememberedDevice:
         """Rebuild a :class:`RememberedDevice` from a serialized dict."""
         return cls(
             physical_id=d.get("physical_id", ""),
@@ -314,12 +312,12 @@ class RememberedDevice:
 
 __all__ = [
     "ConnectionState",
-    "TransportType",
-    "DeviceState",
     "DeviceInfo",
-    "DiscoveredService",
-    "PairingSession",
+    "DeviceState",
     "DiagnosticItem",
     "DiagnosticReport",
+    "DiscoveredService",
+    "PairingSession",
     "RememberedDevice",
+    "TransportType",
 ]

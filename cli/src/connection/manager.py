@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 AI-Phone-Debloater — Centralized Connection Manager
 ===================================================
@@ -13,22 +12,20 @@ from __future__ import annotations
 import logging
 import threading
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
+from typing import Any
 
 from .adb_client import AdbClient
 from .device_identity import DeviceIdentityManager
 from .device_registry import DeviceRegistry
 from .diagnostics import ConnectionDiagnostics
-from .discovery import MdnsDiscovery, LanDiscovery, validate_endpoint
+from .discovery import LanDiscovery, MdnsDiscovery
 from .exceptions import (
-    AdbServerError,
     ConnectionError,
-    DeviceAmbiguousError,
     DeviceNotFoundError,
     DeviceOfflineError,
     DeviceUnauthorizedError,
     OperationCancelledError,
-    PairingError,
     SecurityValidationError,
 )
 from .models import (
@@ -37,7 +34,6 @@ from .models import (
     DiagnosticReport,
     DiscoveredService,
     PairingSession,
-    RememberedDevice,
     TransportType,
 )
 from .qr_pairing import QrPairingManager
@@ -52,16 +48,16 @@ class ConnectionManager:
 
     def __init__(
         self,
-        adb_path: Optional[str] = None,
+        adb_path: str | None = None,
         timeout: float = 30.0,
-        logger_obj: Optional[Any] = None,
-        registry: Optional[DeviceRegistry] = None,
+        logger_obj: Any | None = None,
+        registry: DeviceRegistry | None = None,
     ) -> None:
         self.timeout = float(timeout)
         self.custom_logger = logger_obj
         self._state_lock = threading.RLock()
         self._state = ConnectionState.DISCONNECTED
-        self._active_device: Optional[DeviceInfo] = None
+        self._active_device: DeviceInfo | None = None
 
         # Core ADB low-level client
         self.adb = AdbClient(adb_path=adb_path, timeout=timeout, logger_obj=logger_obj)
@@ -97,11 +93,11 @@ class ConnectionManager:
             logger.debug(f"Connection state transition: {old_state.value} -> {new_state.value}")
 
     @property
-    def active_device(self) -> Optional[DeviceInfo]:
+    def active_device(self) -> DeviceInfo | None:
         with self._state_lock:
             return self._active_device
 
-    def set_active_device(self, device: Optional[DeviceInfo]) -> None:
+    def set_active_device(self, device: DeviceInfo | None) -> None:
         with self._state_lock:
             self._active_device = device
             if device:
@@ -110,7 +106,7 @@ class ConnectionManager:
                     # Automatically record in persistent registry
                     try:
                         self.registry.remember(device)
-                    except Exception as exc:
+                    except (OSError, RuntimeError) as exc:
                         logger.debug(f"Could not update registry for {device.serial}: {exc}")
                 elif device.state == "unauthorized":
                     self._set_state(ConnectionState.UNAUTHORIZED)
@@ -144,13 +140,13 @@ class ConnectionManager:
     # Device Query & Auto-Priority Detection
     # -----------------------------------------------------------------------
 
-    def get_attached_devices(self) -> List[DeviceInfo]:
+    def get_attached_devices(self) -> list[DeviceInfo]:
         """
         Query all attached ADB devices, deduplicate USB and Wi-Fi transports
         belonging to the same physical phone where possible, and return DeviceInfo records.
         """
         raw_list = self.adb.list_devices()
-        devices: List[DeviceInfo] = []
+        devices: list[DeviceInfo] = []
 
         for d in raw_list:
             serial = d.get("serial", "")
@@ -160,22 +156,22 @@ class ConnectionManager:
             try:
                 info = self.identity.populate(serial, state=state)
                 devices.append(info)
-            except Exception as exc:
+            except (OSError, ValueError, RuntimeError) as exc:
                 logger.debug(f"Failed to query hardware info for {serial}: {exc}")
                 tt = TransportType.from_serial(serial).value
                 devices.append(DeviceInfo(serial=serial, state=state, transport_type=tt))
 
         return devices
 
-    def detect_connected_hardware(self) -> Tuple[List[DeviceInfo], List[Tuple[DeviceInfo, DeviceInfo]]]:
+    def detect_connected_hardware(self) -> tuple[list[DeviceInfo], list[tuple[DeviceInfo, DeviceInfo]]]:
         """
         Identify unique physical devices and detect duplicate transports
         (e.g. phone attached over both USB and Wi-Fi simultaneously).
         Returns (unique_physical_devices, duplicate_pairs).
         """
         all_devs = self.get_attached_devices()
-        unique: List[DeviceInfo] = []
-        duplicates: List[Tuple[DeviceInfo, DeviceInfo]] = []
+        unique: list[DeviceInfo] = []
+        duplicates: list[tuple[DeviceInfo, DeviceInfo]] = []
 
         for dev in all_devs:
             found_dup = False
@@ -195,9 +191,9 @@ class ConnectionManager:
 
     def connect_usb(
         self,
-        serial: Optional[str] = None,
+        serial: str | None = None,
         timeout: float = 30.0,
-        progress_cb: Optional[Callable[[str], None]] = None,
+        progress_cb: Callable[[str], None] | None = None,
     ) -> DeviceInfo:
         """Connect to an Android device over physical USB."""
         with self._state_lock:
@@ -215,7 +211,7 @@ class ConnectionManager:
             except DeviceOfflineError:
                 self._set_state(ConnectionState.OFFLINE)
                 raise
-            except Exception as exc:
+            except Exception:
                 self._set_state(ConnectionState.ERROR)
                 raise
 
@@ -223,7 +219,7 @@ class ConnectionManager:
         self,
         address: str,
         timeout: float = 15.0,
-        progress_cb: Optional[Callable[[str], None]] = None,
+        progress_cb: Callable[[str], None] | None = None,
     ) -> DeviceInfo:
         """Connect to a wireless device via HOST:PORT."""
         with self._state_lock:
@@ -243,7 +239,7 @@ class ConnectionManager:
                 device = self.wireless.verify_and_get_info(address)
                 self.set_active_device(device)
                 return device
-            except Exception as exc:
+            except Exception:
                 self._set_state(ConnectionState.ERROR)
                 raise
 
@@ -252,7 +248,7 @@ class ConnectionManager:
         address: str,
         code: str,
         timeout: float = 20.0,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """Pair with an Android 11+ device using a 6-digit numeric pairing code."""
         with self._state_lock:
             self._set_state(ConnectionState.PAIRING)
@@ -266,8 +262,8 @@ class ConnectionManager:
     def start_qr_pairing(
         self,
         timeout: float = 120.0,
-        progress_cb: Optional[Callable[[str, int], None]] = None,
-    ) -> Tuple[PairingSession, str]:
+        progress_cb: Callable[[str, int], None] | None = None,
+    ) -> tuple[PairingSession, str]:
         """
         Initiate a QR code pairing session:
         Generates session and returns (session, rendered_terminal_qr_code).
@@ -283,8 +279,8 @@ class ConnectionManager:
         self,
         session: PairingSession,
         timeout: float = 120.0,
-        progress_cb: Optional[Callable[[str, int], None]] = None,
-        port_prompt_cb: Optional[Callable[[str], Optional[int]]] = None,
+        progress_cb: Callable[[str, int], None] | None = None,
+        port_prompt_cb: Callable[[str], int | None] | None = None,
     ) -> DeviceInfo:
         """Wait for phone scan, complete pairing and connection."""
         try:
@@ -308,7 +304,7 @@ class ConnectionManager:
         self.qr_pairing.cancel()
         self._set_state(ConnectionState.CANCELLED)
 
-    def discover_wireless_devices(self) -> List[DiscoveredService]:
+    def discover_wireless_devices(self) -> list[DiscoveredService]:
         """Discover connectable wireless ADB services via mDNS and LAN probe."""
         services = self.mdns.get_connect_services()
         if not services:
@@ -329,9 +325,9 @@ class ConnectionManager:
 
     def reconnect_remembered(
         self,
-        physical_id: Optional[str] = None,
+        physical_id: str | None = None,
         timeout: float = 15.0,
-    ) -> Optional[DeviceInfo]:
+    ) -> DeviceInfo | None:
         """
         Attempt automatic rediscovery and reconnection to a previously paired device.
         Never assumes the IP/port remains static.
@@ -368,7 +364,8 @@ class ConnectionManager:
                     dev = self.connect_wifi(s.endpoint, timeout=timeout)
                     if dev.physical_id == target_record.physical_id:
                         return dev
-                except Exception:
+                except (ConnectionError, OSError) as exc:
+                    logger.debug(f"Connection attempt to {s.endpoint} failed: {exc}")
                     continue
 
             # 3. Try last known endpoint as fallback (USB or wireless)
@@ -381,15 +378,15 @@ class ConnectionManager:
                     if dev and dev.serial != target_record.last_endpoint:
                         try:
                             self.wireless.disconnect(target_record.last_endpoint)
-                        except Exception:
-                            pass
-                except Exception:
-                    pass
+                        except (ConnectionError, OSError) as exc:
+                            logger.debug(f"Disconnection failed for {target_record.last_endpoint}: {exc}")
+                except (ConnectionError, OSError) as exc:
+                    logger.debug(f"Connection failed for {target_record.last_endpoint}: {exc}")
 
             self._set_state(ConnectionState.DISCONNECTED)
             return None
 
-    def disconnect_device(self, serial: Optional[str] = None) -> bool:
+    def disconnect_device(self, serial: str | None = None) -> bool:
         """Disconnect the specified device or the active device."""
         with self._state_lock:
             target = serial or (self._active_device.serial if self._active_device else None)
@@ -409,7 +406,7 @@ class ConnectionManager:
     # Device Consistency & Safety Validation
     # -----------------------------------------------------------------------
 
-    def validate_active_device(self) -> Tuple[bool, str]:
+    def validate_active_device(self) -> tuple[bool, str]:
         """
         CRITICAL SAFETY CHECK:
         Must be called immediately before ANY package disable, uninstall, or restore.
@@ -458,7 +455,7 @@ class ConnectionManager:
                 new_endpoint = None
 
                 # Try shell-based IP detection first
-                rc, out, _ = self.adb.run_shell("ip route", serial=current.serial)
+                _rc, out, _ = self.adb.run_shell("ip route", serial=current.serial)
                 ip_match = None
                 for line in out.splitlines():
                     if "src" in line:
@@ -470,7 +467,7 @@ class ConnectionManager:
                                 break
 
                 if not ip_match:
-                    rc, out, _ = self.adb.run_shell("getprop dhcp.wlan0.ipaddress", serial=current.serial)
+                    _rc, out, _ = self.adb.run_shell("getprop dhcp.wlan0.ipaddress", serial=current.serial)
                     ip_match = out.strip()
 
                 if ip_match:
@@ -531,7 +528,7 @@ class ConnectionManager:
         """Run the comprehensive connection diagnostics suite."""
         return self.diagnostics.run_all()
 
-    def get_connection_status(self) -> Dict[str, Any]:
+    def get_connection_status(self) -> dict[str, Any]:
         """Return a structured snapshot of connection health and active device."""
         with self._state_lock:
             return {

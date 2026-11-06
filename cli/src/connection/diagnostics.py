@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 AI-Phone-Debloater — Comprehensive Connection Diagnostics Engine
 ================================================================
@@ -11,16 +10,16 @@ Generates user-friendly summary banners and exportable technical reports.
 from __future__ import annotations
 
 import logging
-import os
 import platform
 import socket
 import subprocess
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any
 
-from .adb_client import AdbClient
-from .discovery import MdnsDiscovery, LanDiscovery
+from .adb_client import AdbClient, AdbServerError
+from .discovery import LanDiscovery, MdnsDiscovery
+from .exceptions import ConnectionError
 from .models import DiagnosticItem, DiagnosticReport
 
 logger = logging.getLogger("rovoxia.connection.diagnostics")
@@ -32,8 +31,8 @@ class ConnectionDiagnostics:
     def __init__(
         self,
         adb_client: AdbClient,
-        mdns_discovery: Optional[MdnsDiscovery] = None,
-        lan_discovery: Optional[LanDiscovery] = None,
+        mdns_discovery: MdnsDiscovery | None = None,
+        lan_discovery: LanDiscovery | None = None,
     ) -> None:
         self.adb = adb_client
         self.mdns = mdns_discovery or MdnsDiscovery(adb_client)
@@ -41,8 +40,8 @@ class ConnectionDiagnostics:
 
     def run_all(self) -> DiagnosticReport:
         """Run all diagnostic suites and aggregate the results into a report."""
-        items: List[DiagnosticItem] = []
-        logs: List[str] = []
+        items: list[DiagnosticItem] = []
+        logs: list[str] = []
 
         def log(msg: str):
             logs.append(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}")
@@ -64,7 +63,7 @@ class ConnectionDiagnostics:
         for it in items:
             summary[it.status] = summary.get(it.status, 0) + 1
 
-        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+        now_str = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
         report = DiagnosticReport(
             timestamp=now_str,
             items=items,
@@ -73,7 +72,7 @@ class ConnectionDiagnostics:
         )
         return report
 
-    def _check_adb_binary(self, items: List[DiagnosticItem], log: Any) -> None:
+    def _check_adb_binary(self, items: list[DiagnosticItem], log: Any) -> None:
         """Check ADB executable location, accessibility, and version."""
         adb_path = getattr(self.adb, "adb_path", "")
         if not adb_path or not Path(adb_path).is_file():
@@ -111,7 +110,7 @@ class ConnectionDiagnostics:
                 )
             )
             log(f"OK: ADB version {ver_str}")
-        except Exception as exc:
+        except (OSError, ValueError, AdbServerError) as exc:
             items.append(
                 DiagnosticItem(
                     category="adb",
@@ -122,7 +121,7 @@ class ConnectionDiagnostics:
             )
             log(f"WARN: ADB version error: {exc}")
 
-    def _check_adb_server(self, items: List[DiagnosticItem], log: Any) -> None:
+    def _check_adb_server(self, items: list[DiagnosticItem], log: Any) -> None:
         """Check if ADB server daemon is alive and listening on port 5037."""
         running = self.adb.is_server_running()
         if running:
@@ -182,14 +181,14 @@ class ConnectionDiagnostics:
                         )
                     )
                     log(f"WARN: Multiple ({count}) adb.exe instances running.")
-            except Exception:
+            except (OSError, subprocess.CalledProcessError):
                 pass
 
-    def _check_usb_subsystem(self, items: List[DiagnosticItem], log: Any) -> None:
+    def _check_usb_subsystem(self, items: list[DiagnosticItem], log: Any) -> None:
         """Check USB devices, authorization status, and connectivity."""
         try:
             devices = self.adb.list_devices()
-        except Exception as exc:
+        except (OSError, ConnectionError) as exc:
             items.append(
                 DiagnosticItem(
                     category="usb",
@@ -278,7 +277,7 @@ class ConnectionDiagnostics:
                     )
                 )
 
-    def _check_network_and_wireless(self, items: List[DiagnosticItem], log: Any) -> None:
+    def _check_network_and_wireless(self, items: list[DiagnosticItem], log: Any) -> None:
         """Check host network adapter, mDNS daemon, and visible wireless ADB services."""
         local_ip = self.lan.get_local_ip()
         if local_ip and not local_ip.startswith("127."):
@@ -391,5 +390,5 @@ class ConnectionDiagnostics:
                     )
                 )
                 log(f"INFO: Multiple IP addresses on host: {addrs}")
-        except Exception:
-            pass
+        except (OSError, socket.gaierror) as exc:
+            log(f"WARN: Network interface check failed: {exc}")

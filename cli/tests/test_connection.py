@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 AI-Phone-Debloater — Comprehensive Connection Subsystem Test Suite
 ==================================================================
@@ -18,7 +17,6 @@ isolated temporary environments:
 - Centralized ConnectionManager lifecycle and safety checks
 """
 
-import json
 import os
 import subprocess
 import sys
@@ -38,7 +36,6 @@ from connection.device_identity import DeviceIdentityManager
 from connection.device_registry import DeviceRegistry
 from connection.diagnostics import ConnectionDiagnostics
 from connection.discovery import (
-    LanDiscovery,
     MdnsDiscovery,
     validate_endpoint,
     validate_ip_address,
@@ -63,12 +60,9 @@ from connection.manager import ConnectionManager
 from connection.models import (
     ConnectionState,
     DeviceInfo,
-    DeviceState,
-    DiagnosticItem,
     DiagnosticReport,
     DiscoveredService,
     PairingSession,
-    RememberedDevice,
     TransportType,
 )
 from connection.qr_generator import (
@@ -76,7 +70,6 @@ from connection.qr_generator import (
     generate_android_qr_payload,
     generate_qr_matrix,
     render_qr_for_terminal,
-    render_terminal_double_half_block,
 )
 from connection.qr_pairing import QrPairingManager
 from connection.usb import UsbConnectionHandler
@@ -267,9 +260,10 @@ class TestAdbClient(unittest.TestCase):
 
     @patch("shutil.which")
     def test_discover_adb_explicit(self, mock_which):
-        with tempfile.NamedTemporaryFile(suffix=".exe", delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".exe" if os.name == "nt" else "", delete=False) as f:
             temp_adb = f.name
         try:
+            os.chmod(temp_adb, 0o755)
             client = AdbClient(adb_path=temp_adb)
             self.assertEqual(client.adb_path, temp_adb)
         finally:
@@ -283,11 +277,12 @@ class TestAdbClient(unittest.TestCase):
         mock_proc.stderr = ""
         mock_run.return_value = mock_proc
 
-        with tempfile.NamedTemporaryFile(delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".exe" if os.name == "nt" else "", delete=False) as f:
             temp_adb = f.name
         try:
+            os.chmod(temp_adb, 0o755)
             client = AdbClient(adb_path=temp_adb)
-            rc, out, err = client.run_adb(["devices"])
+            rc, out, _err = client.run_adb(["devices"])
             self.assertEqual(rc, 0)
             self.assertIn("R5CR10ABCDE", out)
             # Verify shell=False was strictly enforced
@@ -310,9 +305,10 @@ class TestAdbClient(unittest.TestCase):
         mock_proc.stderr = ""
         mock_run.return_value = mock_proc
 
-        with tempfile.NamedTemporaryFile(delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".exe" if os.name == "nt" else "", delete=False) as f:
             temp_adb = f.name
         try:
+            os.chmod(temp_adb, 0o755)
             client = AdbClient(adb_path=temp_adb)
             devices = client.list_devices()
             self.assertEqual(len(devices), 3)
@@ -505,9 +501,9 @@ class TestQrPairingManager(unittest.TestCase):
         mock_client = MagicMock()
         mock_client.run_adb.return_value = (
             0,
-            "List of discovered mdns services\n"
+            ("List of discovered mdns services\n"
             "Samsung Galaxy S24 Ultra    _adb-tls-connect._tcp    192.168.1.105:38921\n"
-            "AI_Phone_Debloater_Rovoxia 123    _adb-tls-pairing._tcp    192.168.1.105:41235\n",
+            "AI_Phone_Debloater_Rovoxia 123    _adb-tls-pairing._tcp    192.168.1.105:41235\n"),
             "",
         )
         discovery = MdnsDiscovery(mock_client)
