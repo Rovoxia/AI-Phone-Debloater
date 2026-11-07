@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 AI-Phone-Debloater — Remembered Device Registry
 ===============================================
@@ -12,9 +11,8 @@ from __future__ import annotations
 import json
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from .models import DeviceInfo, RememberedDevice
 
@@ -30,8 +28,8 @@ class DeviceRegistry:
 
     def __init__(
         self,
-        storage_dir: Optional[Path] = None,
-        registry_file: Optional[Path] = None,
+        storage_dir: Path | None = None,
+        registry_file: Path | None = None,
     ) -> None:
         if registry_file:
             self.file_path = Path(registry_file)
@@ -56,7 +54,7 @@ class DeviceRegistry:
             except OSError:
                 pass
 
-    def load_all(self) -> List[RememberedDevice]:
+    def load_all(self) -> list[RememberedDevice]:
         """Load all remembered devices from disk."""
         if not self.file_path.is_file():
             return []
@@ -71,7 +69,7 @@ class DeviceRegistry:
             logger.warning(f"Error loading device registry {self.file_path}: {exc}")
             return []
 
-    def save_all(self, devices: List[RememberedDevice]) -> bool:
+    def save_all(self, devices: list[RememberedDevice]) -> bool:
         """Persist device records atomically to disk."""
         self._ensure_dir()
         tmp_file = self.file_path.with_suffix(".tmp")
@@ -90,7 +88,7 @@ class DeviceRegistry:
                     pass
             return False
 
-    def get(self, physical_id: str) -> Optional[RememberedDevice]:
+    def get(self, physical_id: str) -> RememberedDevice | None:
         """Look up a remembered device by its physical ID."""
         if not physical_id:
             return None
@@ -99,14 +97,14 @@ class DeviceRegistry:
                 return dev
         return None
 
-    def remember(self, info: DeviceInfo, friendly_name: Optional[str] = None) -> RememberedDevice:
+    def remember(self, info: DeviceInfo, friendly_name: str | None = None) -> RememberedDevice:
         """
         Record or update a successfully connected device.
         Never stores passwords, pairing codes, or private keys.
         """
         devices = self.load_all()
         pid = info.physical_id or info.serial
-        now_iso = datetime.now(timezone.utc).isoformat()
+        now_iso = datetime.now(UTC).isoformat()
 
         name = friendly_name or (
             f"{info.manufacturer} {info.model}".strip() if info.model else info.serial

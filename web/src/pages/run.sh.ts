@@ -15,12 +15,10 @@ echo "========================================================"
 echo "  AI-Phone-Debloater Zero-Git Runner (Linux/macOS)"
 echo "========================================================"
 
-for cmd in curl; do
-    if ! command -v "$cmd" &> /dev/null; then
-        echo "[ERROR] Required tool '$cmd' is not installed." >&2
-        exit 1
-    fi
-done
+if ! command -v curl >/dev/null 2>&1; then
+    echo "[ERROR] Required tool 'curl' is not installed." >&2
+    exit 1
+fi
 
 TEMP_DIR="\$(mktemp -d)"
 ZIP_FILE="\${TEMP_DIR}/repo.zip"

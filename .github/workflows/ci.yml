@@ -1,22 +1,33 @@
-name: CI
+name: CI/CD Pipeline - AI-Phone-Debloater
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
+    tags: ['v*']
   pull_request:
-    branches: [main, master]
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
 
 permissions:
   contents: read
+  packages: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.11"
+  NODE_VERSION: "22"
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-
+  # ---------- Lint ----------
+  lint:
+    name: Lint & Static Analysis
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,28 +35,122 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Validate Rule JSON Files
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Lint shell launcher
+        run: shellcheck cli/bin/debloat.sh
+
+      - name: Python syntax check
+        run: python -m py_compile cli/src/debloat_engine.py cli/tests/validate_rules.py cli/tests/test_connection.py
+
+      - name: Python style check
+        run: |
+          pip install ruff
+          ruff check cli/src/debloat_engine.py cli/tests/ --output-format=github
+
+      - name: Shellcheck web runner script
+        run: |
+          # Extract embedded bash from run.sh.ts into temp file and lint
+          python - <<'PYEOF'
+          import re, pathlib, subprocess, tempfile, os
+          src = pathlib.Path("web/src/pages/run.sh.ts").read_text(encoding="utf-8")
+          m = re.search(r"scriptContent = `([\s\S]*?)`;", src)
+          script = m.group(1).replace("${", "$").replace("\\$", "$")
+          with tempfile.NamedTemporaryFile("w", suffix=".sh", delete=False) as f:
+              f.write(script)
+              p = f.name
+          try:
+              r = subprocess.run(["shellcheck", p], capture_output=True, text=True)
+              if r.stdout or r.returncode != 0:
+                  print(r.stdout + r.stderr)
+              raise SystemExit(r.returncode)
+          finally:
+              os.unlink(p)
+          PYEOF
+
+  # ---------- Validation ----------
+  validate:
+    name: Validate Engine & Rules
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Run rule validation suite
         run: python cli/tests/validate_rules.py
 
-      - name: Compile Python sources
-        run: python -m py_compile cli/src/debloat_engine.py cli/tests/validate_rules.py
+      - name: Run connection subsystem tests
+        run: python cli/tests/test_connection.py
 
-      - name: Verify Debloat Engine CLI Help
+      - name: Verify CLI help
         run: python cli/src/debloat_engine.py --help
 
-      - name: Lint Shell Launcher (Linux/macOS)
-        if: runner.os != 'Windows'
-        run: bash -n cli/bin/debloat.sh
+      - name: Check version consistency
+        run: |
+          VERSION_FILE=$(cat VERSION | tr -d '\r\n')
+          echo "VERSION=$VERSION_FILE" >> $GITHUB_ENV
+          python -c "import sys; sys.path.insert(0, 'cli/src'); import debloat_engine as e; assert e.__version__ == '$VERSION_FILE', f'version mismatch: engine={e.__version__} file=$VERSION_FILE'"
 
-      - name: Launcher smoke test (--version)
+      - name: Verify web dataset matches engine rules
+        run: |
+          python - <<'PYEOF'
+          import json, pathlib, re
+          engine = pathlib.Path("cli/src/debloat_engine.py").read_text(encoding="utf-8")
+          m = re.search(r"TOTAL_UNIQUE_PACKAGES[^\n]*=\s*(\d+)", engine)
+          total = int(m.group(1)) if m else None
+          print("Engine unique package count:", total)
+          web = json.loads(pathlib.Path("web/src/data/rules-dataset.json").read_text(encoding="utf-8"))
+          print("Web dataset keys:", list(web.keys()))
+          PYEOF
+
+  # ---------- Tests ----------
+  test:
+    name: Test Suite (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: validate
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Run Python test suites
+        run: |
+          python cli/tests/validate_rules.py
+          python cli/tests/test_connection.py
+
+      - name: Compile Python sources
+        run: python -m py_compile cli/src/debloat_engine.py cli/tests/validate_rules.py cli/tests/test_connection.py
+
+      - name: Smoke test launcher
         shell: bash
         run: |
-          if [ "$RUNNER_OS" = "Windows" ]; then cmd //c "cli\bin\debloat.bat --version"; else bash cli/bin/debloat.sh --version; fi
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            cmd //c "cli\bin\debloat.bat --version"
+          else
+            bash cli/bin/debloat.sh --version
+          fi
 
-  web:
+  web-test:
+    name: Web Dashboard Test
     runs-on: ubuntu-latest
+    needs: validate
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -53,12 +158,190 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: web/package-lock.json
 
-      - name: Build web dashboard
+      - name: Install dependencies
+        run: npm ci
         working-directory: web
+
+      - name: Build web dashboard
+        run: npm run build
+        working-directory: web
+
+      - name: Smoke test web preview
         run: |
-          npm ci
-          npm run build
+          cd web
+          npx astro preview --host 127.0.0.1 > preview.log 2>&1 &
+          PREVIEW_PID=$!
+          for i in $(seq 1 30); do
+            if curl -s http://127.0.0.1:4321/ > /dev/null; then break; fi
+            sleep 1
+          done
+          curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:4321/ | grep -q "200"
+          kill $PREVIEW_PID || true
+
+  # ---------- Security ----------
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks secret scan
+        run: |
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v8.24.0/gitleaks_8.24.0_linux_x64.tar.gz" -o /tmp/gitleaks.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp
+          /tmp/gitleaks detect --source . --verbose --redact
+
+      - name: Audit npm dependencies
+        run: |
+          cd web
+          npm audit --audit-level moderate
+
+  # ---------- Docker build & push ----------
+  docker:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [test, web-test, security]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push CLI image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.cli
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push web image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.web
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-web:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-web:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ---------- Release ----------
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: docker
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: ver
+        run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Generate release notes
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 HEAD 2>/dev/null || true)
+          if [ -n "$LAST_TAG" ]; then
+            RANGE="${LAST_TAG}..HEAD"
+          else
+            RANGE="$(git rev-list --max-parents=0 HEAD)"
+          fi
+          NOTES=$(git log --pretty=format:"%s" $RANGE | grep -v "^\s*$" | head -100)
+          {
+            echo "# Release ${{ steps.ver.outputs.version }}"
+            echo ""
+            echo "AI-Phone-Debloater v${{ steps.ver.outputs.version }}"
+            echo ""
+            echo "## Changes"
+            echo '```'
+            echo "$NOTES"
+            echo '```'
+          } > RELEASE_NOTES.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+
+      - name: Upload web dist as release asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: web/dist/index.html
+          asset_name: web-dashboard-${{ steps.ver.outputs.version }}.html
+          asset_content_type: text/html
+
+  # ---------- Deploy ----------
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: release
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    environment: production
+
+    steps:
+      - name: Deploy
+        run: |
+          echo "Production deployment for ${{ github.ref_name }}."
+          echo "Configure target environment secrets and deployment steps externally.
+
+  # ---------- Final gate summary ----------
+  final-status:
+    name: Pipeline Summary
+    runs-on: ubuntu-latest
+    needs: [lint, validate, test, web-test, security, docker, release, deploy]
+    if: always()
+
+    steps:
+      - name: Write job status summary
+        run: |
+          echo "lint=${{ needs.lint.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "validate=${{ needs.validate.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "test=${{ needs.test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "web-test=${{ needs.web-test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "security=${{ needs.security.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "docker=${{ needs.docker.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "release=${{ needs.release.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "deploy=${{ needs.deploy.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "Pipeline status: ${{ needs.release.result }}"

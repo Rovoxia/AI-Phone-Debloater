@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 AI-Phone-Debloater — Device Identity Verification Subsystem
 ===========================================================
@@ -11,7 +10,6 @@ device and ensure identity consistency throughout sessions.
 from __future__ import annotations
 
 import logging
-from typing import Optional, Tuple
 
 from .adb_client import AdbClient
 from .models import DeviceInfo, TransportType
@@ -58,7 +56,7 @@ class DeviceIdentityManager:
         info.physical_id = self.resolve_physical_id(serial, info)
         return info
 
-    def resolve_physical_id(self, serial: str, info: Optional[DeviceInfo] = None) -> str:
+    def resolve_physical_id(self, serial: str, info: DeviceInfo | None = None) -> str:
         """
         Determine canonical hardware identifier (ro.serialno, ro.boot.serialno, or USB serial).
         For wireless connections, queries ro.serialno so it matches the USB serial of the same phone.
@@ -129,7 +127,7 @@ class DeviceIdentityManager:
 
         return False
 
-    def verify_consistency(self, target: DeviceInfo) -> Tuple[bool, str]:
+    def verify_consistency(self, target: DeviceInfo) -> tuple[bool, str]:
         """
         Verify that the device connected at target.serial is still reachable, authorized,
         and matches target identity before destructive debloating operations.

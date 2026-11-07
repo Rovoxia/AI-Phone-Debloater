@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 AI-Phone-Debloater — Connection Layer Exceptions
 ================================================
@@ -155,17 +154,17 @@ class OperationCancelledError(ConnectionError):
 
 
 __all__ = [
-    "ConnectionError",
     "AdbNotFoundError",
-    "AdbVersionError",
     "AdbServerError",
-    "DeviceNotFoundError",
-    "DeviceUnauthorizedError",
-    "DeviceOfflineError",
+    "AdbVersionError",
+    "ConnectionError",
     "DeviceAmbiguousError",
+    "DeviceNotFoundError",
+    "DeviceOfflineError",
+    "DeviceUnauthorizedError",
+    "DiscoveryError",
+    "OperationCancelledError",
     "PairingError",
     "PairingTimeoutError",
-    "DiscoveryError",
     "SecurityValidationError",
-    "OperationCancelledError",
 ]

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 AI-Phone-Debloater — Device Discovery
 =====================================
@@ -26,7 +25,6 @@ import re
 import socket
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Optional, Tuple
 
 from .adb_client import _LoggerAdapter
 from .exceptions import (
@@ -100,7 +98,7 @@ def validate_port(port: int) -> bool:
         return False
 
 
-def validate_endpoint(endpoint: str) -> Tuple[str, int]:
+def validate_endpoint(endpoint: str) -> tuple[str, int]:
     """Validate a ``host:port`` endpoint and return ``(host, port)``.
 
     Raises :class:`SecurityValidationError` when:
@@ -192,7 +190,7 @@ class MdnsDiscovery:
         self._logger.debug("mdns check rc=%s supported=%s out=%r err=%r", rc, supported, stdout[:200], stderr[:200])
         return supported
 
-    def discover_services(self) -> List[DiscoveredService]:
+    def discover_services(self) -> list[DiscoveredService]:
         """Run ``adb mdns services`` and parse the advertised services.
 
         Output format (one service per line)::
@@ -221,7 +219,7 @@ class MdnsDiscovery:
                 f"adb mdns services failed (rc={rc}): {stderr.strip() or stdout.strip()}"
             )
 
-        services: List[DiscoveredService] = []
+        services: list[DiscoveredService] = []
         for line in stdout.splitlines():
             line = line.strip()
             if not line or line.startswith("List of"):
@@ -255,12 +253,12 @@ class MdnsDiscovery:
         self._logger.debug("discovered %d mdns service(s)", len(services))
         return services
 
-    def get_pairing_services(self) -> List[DiscoveredService]:
+    def get_pairing_services(self) -> list[DiscoveredService]:
         """Return discovered services where :attr:`DiscoveredService.is_pairing`
         is True (ADB-TLS pairing endpoints)."""
         return [s for s in self.discover_services() if s.is_pairing]
 
-    def get_connect_services(self) -> List[DiscoveredService]:
+    def get_connect_services(self) -> list[DiscoveredService]:
         """Return discovered services where :attr:`DiscoveredService.is_connect`
         is True (ADB-TLS connect endpoints)."""
         return [s for s in self.discover_services() if s.is_connect]
@@ -308,7 +306,7 @@ class LanDiscovery:
             return "192.168.1."
         return f"{octets[0]}.{octets[1]}.{octets[2]}."
 
-    def _probe(self, ip: str, port: int, timeout: float) -> Optional[str]:
+    def _probe(self, ip: str, port: int, timeout: float) -> str | None:
         """Attempt a TCP connect to ``ip:port``; return ``ip:port`` on success."""
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(timeout)
@@ -325,7 +323,7 @@ class LanDiscovery:
         port: int = 5555,
         timeout: float = 0.2,
         max_workers: int = 64,
-    ) -> List[str]:
+    ) -> list[str]:
         """Multithreaded TCP probe of the local /24 subnet.
 
         Attempts a TCP connect to ``port`` (default 5555) on every address
@@ -351,10 +349,10 @@ class LanDiscovery:
         prefix = self._local_subnet()
         targets = [f"{prefix}{i}" for i in range(1, 255)]
 
-        found: List[str] = []
+        found: list[str] = []
         lock = threading.Lock()
 
-        def _task(ip: str) -> Optional[str]:
+        def _task(ip: str) -> str | None:
             result = self._probe(ip, port, timeout)
             if result:
                 with lock:
@@ -374,9 +372,9 @@ class LanDiscovery:
 
 
 __all__ = [
+    "LanDiscovery",
+    "MdnsDiscovery",
+    "validate_endpoint",
     "validate_ip_address",
     "validate_port",
-    "validate_endpoint",
-    "MdnsDiscovery",
-    "LanDiscovery",
 ]

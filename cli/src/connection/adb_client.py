@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 AI-Phone-Debloater — ADB Client
 ===============================
@@ -22,12 +21,11 @@ from __future__ import annotations
 
 import logging
 import os
-import platform
+import re
 import shutil
 import subprocess
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 from .exceptions import (
     AdbNotFoundError,
@@ -46,14 +44,13 @@ logger = logging.getLogger("ai_phone_debloater.connection.adb_client")
 SENSITIVE_TOKENS: tuple = ("pair", "connect", "disconnect")
 
 
-def _redact_command(cmd: List[str]) -> str:
+def _redact_command(cmd: list[str]) -> str:
     """Return a human-readable command string with sensitive tokens masked.
 
     When ``cmd`` contains 'pair', both the endpoint and the pairing code are redacted.
     When ``cmd`` contains 'connect' or 'disconnect', the endpoint is redacted.
     """
-    import re
-    parts: List[str] = []
+    parts: list[str] = []
     redact_count = 0
     for part in cmd:
         if part == "pair":
@@ -87,7 +84,7 @@ class _LoggerAdapter:
         if args:
             try:
                 return msg % args
-            except Exception:
+            except (TypeError, ValueError):
                 return f"{msg} {' '.join(str(a) for a in args)}"
         return msg
 
@@ -158,8 +155,9 @@ class AdbClient:
 
     # Standard candidate locations for the adb binary, used when nothing
     # else resolves. Kept intentionally short — stdlib-only discovery does
-    # not scan the whole filesystem.
-    STANDARD_CANDIDATES: List[str] = [
+    # not scan the whole filesystem. Stored as an immutable tuple to avoid
+    # mutable-default-class-attribute foot-guns.
+    STANDARD_CANDIDATES: tuple[str, ...] = (
         r"C:\platform-tools\adb.exe",
         r"C:\Android\platform-tools\adb.exe",
         os.path.expandvars(r"%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe"),
@@ -169,11 +167,11 @@ class AdbClient:
         "/usr/bin/adb",
         "/opt/homebrew/bin/adb",
         "/opt/android-sdk/platform-tools/adb",
-    ]
+    )
 
     def __init__(
         self,
-        adb_path: Optional[str] = None,
+        adb_path: str | None = None,
         timeout: float = DEFAULT_TIMEOUT,
         logger=None,
         logger_obj=None,
@@ -188,7 +186,7 @@ class AdbClient:
     # Path discovery
     # ------------------------------------------------------------------
 
-    def _discover_adb(self, adb_path: Optional[str]) -> str:
+    def _discover_adb(self, adb_path: str | None) -> str:
         """Resolve the adb executable path through an ordered candidate chain.
 
         Order:
@@ -200,7 +198,7 @@ class AdbClient:
         4. System ``PATH`` via :func:`shutil.which`.
         5. Standard candidate locations (common SDK install dirs).
         """
-        candidates: List[str] = []
+        candidates: list[str] = []
 
         # 1. Explicit argument.
         if adb_path:
@@ -265,11 +263,11 @@ class AdbClient:
 
     def run_cmd(
         self,
-        cmd: List[str],
-        timeout: Optional[float] = None,
+        cmd: list[str],
+        timeout: float | None = None,
         capture: bool = True,
-        env: Optional[dict] = None,
-    ) -> Tuple[int, str, str]:
+        env: dict | None = None,
+    ) -> tuple[int, str, str]:
         """Execute an arbitrary command list safely.
 
         Guarantees:
@@ -303,6 +301,7 @@ class AdbClient:
                 encoding="utf-8",
                 errors="replace",
                 env=merged_env,
+                check=False,
             )
         except subprocess.TimeoutExpired as exc:
             try:
@@ -312,19 +311,21 @@ class AdbClient:
                         exc.process.wait(timeout=5)
                     except subprocess.TimeoutExpired:
                         exc.process.kill()
-            except Exception:
-                pass
+            except (TimeoutError, OSError) as exc:
+                self._logger.error(f"Timeout handling failed: {exc}")
             raise AdbServerError(
                 f"command timed out after {timeout}s: {_redact_command(cmd)}"
             ) from exc
-        except FileNotFoundError as exc:
+        except FileNotFoundError:
+            self._logger.exception(f"executable not found: {cmd[0] if cmd else '<empty>'}")
             raise AdbNotFoundError(
                 f"executable not found: {cmd[0] if cmd else '<empty>'}"
-            ) from exc
+            ) from None
         except OSError as exc:
+            self._logger.exception(f"failed to execute {cmd[0] if cmd else '<empty>'}")
             raise AdbServerError(
                 f"failed to execute {cmd[0] if cmd else '<empty>'}: {exc}"
-            ) from exc
+            ) from None
 
         stdout = proc.stdout or ""
         stderr = proc.stderr or ""
@@ -335,16 +336,16 @@ class AdbClient:
 
     def run_adb(
         self,
-        args: List[str],
-        timeout: Optional[float] = None,
-        serial: Optional[str] = None,
-    ) -> Tuple[int, str, str]:
+        args: list[str],
+        timeout: float | None = None,
+        serial: str | None = None,
+    ) -> tuple[int, str, str]:
         """Run ``adb [-s serial] <args...>``.
 
         Prepends the resolved adb binary path and an optional ``-s serial``
         selector before the supplied arguments.
         """
-        cmd: List[str] = [self.adb_path]
+        cmd: list[str] = [self.adb_path]
         if serial:
             cmd.extend(["-s", serial])
         cmd.extend(args)
@@ -353,9 +354,9 @@ class AdbClient:
     def run_shell(
         self,
         command: str,
-        timeout: Optional[float] = None,
-        serial: Optional[str] = None,
-    ) -> Tuple[int, str, str]:
+        timeout: float | None = None,
+        serial: str | None = None,
+    ) -> tuple[int, str, str]:
         """Run ``adb [-s serial] shell <command>`` on the device."""
         return self.run_adb(["shell", command], timeout=timeout, serial=serial)
 
@@ -425,7 +426,7 @@ class AdbClient:
         ``min_version``. Wireless pairing requires adb >= 1.0.41."""
         installed = self.get_version()
 
-        def parse(ver: str) -> Tuple[int, ...]:
+        def parse(ver: str) -> tuple[int, ...]:
             return tuple(int(part) for part in ver.split(".") if part.isdigit())
 
         if parse(installed) < parse(min_version):
@@ -438,7 +439,7 @@ class AdbClient:
     # Device listing
     # ------------------------------------------------------------------
 
-    def list_devices(self) -> List[Dict[str, str]]:
+    def list_devices(self) -> list[dict[str, str]]:
         """Run ``adb devices -l`` (without ``-s``) and parse the listing.
 
         Returns a list of dicts with keys: ``serial``, ``state``, ``model``,
@@ -451,7 +452,7 @@ class AdbClient:
                 f"adb devices -l failed (rc={rc}): {stderr.strip() or stdout.strip()}"
             )
 
-        devices: List[Dict[str, str]] = []
+        devices: list[dict[str, str]] = []
         for line in stdout.splitlines():
             line = line.strip()
             if not line or line.startswith("List of devices attached"):
@@ -461,7 +462,7 @@ class AdbClient:
             if len(parts) < 2:
                 continue
             serial, state = parts[0], parts[1]
-            props: Dict[str, str] = {}
+            props: dict[str, str] = {}
             for token in parts[2:]:
                 if ":" in token:
                     key, _, value = token.partition(":")
@@ -482,7 +483,7 @@ class AdbClient:
         """Return the state string for a single serial via ``adb -s <serial>
         get-state``, falling back to the ``list_devices`` listing."""
         try:
-            rc, stdout, stderr = self.run_adb(
+            rc, stdout, _stderr = self.run_adb(
                 ["get-state"], timeout=10.0, serial=serial
             )
             if rc == 0:
@@ -504,7 +505,7 @@ class AdbClient:
             raise DeviceNotFoundError(f"device not found: {serial}")
         return dev["serial"]
 
-    def lookup_device(self, serial: str) -> Optional[Dict[str, str]]:
+    def lookup_device(self, serial: str) -> dict[str, str] | None:
         """Search the device listing for a serial. Returns dict or None."""
         devices = self.list_devices()
         for dev in devices:
@@ -535,14 +536,14 @@ class AdbClient:
             )
         return devices[0]["serial"]
 
-    def getprop(self, prop: str, serial: Optional[str] = None, timeout: Optional[float] = None) -> str:
+    def getprop(self, prop: str, serial: str | None = None, timeout: float | None = None) -> str:
         """Query an Android system property via `getprop <prop>`."""
         if not re.match(r"^[A-Za-z0-9._-]+$", prop):
             return ""
         try:
             rc, out, _ = self.run_shell(f"getprop {prop}", timeout=timeout or 10.0, serial=serial)
             return out.strip() if rc == 0 else ""
-        except Exception:
+        except (OSError, AdbServerError):
             return ""
 
     def is_device_online(self, serial: str) -> bool:

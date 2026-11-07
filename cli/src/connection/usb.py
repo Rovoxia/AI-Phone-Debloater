@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 AI-Phone-Debloater — USB Transport Handler
 ==========================================
@@ -11,7 +10,8 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
+from typing import Any
 
 from .adb_client import AdbClient
 from .device_identity import DeviceIdentityManager
@@ -21,7 +21,7 @@ from .exceptions import (
     DeviceUnauthorizedError,
     OperationCancelledError,
 )
-from .models import DeviceInfo, DeviceState, TransportType
+from .models import DeviceInfo, TransportType
 
 logger = logging.getLogger("rovoxia.connection.usb")
 
@@ -32,20 +32,20 @@ class UsbConnectionHandler:
     def __init__(
         self,
         adb_client: AdbClient,
-        identity_manager: Optional[DeviceIdentityManager] = None,
-        logger_obj: Optional[Any] = None,
+        identity_manager: DeviceIdentityManager | None = None,
+        logger_obj: Any | None = None,
     ) -> None:
         self.adb = adb_client
         self.identity = identity_manager or DeviceIdentityManager(adb_client)
         self.custom_logger = logger_obj
 
-    def list_usb_devices(self) -> List[Dict[str, str]]:
+    def list_usb_devices(self) -> list[dict[str, str]]:
         """
         Enumerate all attached devices and filter for USB transports
         (excludes emulator-*, IP:Port, etc.).
         """
         all_devs = self.adb.list_devices()
-        usb_devs: List[Dict[str, str]] = []
+        usb_devs: list[dict[str, str]] = []
         for d in all_devs:
             serial = d.get("serial", "")
             if not serial:
@@ -55,7 +55,7 @@ class UsbConnectionHandler:
                 usb_devs.append(d)
         return usb_devs
 
-    def get_ready_devices(self) -> List[DeviceInfo]:
+    def get_ready_devices(self) -> list[DeviceInfo]:
         """Return all USB devices that are in authorized 'device' state."""
         raw_list = self.list_usb_devices()
         ready = []
@@ -70,8 +70,8 @@ class UsbConnectionHandler:
         serial: str,
         timeout: float = 45.0,
         poll_interval: float = 1.0,
-        progress_cb: Optional[Callable[[str, int], None]] = None,
-        cancel_check: Optional[Callable[[], bool]] = None,
+        progress_cb: Callable[[str, int], None] | None = None,
+        cancel_check: Callable[[], bool] | None = None,
     ) -> DeviceInfo:
         """
         Poll an attached device that is currently 'unauthorized' until the user
@@ -117,9 +117,9 @@ class UsbConnectionHandler:
 
     def detect_and_connect(
         self,
-        serial: Optional[str] = None,
+        serial: str | None = None,
         timeout: float = 30.0,
-        progress_cb: Optional[Callable[[str], None]] = None,
+        progress_cb: Callable[[str], None] | None = None,
     ) -> DeviceInfo:
         """
         Connect to a USB device:
