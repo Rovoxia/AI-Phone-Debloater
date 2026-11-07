@@ -1,0 +1,75 @@
+name: Release
+
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read VERSION
+        id: ver
+        run: echo "version=$(cat VERSION | tr -d '\r\n')" >> $GITHUB_OUTPUT
+
+      - name: Check existing release
+        id: check
+        run: |
+          EXISTING=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || true)
+          echo "latest_release=${EXISTING:-none}" >> $GITHUB_OUTPUT
+          echo "Latest release tag: ${EXISTING:-none}"
+
+      - name: Skip when already released
+        if: steps.check.outputs.latest_release != 'none' && steps.check.outputs.latest_release == format('v{0}', steps.ver.outputs.version)
+        run: echo "Release v${{ steps.ver.outputs.version }} already exists. Skipping."
+
+      - name: Generate changelog
+        if: steps.check.outputs.latest_release != 'none' && steps.check.outputs.latest_release != format('v{0}', steps.ver.outputs.version)
+        run: |
+          LAST_TAG="${{ steps.check.outputs.latest_release }}"
+          if [ -n "$LAST_TAG" ]; then
+            RANGE="${LAST_TAG}..HEAD"
+          else
+            RANGE="$(git rev-list --max-parents=0 HEAD)"
+          fi
+          NOTES=$(git log --pretty=format:"%s" $RANGE | grep -v "^\s*$" | head -100)
+          {
+            echo "# Release v${{ steps.ver.outputs.version }}"
+            echo ""
+            echo "## Changes"
+            echo '```'
+            echo "$NOTES"
+            echo '```'
+          } > RELEASE_NOTES.md
+
+      - name: Update changelog.md
+        if: steps.check.outputs.latest_release != 'none' && steps.check.outputs.latest_release != format('v{0}', steps.ver.outputs.version)
+        run: |
+          {
+            echo ""
+            echo "# Release v${{ steps.ver.outputs.version }}"
+            echo ""
+            echo "## Changes"
+            echo '```'
+            cat RELEASE_NOTES.md | sed '1,/^```$/d' | sed '/^```$/d'
+            echo '```'
+          } >> CHANGELOG.md
+
+      - name: Create tag and GitHub Release
+        if: steps.check.outputs.latest_release != 'none' && steps.check.outputs.latest_release != format('v{0}', steps.ver.outputs.version)
+        run: |
+          git tag -a "v${{ steps.ver.outputs.version }}" -m "Release v${{ steps.ver.outputs.version }}"
+          git push origin "v${{ steps.ver.outputs.version }}"
+          gh release create "v${{ steps.ver.outputs.version }}" --title "Release v${{ steps.ver.outputs.version }}" --notes-file RELEASE_NOTES.md
