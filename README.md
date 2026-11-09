@@ -20,7 +20,7 @@
 [![Root: No Root Required](https://img.shields.io/badge/Root-100%25%20No%20Root-purple.svg?style=flat-square)](#technical-safety-architecture)
 [![Knox: 0x0 Warranty Safe](https://img.shields.io/badge/Samsung%20Knox-0x0%20(Warranty%20Safe)-success.svg?style=flat-square)](#frequently-asked-questions)
 [![CI Status](https://img.shields.io/badge/CI-Passing-brightgreen.svg?style=flat-square)](https://github.com/Rovoxia/AI-Phone-Debloater/actions)
-[![Curated Rules](https://img.shields.io/badge/Curated%20Rules-324%20Packages-orange.svg?style=flat-square)](cli/rules/)
+[![Curated Rules](https://img.shields.io/badge/Curated%20Rules-352%20Packages-orange.svg?style=flat-square)](cli/rules/)
 [![Safety Verified](https://img.shields.io/badge/Safety-Verified-blueviolet.svg?style=flat-square)](#quick-facts--technical-summary)
 
 <p align="center">
@@ -49,7 +49,7 @@ Key technical facts and specifications:
 | **Does it trip Samsung Knox or void warranty?** | **No.** Knox Warranty Void remains `0x0`. Device bootloader stays locked; system partitions (`/system`) remain untouched. |
 | **Do banking apps and Google Pay continue working?** | **Yes.** Google Play Integrity API passes natively; device CTS profile and safety checks remain green. |
 | **Are package removals reversible?** | **100% reversible.** Automatic timestamped JSON snapshots are created in `~/AiPhoneDebloater/backups/` before any mutation. |
-| **Can critical system packages be removed accidentally?** | **No.** Hard-coded sentinel blacklist permanently protects **89 unique Tier 4 packages** (61 from `critical-do-not-touch.json` + 89 in `HARDCRITICAL_PACKAGES`, union 89) — SystemUI, Telephony, Keystore, framework, and modem HALs are never touched. |
+| **Can critical system packages be removed accidentally?** | **No.** Hard-coded sentinel blacklist permanently protects **89 unique Tier 4 packages** (all 89 in `critical-do-not-touch.json`, loaded into `HARDCRITICAL_PACKAGES`; union 89) — SystemUI, Telephony, Keystore, framework, and modem HALs are never touched. |
 | **What platforms are supported?** | Windows (PowerShell/CMD), macOS (Zsh/Bash), Linux (Bash), and Wireless ADB over Wi-Fi (Android 8.0 to 15+). |
 
 ---
@@ -68,7 +68,7 @@ Unlike legacy debloating scripts that execute unvetted package removal commands 
 
 > [!WARNING]
 > ### ⚠️ Safety & Best Practices Notice • `No Root Required`
-> Uses safe User 0 commands (`disable-user` / `uninstall -k`) with 61 core OS packages hard-blocked. Because OEM skins vary, Tier 2/3 removal may disrupt dependent features. **Always back up important photos, chats, and data before modifying packages.**
+> Uses safe User 0 commands (`disable-user` / `uninstall -k`) with 89 core OS packages hard-blocked. Because OEM skins vary, Tier 2/3 removal may disrupt dependent features. **Always back up important photos, chats, and data before modifying packages.**
 
 ---
 
@@ -165,12 +165,12 @@ Every Android package evaluated by AI-Phone-Debloater is classified strictly int
 
 > [!WARNING]
 > ### ⚠️ Safety & Best Practices Notice • `No Root Required`
-> Uses safe User 0 commands (`disable-user` / `uninstall -k`) with 61 core OS packages hard-blocked. Because OEM skins vary, Tier 2/3 removal may disrupt dependent features. **Always back up important photos, chats, and data before modifying packages.**
+> Uses safe User 0 commands (`disable-user` / `uninstall -k`) with 89 core OS packages hard-blocked. Because OEM skins vary, Tier 2/3 removal may disrupt dependent features. **Always back up important photos, chats, and data before modifying packages.**
 
 ### ⚙️ How Safety Tiers Work (Engine Decision Pipeline)
 
 1. **Inviolable Core Sentinel (Tier 4 Guardrail)**  
-   The engine initializes by loading 61 critical operating system packages from `cli/rules/critical-do-not-touch.json` and internal kernel safeguards into memory. Any package marked as Tier 4 (`com.android.systemui`, telephony stack, keystore biometrics) is **permanently blocked** and cannot be removed, frozen, or bypassed by any argument or AI prompt.
+   The engine initializes by loading 89 critical operating system packages from `cli/rules/critical-do-not-touch.json` and internal kernel safeguards into memory. Any package marked as Tier 4 (`com.android.systemui`, telephony stack, keystore biometrics) is **permanently blocked** and cannot be removed, frozen, or bypassed by any argument or AI prompt.
 
 2. **OEM Skin Auto-Discovery & Dynamic Rules**  
    The engine queries device properties via ADB (`ro.product.manufacturer`, `ro.product.model`) and dynamically matches the corresponding OEM rulebook (`samsung-oneui.json`, `xiaomi-miui-hyperos.json`, `oneplus-oxygenos.json`, `google-pixel.json`, etc.) alongside `universal-safe-to-remove.json`.
@@ -210,7 +210,7 @@ How AI-Phone-Debloater compares against traditional Android debloating solutions
 <a id="oem-coverage-matrix"></a>
 ## 📱 OEM Coverage Matrix
 
-Curated rule databases located in `cli/rules/` cover **324 unique packages** across the major Android OEM skins (263 removable bloat + 61 Tier 4 critical hard-blocked):
+Curated rule databases located in `cli/rules/` cover **352 unique packages** across the major Android OEM skins (263 removable bloat + 89 Tier 4 critical hard-blocked):
 
 | Manufacturer | System Skin | Rule Database File | Packages | Targeted Services |
 | :--- | :--- | :--- | :---: | :--- |
@@ -223,9 +223,9 @@ Curated rule databases located in `cli/rules/` cover **324 unique packages** acr
 | **Transsion** | Tecno HiOS, Infinix XOS, itel | [`transsion-tecno-infinix.json`](cli/rules/transsion-tecno-infinix.json) | 29 | Palm Store, Carlcare telemetry, AHA Games, Phone Master optimization ads, HiOS launcher ads. |
 | **Huawei** | EMUI | [`huawei-emui.json`](cli/rules/huawei-emui.json) | 4 | EMUI-specific bloat and telemetry daemons. |
 | **Universal (All OEMs)** | Cross-Carrier & Preloads | [`universal-safe-to-remove.json`](cli/rules/universal-safe-to-remove.json) | 81 | Facebook AppManager / Installer, Microsoft OneDrive / Link, Netflix Activation, Google Partner Setup. |
-| **Critical Core (Sentinel)** | Tier 4 — never touched | [`critical-do-not-touch.json`](cli/rules/critical-do-not-touch.json) | 61 | Android framework, telephony, keystore, package installer — hard-blocked. |
+| **Critical Core (Sentinel)** | Tier 4 — never touched | [`critical-do-not-touch.json`](cli/rules/critical-do-not-touch.json) | 89 | Android framework, telephony, keystore, package installer — hard-blocked. |
 
-**Total:** 324 unique packages across 10 rule databases (263 removable bloat + 61 Tier 4 critical hard-blocked).
+**Total:** 352 unique packages across 10 rule databases (263 removable bloat + 89 Tier 4 critical hard-blocked).
 
 ---
 
@@ -247,7 +247,7 @@ Modern Android devices store system APKs inside read-only partitions (`/system`,
 When executing uninstalls, the `-k` parameter instructs Android's Package Manager to preserve the app's private data directory located in `/data/user/0/<package_name>/`. If an application is re-installed or re-enabled later, accounts, local preferences, and session tokens are preserved.
 
 ### 4. Code-Level Sentinel Blacklist
-The core engine enforces a hard-coded set of 61 fundamental operating system packages in `cli/src/debloat_engine.py` and `cli/rules/critical-do-not-touch.json`. Even if an AI agent, custom rule, or user argument commands the removal of packages such as `com.android.systemui` or `com.android.phone`, the engine **intercepts and aborts** the action immediately before execution.
+The core engine enforces a hard-coded set of 89 fundamental operating system packages in `cli/src/debloat_engine.py` and `cli/rules/critical-do-not-touch.json`. Even if an AI agent, custom rule, or user argument commands the removal of packages such as `com.android.systemui` or `com.android.phone`, the engine **intercepts and aborts** the action immediately before execution.
 
 ---
 

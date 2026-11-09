@@ -71,21 +71,34 @@ Before submitting a pull request, run the automated test suite locally:
 # 1. Run Rule Validation Test (Checks JSON syntax, structure, and 0 collisions with Critical Blacklist)
 python cli/tests/validate_rules.py
 
-# 2. Compile Python Sources (Syntax & type checking)
-python -m py_compile cli/src/debloat_engine.py cli/tests/validate_rules.py
+# 2. Run Connection Subsystem Tests
+python cli/tests/test_connection.py
 
-# 3. Test CLI Engine Simulation
+# 3. Compile Python Sources (Syntax & type checking)
+python -m py_compile cli/src/debloat_engine.py cli/tests/validate_rules.py cli/tests/test_connection.py
+
+# 4. Lint Python (ruff)
+pip install ruff && ruff check cli/src cli/tests
+
+# 5. Test CLI Engine Simulation
 python cli/src/debloat_engine.py --help
 python cli/src/debloat_engine.py --dry-run --tier 1
 
-# 4. Lint Shell Launchers (Linux/macOS)
+# 6. Lint Shell Launchers (Linux/macOS)
 bash -n cli/bin/debloat.sh
+shellcheck cli/bin/debloat.sh
 
-# 5. Build Web Dashboard (if web files modified)
+# 7. Build Web Dashboard (if web files modified)
 npm --prefix web run build
+
+# 8. Verify web dataset is in sync with cli/rules/*.json
+python cli/generate_rules_dataset.py
+git diff --exit-code web/src/data/rules-dataset.json
 ```
 
-These checks run automatically in GitHub Actions CI on Ubuntu, Windows, and macOS.
+These checks run automatically in GitHub Actions CI on Ubuntu, Windows, and macOS (Python 3.11 + Node 22), across the `lint`, `validate`, `test`, `web-test`, and `security` jobs.
+
+CI also runs a release workflow (`.github/workflows/release.yml`) that creates GitHub Releases for version-bump tags and updates `CHANGELOG.md`.
 
 ---
 
