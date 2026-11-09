@@ -27,7 +27,7 @@ Clone https://github.com/Rovoxia/AI-Phone-Debloater.git and guide me through saf
    - Display the proposed changes table and pause for my confirmation before modifying anything.
 
 4. Snapshot & Safe Execution:
-   - Create an automated backup snapshot (cli/backups/snapshot_<model>_<timestamp>.json).
+   - Create an automated backup snapshot (`~/AiPhoneDebloater/backups/snapshot_<model>_<timestamp>.json`).
    - Execute safe debloat using `disable` (or `uninstall -k`), ensuring all personal files remain intact.
    - Display the restore command for instant rollback.
 ```
@@ -99,7 +99,7 @@ From the interactive menu:
   1. Make sure phone and PC are connected to the same Wi-Fi.
   2. On phone: **Settings → Developer Options → Wireless Debugging** (turn ON).
   3. Tap **"Pair device with pairing code"** to view the IP:Port and 6-digit code.
-  4. Run launcher, press **`w`**, select **`3`** to pair (or option **`1`** to auto-discover). Pair first with `adb pair <ip>:<pair-port> <code>`, then run:
+  4. Run launcher, press **`w`**, then select **`3`** to pair with the 6-digit code (or **`4`** to auto-discover via mDNS / LAN). After pairing, run:
      ```bash
      python cli/src/debloat_engine.py --wireless <ip>:<port>
      ```

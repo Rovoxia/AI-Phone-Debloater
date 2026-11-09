@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial public release of AI-Phone-Debloater
 - Cross-platform CLI (`debloat.bat` / `debloat.sh`) with Python/ADB auto-bootstrap
-- 10 curated OEM rule databases (324 packages) + critical core blacklist (89 packages)
+- 10 curated OEM rule databases (352 packages) + critical core blacklist (89 packages)
 - 4 safety tiers (Safe/Advanced/Extreme/Critical-hard-blocked)
 - User-0 preservation architecture (`pm disable-user`, `pm uninstall -k`)
 - Automatic snapshot backups (`~/AiPhoneDebloater/backups/`)
@@ -39,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - TTY stdin detection for `curl ... | bash` launches (redirects to `/dev/tty`)
 - Critical package count corrected: 89 unique Tier 4 packages (was 64+61=125)
-- Total rule count corrected: 324 packages across 10 OEM rule files (was 320+)
+- Total rule count corrected: 352 packages across 10 OEM rule files (was 320+)
 - `debloat.sh` now execs `--interactive </dev/tty` when piped and TTY available
 - Zero-Git runner `run.sh.ts` redirects stdin from `/dev/tty` for interactive menu
 
@@ -62,7 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial public release
 - Cross-platform CLI (`debloat.bat` / `debloat.sh`) with Python/ADB auto-bootstrap
-- 10 curated OEM rule databases (324 packages) + critical core blacklist (89 packages)
+- 10 curated OEM rule databases (352 packages) + critical core blacklist (89 packages)
 - 4 safety tiers (Safe/Advanced/Extreme/Critical-hard-blocked)
 - User-0 preservation architecture (`pm disable-user`, `pm uninstall -k`)
 - Automatic snapshot backups (`~/AiPhoneDebloater/backups/`)

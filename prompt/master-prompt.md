@@ -43,7 +43,7 @@ Execute these stages sequentially. Never skip ahead without completing the curre
 
 ### STAGE 4: Snapshot & Reversible Execution
 1. **Create Rollback Snapshot:**
-   * Engine Mode automatically generates `cli/backups/snapshot_<model>_<timestamp>.json`.
+   * Engine Mode automatically generates `~/AiPhoneDebloater/backups/snapshot_<model>_<timestamp>.json`.
    * Raw ADB Mode must first run: `adb shell pm list packages -u -f --user 0 > backup_packages.txt`
 2. **Execute Safe Debloat:**
    * Use `disable` (preferred) or `uninstall -k` (preserves user data).
