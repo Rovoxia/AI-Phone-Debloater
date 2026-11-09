@@ -43,3 +43,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Critical packages hard-blocked against all removal attempts
 - Input validation on all package names and ADB endpoints
 - Shell injection prevention in wireless connection handlers
+# Release v1.0.0
+
+## Changes
+```
+
+```
