@@ -652,7 +652,7 @@ Tier 4 packages are permanently hard-blocked under **any** flag or prompt:
 
 - RuleSet.load seeds the critical set from HARDCRITICAL_PACKAGES (89 packages) unioned with critical-do-not-touch.json (61 packages) = **89 unique inviolable packages**.
 - Critical packages cannot be disabled or uninstalled under any flag.
-- `validate_rules.py` enforces zero collisions between other rule databases and `critical-do-not-touch.json`.
+- validate_rules.py enforces zero collisions between other rule databases and critical-do-not-touch.json.
 
 Examples of blocked packages: SystemUI, Phone, Settings, and core Android framework components.
 
@@ -699,7 +699,7 @@ Android 11+ supports wireless debugging. You can run AI-Phone-Debloater over Wi-
 Settings → Developer options → **Wireless debugging** ON.
 
 ### 2. Pair the Device
-Select "Pair device with pairing code" or scan the QR code shown on screen. Note the IP and port (e.g. `192.168.1.42:5555`).
+Select Pair device with pairing code or scan the QR code shown on screen. Note the IP and port (e.g. 192.168.1.42:5555).
 
 ### 3. Connect via ADB
 \`\`\`bash
