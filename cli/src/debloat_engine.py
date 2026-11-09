@@ -365,11 +365,6 @@ class RuleSet:
         self.logger = logger or Logger()
         self.critical = set(HARDCRITICAL_PACKAGES.keys())
         self.critical_reasons = dict(HARDCRITICAL_PACKAGES)
-
-    def __init__(self, logger=None):
-        self.logger = logger or Logger()
-        self.critical = set(HARDCRITICAL_PACKAGES.keys())
-        self.critical_reasons = dict(HARDCRITICAL_PACKAGES)
         self.safe = {}
         self.loaded_files = []
 
