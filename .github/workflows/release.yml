@@ -1,6 +1,8 @@
 name: Release
 
 on:
+  push:
+    tags: ['v*']
   pull_request:
     branches: [main]
     types: [closed]
@@ -12,7 +14,7 @@ jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
+    if: github.event_name == 'push' || github.event.pull_request.merged == true
 
     steps:
       - name: Checkout repository
@@ -20,9 +22,24 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Read VERSION
+      - name: Determine version
         id: ver
-        run: echo "version=$(cat VERSION | tr -d '\r\n')" >> $GITHUB_OUTPUT
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          else
+            TAG="v$(cat VERSION | tr -d '\r\n')"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Version: $TAG"
+
+      - name: Verify version matches VERSION file
+        run: |
+          FILE_VER=$(cat VERSION | tr -d '\r\n')
+          if [ "${{ steps.ver.outputs.tag }}" != "v$FILE_VER" ]; then
+            echo "::error::Tag ${{ steps.ver.outputs.tag }} does not match VERSION file ($FILE_VER)"
+            exit 1
+          fi
 
       - name: Check existing release
         id: check
@@ -32,11 +49,11 @@ jobs:
           echo "Latest release tag: ${EXISTING:-none}"
 
       - name: Skip when already released
-        if: steps.check.outputs.latest_release != 'none' && steps.check.outputs.latest_release == format('v{0}', steps.ver.outputs.version)
-        run: echo "Release v${{ steps.ver.outputs.version }} already exists. Skipping."
+        if: steps.check.outputs.latest_release == format('v{0}', steps.ver.outputs.version)
+        run: echo "Release ${{ steps.ver.outputs.tag }} already exists. Skipping."
 
       - name: Generate changelog
-        if: steps.check.outputs.latest_release != 'none' && steps.check.outputs.latest_release != format('v{0}', steps.ver.outputs.version)
+        if: steps.check.outputs.latest_release != format('v{0}', steps.ver.outputs.version)
         run: |
           LAST_TAG="${{ steps.check.outputs.latest_release }}"
           if [ -n "$LAST_TAG" ]; then
@@ -46,7 +63,7 @@ jobs:
           fi
           NOTES=$(git log --pretty=format:"%s" $RANGE | grep -v "^\s*$" | head -100)
           {
-            echo "# Release v${{ steps.ver.outputs.version }}"
+            echo "# Release ${{ steps.ver.outputs.tag }}"
             echo ""
             echo "## Changes"
             echo '```'
@@ -55,21 +72,24 @@ jobs:
           } > RELEASE_NOTES.md
 
       - name: Update changelog.md
-        if: steps.check.outputs.latest_release != 'none' && steps.check.outputs.latest_release != format('v{0}', steps.ver.outputs.version)
+        if: steps.check.outputs.latest_release != format('v{0}', steps.ver.outputs.version)
         run: |
           {
             echo ""
-            echo "# Release v${{ steps.ver.outputs.version }}"
+            echo "# Release ${{ steps.ver.outputs.tag }}"
             echo ""
             echo "## Changes"
             echo '```'
             cat RELEASE_NOTES.md | sed '1,/^```$/d' | sed '/^```$/d'
             echo '```'
           } >> CHANGELOG.md
+          git add CHANGELOG.md
+          git -c user.name="Rovoxia" -c user.email="noreply@anthropic.com" commit -m "docs: update changelog for ${{ steps.ver.outputs.tag }}" || true
+          git push origin HEAD || true
 
-      - name: Create tag and GitHub Release
-        if: steps.check.outputs.latest_release != 'none' && steps.check.outputs.latest_release != format('v{0}', steps.ver.outputs.version)
+      - name: Create GitHub Release
+        if: steps.check.outputs.latest_release != format('v{0}', steps.ver.outputs.version)
         run: |
-          git tag -a "v${{ steps.ver.outputs.version }}" -m "Release v${{ steps.ver.outputs.version }}"
-          git push origin "v${{ steps.ver.outputs.version }}"
-          gh release create "v${{ steps.ver.outputs.version }}" --title "Release v${{ steps.ver.outputs.version }}" --notes-file RELEASE_NOTES.md
+          gh release create "${{ steps.ver.outputs.tag }}" \
+            --title "Release ${{ steps.ver.outputs.tag }}" \
+            --notes-file RELEASE_NOTES.md
