@@ -15,6 +15,11 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event.pull_request.merged == true
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GITHUB_TOKEN: ${{ github.token }}
 
     steps:
       - name: Checkout repository
@@ -31,6 +36,7 @@ jobs:
             TAG="v$(cat VERSION | tr -d '\r\n')"
           fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=${TAG#v}" >> $GITHUB_OUTPUT
           echo "Version: $TAG"
 
       - name: Verify version matches VERSION file
@@ -44,22 +50,22 @@ jobs:
       - name: Check existing release
         id: check
         run: |
-          EXISTING=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || true)
+          EXISTING=$(gh release list --limit 1 --json tagName --jq '.[0].tagName // empty' 2>/dev/null || true)
           echo "latest_release=${EXISTING:-none}" >> $GITHUB_OUTPUT
           echo "Latest release tag: ${EXISTING:-none}"
 
       - name: Skip when already released
-        if: steps.check.outputs.latest_release == format('v{0}', steps.ver.outputs.version)
+        if: steps.check.outputs.latest_release == steps.ver.outputs.tag
         run: echo "Release ${{ steps.ver.outputs.tag }} already exists. Skipping."
 
       - name: Generate changelog
-        if: steps.check.outputs.latest_release != format('v{0}', steps.ver.outputs.version)
+        if: steps.check.outputs.latest_release != steps.ver.outputs.tag
         run: |
           LAST_TAG="${{ steps.check.outputs.latest_release }}"
-          if [ -n "$LAST_TAG" ]; then
+          if [ -n "$LAST_TAG" ] && [ "$LAST_TAG" != "none" ]; then
             RANGE="${LAST_TAG}..HEAD"
           else
-            RANGE="$(git rev-list --max-parents=0 HEAD)"
+            RANGE="HEAD"
           fi
           NOTES=$(git log --pretty=format:"%s" $RANGE | grep -v "^\s*$" | head -100)
           {
@@ -72,7 +78,7 @@ jobs:
           } > RELEASE_NOTES.md
 
       - name: Update changelog.md
-        if: steps.check.outputs.latest_release != format('v{0}', steps.ver.outputs.version)
+        if: steps.check.outputs.latest_release != steps.ver.outputs.tag
         run: |
           {
             echo ""
@@ -88,7 +94,7 @@ jobs:
           git push origin HEAD || true
 
       - name: Create GitHub Release
-        if: steps.check.outputs.latest_release != format('v{0}', steps.ver.outputs.version)
+        if: steps.check.outputs.latest_release != steps.ver.outputs.tag
         run: |
           gh release create "${{ steps.ver.outputs.tag }}" \
             --title "Release ${{ steps.ver.outputs.tag }}" \
