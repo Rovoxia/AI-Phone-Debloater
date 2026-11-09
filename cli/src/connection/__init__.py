@@ -11,7 +11,7 @@ from .adb_client import AdbClient
 from .device_identity import DeviceIdentityManager
 from .device_registry import DeviceRegistry
 from .diagnostics import ConnectionDiagnostics
-from .discovery import LanDiscovery, MdnsDiscovery, validate_endpoint
+from .discovery import LanDiscovery, MdnsDiscovery, validate_endpoint, validate_host
 from .exceptions import (
     AdbNotFoundError,
     AdbServerError,
@@ -92,4 +92,5 @@ __all__ = [
     "generate_qr_matrix",
     "render_qr_for_terminal",
     "validate_endpoint",
+    "validate_host",
 ]

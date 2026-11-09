@@ -40,9 +40,11 @@ try {
     }
 
     $NewVersionFile = Join-Path $ExtractedRoot.FullName "VERSION"
-    $NewVersion = "1.0.0"
+    $NewVersion = ""
     if (Test-Path $NewVersionFile) {
         $NewVersion = (Get-Content $NewVersionFile -Raw).Trim()
+    } else {
+        throw "VERSION file not found in repository archive."
     }
 
     $VersionChanged = ($InstalledVersion -ne $NewVersion) -or (-not (Test-Path $InstallDir))

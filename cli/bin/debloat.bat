@@ -6,11 +6,13 @@ set "ROOT_DIR=%BIN_DIR%..\.."
 cd /d "%ROOT_DIR%"
 
 :: Read version from VERSION file
-set "APP_VERSION=1.0.0"
 if exist "%ROOT_DIR%\VERSION" (
     set /p APP_VERSION=<"%ROOT_DIR%\VERSION"
 ) else if exist "%CLI_DIR%\VERSION" (
     set /p APP_VERSION=<"%CLI_DIR%\VERSION"
+) else (
+    echo [ERROR] VERSION file not found at %ROOT_DIR%\VERSION
+    exit /b 1
 )
 
 title AI-Phone-Debloater v%APP_VERSION%

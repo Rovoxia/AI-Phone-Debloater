@@ -95,21 +95,18 @@ jobs:
 
       - name: Check version consistency
         run: |
+          if [ ! -f VERSION ]; then
+            echo "::error::VERSION file is missing at repository root"
+            exit 1
+          fi
           VERSION_FILE=$(cat VERSION | tr -d '\r\n')
           echo "VERSION=$VERSION_FILE" >> $GITHUB_ENV
           python -c "import sys; sys.path.insert(0, 'cli/src'); import debloat_engine as e; assert e.__version__ == '$VERSION_FILE', f'version mismatch: engine={e.__version__} file=$VERSION_FILE'"
 
       - name: Verify web dataset matches engine rules
         run: |
-          python - <<'PYEOF'
-          import json, pathlib, re
-          engine = pathlib.Path("cli/src/debloat_engine.py").read_text(encoding="utf-8")
-          m = re.search(r"TOTAL_UNIQUE_PACKAGES[^\n]*=\s*(\d+)", engine)
-          total = int(m.group(1)) if m else None
-          print("Engine unique package count:", total)
-          web = json.loads(pathlib.Path("web/src/data/rules-dataset.json").read_text(encoding="utf-8"))
-          print("Web dataset keys:", list(web.keys()))
-          PYEOF
+          python cli/generate_rules_dataset.py
+          git diff --exit-code web/src/data/rules-dataset.json || (echo "::error::web/src/data/rules-dataset.json is out of sync with cli/rules/*. Run 'python cli/generate_rules_dataset.py' and commit." && exit 1)
 
   # ---------- Tests ----------
   test:

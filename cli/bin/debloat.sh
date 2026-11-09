@@ -54,11 +54,13 @@ if [ -z "$PY" ]; then
     exit 1
 fi
 
-APP_VERSION="1.0.0"
 if [ -f "$ROOT_DIR/VERSION" ]; then
     APP_VERSION=$(tr -d '\r\n' < "$ROOT_DIR/VERSION")
 elif [ -f "$CLI_DIR/VERSION" ]; then
     APP_VERSION=$(tr -d '\r\n' < "$CLI_DIR/VERSION")
+else
+    echo "[ERROR] VERSION file not found at $ROOT_DIR/VERSION" >&2
+    exit 1
 fi
 
 echo "Using Python: $PY"

@@ -70,100 +70,36 @@ TIMESTAMP_FORMAT = "%Y%m%d_%H%M%S"
 # Device manufacturer (first word of ro.product.manufacturer) -> word used in the OEM rule files.
 MANUFACTURER_ALIASES: dict[str, str] = {"redmi": "xiaomi", "poco": "xiaomi", "iqoo": "vivo"}
 
-HARDCRITICAL_PACKAGES: dict[str, str] = {
-    # Android core framework (in both CRIT and HARDCRITICAL)
-    "android": "Android core framework",
-    "com.android.systemui": "System UI (nav bar, status bar, notifications)",
-    "com.android.phone": "Telephony stack",
-    "com.android.server.telecom": "Telecom manager",
-    "com.android.settings": "Settings app",
-    "com.android.vending": "Google Play Store",
-    "com.google.android.gms": "Google Play services",
-    "com.android.inputdevices": "Input device service",
-    "com.android.location": "Location services",
-    "com.android.wifi": "Wi-Fi stack",
-    "com.android.wifi.service": "Wi-Fi service",
-    "com.android.bluetooth": "Bluetooth stack",
-    "com.android.nfc": "NFC service",
-    "com.android.browser": "System browser",
-    "com.android.documentsui": "Documents UI (file picker)",
-    "com.android.calendar": "Calendar provider",
-    "com.android.contacts": "Contacts storage",
-    "com.android.telephony": "Telephony provider",
-    "com.android.providers.contacts": "Contacts provider",
-    "com.android.providers.calendar": "Calendar provider",
-    "com.android.providers.downloads": "Download provider",
-    "com.android.providers.media": "Media provider",
-    "com.android.providers.userdictionary": "User dictionary",
-    "com.android.providers.settings": "Settings provider",
-    "com.android.providers.telephony": "Telephony provider",
-    "com.android.shell": "ADB shell itself",
-    "com.android.vending.licensing": "Play licensing",
-    "com.android.webview": "Android System WebView",
-    "com.android.packageinstaller": "Package installer",
-    "com.android.launcher": "Home launcher",
-    "com.android.launcher3": "Home launcher (AOSP)",
-    "com.android.keyguard": "Lock screen",
-    "com.android.desktopclock": "Clock / alarm",
-    "com.android.messaging": "SMS app",
-    "com.android.dialer": "Dialer",
-    "com.android.incallui": "In-call UI",
-    "com.android.mediacaserver": "Media CAS server",
-    "com.android.stk": "SIM toolkit",
-    "com.android.carrierconfig": "Carrier config",
-    "com.android.emergency": "Emergency services",
-    "com.android.sharedstoragebackup": "Shared storage backup",
-    "com.android.onetimeinitializer": "OTA / setup",
-    "com.android.partnercustomization": "Partner customization",
-    "com.android.twilight": "Night light",
-    "com.android.printspooler": "Print spooler",
-    "com.android.wallpaper": "Wallpaper service",
-    "com.android.systemupdate": "System updates",
-    "com.android.networkstack": "Network stack",
-    "com.android.bips": "BIP services",
-    "com.android.ipsec": "IPsec stack",
-    "com.android.vpn": "VPN services",
-    "com.android.smspush": "SMS push",
-    "com.android.ims": "IP Multimedia Subsystem",
-    "com.android.ims.rcsservice": "RCS service",
-    "com.google.android.webview": "Android System WebView",
-    "com.google.android.inputmethod.latin": "Gboard keyboard",
-    "com.android.keyboard": "AOSP keyboard",
-    "com.samsung.android.oneconnect": "Samsung One Connect",
-    "com.samsung.android.scloud": "Samsung cloud service",
-    "com.samsung.android.app.samsungshare": "Samsung share service",
-    "com.samsung.android.mdxservice": "Samsung mobile device exchange",
-    "com.samsung.android.app.rss": "Samsung RSS feed",
-    "com.samsung.android.app.sbrowser": "Samsung Internet browser",
+def _load_hardcritical_packages() -> dict[str, str]:
+    """Load critical packages from the canonical JSON file, with minimal fallback."""
+    for cand in RULES_DIR_CANDIDATES:
+        crit_file = cand / "critical-do-not-touch.json"
+        if crit_file.is_file():
+            try:
+                with open(crit_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                rules = data.get("rules") or data.get("packages") or []
+                res = {}
+                for r in rules:
+                    if isinstance(r, dict) and "package" in r:
+                        res[r["package"]] = r.get("description") or r.get("name") or "critical system package"
+                if res:
+                    return res
+            except (OSError, ValueError):
+                pass
+    # Minimal fallback if JSON cannot be loaded
+    return {
+        "android": "Android core framework",
+        "com.android.systemui": "System UI",
+        "com.android.phone": "Telephony stack",
+        "com.android.server.telecom": "Telecom manager",
+        "com.android.settings": "Settings app",
+        "com.android.packageinstaller": "Package installer",
+        "com.google.android.gms": "Google Play services",
+        "com.android.shell": "ADB shell itself",
+    }
 
-    # AOSP system packages (in CRIT JSON only - add to HARDCRITICAL)
-    "com.android.server": "System Server",
-    "com.android.server.activitymanager": "Activity Manager Service",
-    "com.android.server.input": "Input Service",
-    "com.android.server.display": "Display Service",
-    "com.android.server.power": "Power Manager Service",
-    "com.android.server.audio": "Audio Service",
-    "com.android.server.pm": "Package Manager Service",
-    "com.android.server.appops": "AppOps Service",
-    "com.android.server.backup": "Backup Service",
-    "com.android.server.account": "Account Service",
-    "com.android.server.location": "Location Service",
-    "com.android.server.wifi": "Wi-Fi Service",
-    "com.android.server.bluetooth": "Bluetooth Service",
-    "com.android.server.nfc": "NFC Service",
-    "com.android.server.telephony": "Telephony Service",
-    "com.android.cellbroadcastreceiver": "Cell Broadcast Receiver",
-    "com.android.externalstorage": "External Storage",
-    "com.android.keychain": "Keychain Service",
-    "com.android.locksettings": "Lock Settings",
-    "com.android.fingerprint": "Fingerprint Service",
-    "com.android.biometrics": "Biometrics Service",
-    "com.android.systemui.navbar": "System UI Navigation Bar",
-    "com.google.android.gsf": "Google Services Framework",
-    "com.google.android.gms.auth": "Google Auth Services",
-    "com.google.android.gms.account": "Google Account Services",
-    "com.google.android.ext.services": "Google Extra Services",
-}
+HARDCRITICAL_PACKAGES: dict[str, str] = _load_hardcritical_packages()
 
 class Color:
     RESET = "\033[0m"
@@ -430,10 +366,10 @@ class RuleSet:
         self.critical = set(HARDCRITICAL_PACKAGES.keys())
         self.critical_reasons = dict(HARDCRITICAL_PACKAGES)
 
-    @property
-    def total_unique_packages(self) -> int:
-        return len(self.critical)
-
+    def __init__(self, logger=None):
+        self.logger = logger or Logger()
+        self.critical = set(HARDCRITICAL_PACKAGES.keys())
+        self.critical_reasons = dict(HARDCRITICAL_PACKAGES)
         self.safe = {}
         self.loaded_files = []
 
@@ -470,16 +406,10 @@ class RuleSet:
         self.safe[pkg] = {"tier": tier, "reason": reason, "source": source}
 
     @staticmethod
-    def _tier_from_category(category: str):
-        # Whole-word match: a substring test made "download"/"broadcast" look like "ad".
-        words = set(re.split(r"[^a-z]+", (category or "").lower()))
-        if words & {"telemetry", "ad", "ads", "adware", "tracker", "tracking", "bloat", "bloatware", "carrier"}: return 1
-        if words & {"wellbeing", "voice", "cloud"}: return 2
-        return 3
-
-    def _entry_tier(self, entry, source):
+    def _entry_tier(entry, source):
         raw = entry.get("tier")
-        if raw is None: return self._tier_from_category(str(entry.get("category", "")))
+        if raw is None:
+            raise ValueError(f"{source}: {entry.get('package')} has no tier specified (must be 1, 2 or 3)")
         try:
             tier = int(raw)
         except (TypeError, ValueError):
@@ -1251,8 +1181,7 @@ def build_parser():
     p.add_argument("--quiet", "-q", action="store_true", help="Suppress output")
     p.add_argument("--verbose", "-v", action="store_true", help="Show debug info")
     p.add_argument("--no-backup", action="store_true", help="Skip automatic backup snapshot")
-    p.add_argument("--output", "-o", help="Output path for --scan export (implies --export-json)")
-    p.add_argument("--export-json", action="store_true", help="Export scan results as JSON")
+    p.add_argument("--export-json", nargs="?", const=True, metavar="PATH", help="Export scan results as JSON (optionally to PATH)")
     p.add_argument("--serial", help="ADB serial of the device to use when several are attached (default: $ANDROID_SERIAL)")
     p.add_argument("--adb-path", help="Path to the adb executable (default: PATH, bundled platform-tools, $AI_PHONE_DEBLOATER_ADB_PATH)")
     p.add_argument("--yes", "-y", action="store_true", help="Do not ask for confirmation (required for --tier without a terminal)")
@@ -1262,9 +1191,10 @@ def build_parser():
 def main(argv=None):
     parser = build_parser()
     args = parser.parse_args(argv)
-    export = bool(args.export_json or args.output)
+    export_path = args.export_json if isinstance(args.export_json, str) else None
+    export = bool(args.export_json)
     if args.restore and (args.tier or args.scan or export):
-        parser.error("--restore cannot be combined with --scan/--tier/--export-json/--output")
+        parser.error("--restore cannot be combined with --scan/--tier/--export-json")
     if args.action and not args.tier:
         parser.error("--action requires --tier")
     has_action = bool(args.scan or args.tier or args.restore or export or args.diagnostics or args.qr_pair or args.switch_transport)
@@ -1293,11 +1223,11 @@ def main(argv=None):
         if args.tier:
             report = engine.debloat_tier(args.tier, action=args.action or "disable", auto_snapshot=not args.no_backup)
             if export and engine.last_scan is not None:
-                engine.export_scan(engine.last_scan, args.output)
+                engine.export_scan(engine.last_scan, export_path)
             return 1 if (report.get("failed") or report.get("cancelled")) else 0
         if args.scan or export:
             results = engine.scan()
-            if export: engine.export_scan(results, args.output)
+            if export: engine.export_scan(results, export_path)
             return 0
         engine.interactive()
         return 0
