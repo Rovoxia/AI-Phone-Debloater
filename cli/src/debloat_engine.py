@@ -368,6 +368,8 @@ class RuleSet:
         self.safe = {}
         self.loaded_files = []
 
+    # NOTE: original duplicate __init__ stub removed by Ruff F811 fix below
+
     def _load_json(self, path: Path):
         if not path.is_file(): return None
         try:
