@@ -84,7 +84,7 @@ jobs:
             echo '```'
           } >> CHANGELOG.md
           git add CHANGELOG.md
-          git -c user.name="Rovoxia" -c user.email="dev@rovoxia.com" commit -m "docs: update changelog for ${{ steps.ver.outputs.tag }}" || true
+          git -c user.name="Rovoxia" -c user.email="devs@rovoxia.com" commit -m "docs: update changelog for ${{ steps.ver.outputs.tag }}" || true
           git push origin HEAD || true
 
       - name: Create GitHub Release
