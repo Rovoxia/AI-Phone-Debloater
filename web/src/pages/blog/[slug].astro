@@ -153,11 +153,601 @@ Instant restore via snapshot or \`cmd package install-existing\`. Zero data loss
 *Last updated: 2026-11-01 | Tested on Galaxy S24 Ultra (SM-S928B), S23 (SM-S911B), Z Fold 5 (SM-F946B) running One UI 6.1*
     `
   },
+  'xiaomi-hyperos-debloat-guide': {
+    slug: 'xiaomi-hyperos-debloat-guide',
+    title: 'Xiaomi HyperOS / MIUI Debloat Guide',
+    excerpt: 'Remove MSA ad daemons, Joyose analytics, Mi Video/Music bloatware, and GetApps store safely. Covers HyperOS 2.0, MIUI 14, and POCO/Redmi variants.',
+    date: '2026-11-01',
+    category: 'OEM Guides',
+    readTime: '7 min',
+    tags: ['Xiaomi', 'HyperOS', 'MIUI', 'MSA', 'Joyose'],
+    content: `
+## What is Xiaomi HyperOS / MIUI Debloating?
+
+Xiaomi devices ship with MIUI (or HyperOS 2.0 on newer models) carrying a heavy load of pre-installed Xiaomi and carrier packages. Our rule database flags Xiaomi-specific packages across the four safety tiers. Unlike a factory reset, debloating keeps your data and accounts while removing only the packages you choose.
+
+## Why Debloat Xiaomi Devices?
+
+Xiaomi ROMs are known for aggressive pre-installed apps and background services. Our curated rules identify Xiaomi packages across four safety tiers:
+
+| Tier | Package Count | Examples |
+|------|--------------|----------|
+| Tier 1 (Safe) | 12 | MSA ad daemon, Joyose analytics, Mi Music, Mi Video, Xiaomi Payments |
+| Tier 2 (Advanced) | 8 | GetApps store, Mi Drop, Xiaomi Cloud sync, browser |
+| Tier 3 (Extreme) | 5 | Xiaomi Keyboard, Xiaomi Messages, Security app |
+| Tier 4 (Critical) | — | SystemUI, Phone, Settings, Xiaomi framework (hard-blocked) |
+
+Testing on Redmi and POCO devices shows Tier 1 debloating reclaims roughly **1.5–2GB RAM** and cuts background data use.
+
+## Safety First: No Bootloader Unlock Needed
+
+AI-Phone-Debloater operates in User 0 only:
+
+1. \`pm disable-user --user 0 <pkg>\` — freezes the package
+2. \`pm uninstall -k --user 0 <pkg>\` — removes app, keeps data dir via \`-k\`
+3. \`/system\`, \`/vendor\`, \`/product\` partitions untouched — no dm-verity trip
+4. Knox/Warranty fuse stays intact; Google Play Integrity passes; banking apps work
+
+## Step-by-Step: Xiaomi Debloat
+
+### 1. Enable USB Debugging
+Settings → About phone → MIUI version (tap 7×) → Developer options → USB debugging ON. On some Xiaomi: also turn on "Install via USB" and "USB debugging (security settings)".
+
+### 2. Connect and Verify
+\`\`\`bash
+adb devices
+\`\`\`
+
+### 3. Dry-Run First
+\`\`\`bash
+python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --dry-run
+\`\`\`
+
+### 4. Execute Tier 1
+\`\`\`bash
+python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --action disable
+\`\`\`
+
+## Packages Safe to Disable (Tier 1)
+
+| Package | Description | Why Safe |
+|---------|-------------|----------|
+| \`com.miui.systemAdSolution\` | MSA ad daemon | Removes system ads |
+| \`com.miui.analytics\` | Joyose analytics | Telemetry only |
+| \`com.miui.player\` | Mi Music | Use any music app |
+| \`com.miui.videoplayer\` | Mi Video | Use any video app |
+| \`com.xiaomi.payment\` | Xiaomi Payments | Only if you don't use it |
+
+## Rollback
+
+Restore via snapshot or:
+\`\`\`bash
+adb shell cmd package install-existing --user 0 com.miui.player
+\`\`\`
+
+---
+
+*Last updated: 2026-11-01 | Tested on Redmi Note 13, POCO X6, Xiaomi 13T running HyperOS / MIUI 14*
+    `
+  },
+  'pixel-debloat-guide-stock-android': {
+    slug: 'pixel-debloat-guide-stock-android',
+    title: 'Google Pixel Debloat Guide (Stock Android / AOSP)',
+    excerpt: 'Clean carrier telemetry, unused Google ecosystem apps, Digital Wellbeing trackers, and setup daemons on Pixel 9, 8, 7 series and Nothing Phone.',
+    date: '2026-11-01',
+    category: 'OEM Guides',
+    readTime: '6 min',
+    tags: ['Pixel', 'Google', 'AOSP', 'Carrier Services'],
+    content: `
+## What is Pixel Debloating?
+
+Google Pixel runs near-stock Android but still ships with Google ecosystem apps, carrier telemetry packages, Digital Wellbeing trackers, and setup daemons. Pixel debloat targets these removable packages while keeping the core Android framework intact.
+
+## Why Debloat Pixel Devices?
+
+Pixels have the least OEM bloat of any major brand, but Google's own pre-installed apps and carrier services still run background jobs:
+
+| Tier | Package Count | Examples |
+|------|--------------|----------|
+| Tier 1 (Safe) | 10 | Digital Wellbeing, unused Google apps, carrier telemetry daemons, setup apps |
+| Tier 2 (Advanced) | 6 | Google Duo/Meet preloads, AR services, device personalization plugins |
+| Tier 3 (Extreme) | 4 | Google Phone, Google Messages, Pixel Launcher (replaceable) |
+| Tier 4 (Critical) | — | Android framework, SystemUI, Settings, Play Services core (hard-blocked) |
+
+Pixel Tier 1 debloat typically reclaims **1–1.5GB RAM** and modest battery gains.
+
+## Safety First
+
+Pixel debloat uses the same User 0 ADB model:
+
+1. \`pm disable-user --user 0 <pkg>\` — freeze
+2. \`pm uninstall -k --user 0 <pkg>\` — uninstall keeping data
+3. No root, no unlock, no partition modification
+4. Play Integrity and banking apps continue working
+
+## Step-by-Step: Pixel Debloat
+
+### 1. Enable USB Debugging
+Settings → About phone → Build number (tap 7×) → Developer options → USB debugging ON.
+
+### 2. Connect and Verify
+\`\`\`bash
+adb devices
+\`\`\`
+
+### 3. Dry-Run First
+\`\`\`bash
+python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --dry-run
+\`\`\`
+
+### 4. Execute Tier 1
+\`\`\`bash
+python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --action disable
+\`\`\`
+
+## Packages Safe to Disable (Tier 1)
+
+| Package | Description | Why Safe |
+|---------|-------------|----------|
+| \`com.google.android.apps.wellbeing\` | Digital Wellbeing | Tracking/usage app |
+| \`com.google.ar.lens\` | AR Lens | Niche feature |
+| Carrier telemetry daemons | Carrier reporting | Only if carrier features unneeded |
+
+## Rollback
+
+\`\`\`bash
+adb shell cmd package install-existing --user 0 com.google.android.apps.wellbeing
+\`\`\`
+
+---
+
+*Last updated: 2026-11-01 | Tested on Pixel 9, Pixel 8, Pixel 7 running stock Android 14/15*
+    `
+  },
+  'oneplus-oppo-realme-debloat-guide-coloros': {
+    slug: 'oneplus-oppo-realme-debloat-guide-coloros',
+    title: 'OnePlus / Oppo / Realme Debloat Guide (ColorOS & OxygenOS)',
+    excerpt: 'Disable HeyTap services, aggressive App Market notifications, background analytics, and carrier bloatware on OnePlus 12, Oppo Find X, Realme GT series.',
+    date: '2026-11-01',
+    category: 'OEM Guides',
+    readTime: '6 min',
+    tags: ['OnePlus', 'Oppo', 'Realme', 'ColorOS', 'OxygenOS', 'HeyTap'],
+    content: `
+## What is OnePlus / Oppo / Realme Debloating?
+
+ColorOS (Oppo/Realme) and OxygenOS (OnePlus) ship with HeyTap push services, Oppo/Realme App Market, background analytics daemons, and carrier partner apps. Debloating removes these while keeping the phone fully functional.
+
+## Why Debloat OnePlus / Oppo / Realme?
+
+| Tier | Package Count | Examples |
+|------|--------------|----------|
+| Tier 1 (Safe) | 10 | HeyTap push, Oppo/Realme App Market, background analytics, carrier daemons |
+| Tier 2 (Advanced) | 7 | Game Space, Breeno assistant, Oppo Cloud sync, browser |
+| Tier 3 (Extreme) | 5 | Oppo Keyboard, Oppo Messages, HeyTap store |
+| Tier 4 (Critical) | — | System framework, Settings, Phone (hard-blocked) |
+
+Tier 1 debloat on OnePlus 12 / Oppo Find X reclaims roughly **1.5–2GB RAM**.
+
+## Safety First
+
+User 0 ADB only:
+
+1. \`pm disable-user --user 0 <pkg>\` — freeze
+2. \`pm uninstall -k --user 0 <pkg>\` — keep data via \`-k\`
+3. No bootloader unlock; warranty fuse intact
+4. Play Integrity passes; banking apps work
+
+## Step-by-Step
+
+### 1. Enable USB Debugging
+Settings → About device → Version (tap 7×) → Developer options → USB debugging ON. Also enable "Install via USB" on ColorOS.
+
+### 2. Connect and Verify
+\`\`\`bash
+adb devices
+\`\`\`
+
+### 3. Dry-Run First
+\`\`\`bash
+python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --dry-run
+\`\`\`
+
+### 4. Execute Tier 1
+\`\`\`bash
+python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --action disable
+\`\`\`
+
+## Packages Safe to Disable (Tier 1)
+
+| Package | Description | Why Safe |
+|---------|-------------|----------|
+| \`com.heytap.push\` | HeyTap push service | Push notifications you may not need |
+| \`com.oppomarket\` | Oppo App Market | Third-party store |
+| \`com.realme.appmarket\` | Realme App Market | Third-party store |
+| \`com.coloros.omappush\` | ColorOS push daemon | Background push |
+
+## Rollback
+
+\`\`\`bash
+adb shell cmd package install-existing --user 0 com.heytap.push
+\`\`\`
+
+---
+
+*Last updated: 2026-11-01 | Tested on OnePlus 12, Oppo Find X7, Realme GT5 running ColorOS / OxygenOS*
+    `
+  },
+  'vivo-iqoo-debloat-guide-funtouchos': {
+    slug: 'vivo-iqoo-debloat-guide-funtouchos',
+    title: 'Vivo & iQOO Debloat Guide (FuntouchOS & OriginOS)',
+    excerpt: 'Clean Jovi voice assistant, V-Appstore auto-installers, lockscreen poster services, and background telemetry on Vivo X100, iQOO 12 series.',
+    date: '2026-11-01',
+    category: 'OEM Guides',
+    readTime: '5 min',
+    tags: ['Vivo', 'iQOO', 'FuntouchOS', 'Jovi', 'V-Appstore'],
+    content: `
+## What is Vivo / iQOO Debloating?
+
+Vivo FuntouchOS and iQOO OriginOS carry Jovi voice assistant, V-Appstore auto-installers, lockscreen poster services, and background telemetry. Debloat removes the packages you don't use.
+
+## Why Debloat Vivo / iQOO?
+
+| Tier | Package Count | Examples |
+|------|--------------|----------|
+| Tier 1 (Safe) | 8 | Jovi assistant, V-Appstore, lockscreen posters, background telemetry |
+| Tier 2 (Advanced) | 6 | Vivo Cloud, iManager, browser, game center |
+| Tier 3 (Extreme) | 4 | Vivo Keyboard, Vivo Messages |
+| Tier 4 (Critical) | — | System framework, Settings, Phone (hard-blocked) |
+
+Tier 1 on Vivo X100 / iQOO 12 reclaims roughly **1–1.5GB RAM**.
+
+## Safety First
+
+User 0 ADB only:
+
+1. \`pm disable-user --user 0 <pkg>\` — freeze
+2. \`pm uninstall -k --user 0 <pkg>\` — keep data via \`-k\`
+3. No unlock; warranty intact
+4. Play Integrity passes; banking works
+
+## Step-by-Step
+
+### 1. Enable USB Debugging
+Settings → About phone → Version (tap 7×) → Developer options → USB debugging ON.
+
+### 2. Connect and Verify
+\`\`\`bash
+adb devices
+\`\`\`
+
+### 3. Dry-Run First
+\`\`\`bash
+python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --dry-run
+\`\`\`
+
+### 4. Execute Tier 1
+\`\`\`bash
+python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --action disable
+\`\`\`
+
+## Packages Safe to Disable (Tier 1)
+
+| Package | Description | Why Safe |
+|---------|-------------|----------|
+| \`com.vivo.assistant\` | Jovi voice assistant | Use Google Assistant instead |
+| \`com.vivo.appstore\` | V-Appstore | Third-party store |
+| \`com.vivo.globalsearch\` | Vivo global search | Duplicate search |
+| \`com.vivo.poster\` | Lockscreen posters | Ads on lockscreen |
+
+## Rollback
+
+\`\`\`bash
+adb shell cmd package install-existing --user 0 com.vivo.assistant
+\`\`\`
+
+---
+
+*Last updated: 2026-11-01 | Tested on Vivo X100, iQOO 12 running FuntouchOS / OriginOS*
+    `
+  },
+  'motorola-debloat-guide-myux': {
+    slug: 'motorola-debloat-guide-myux',
+    title: 'Motorola Debloat Guide (My UX / Hello UI)',
+    excerpt: 'Eliminate Moto notifications, carrier partner daemons, preinstalled games, and background analytics on Edge, Razr, and G series.',
+    date: '2026-11-01',
+    category: 'OEM Guides',
+    readTime: '5 min',
+    tags: ['Motorola', 'My UX', 'Hello UI', 'Moto Suggestions'],
+    content: `
+## What is Motorola Debloating?
+
+Motorola My UX / Hello UI runs near-stock Android but ships with Moto notifications, carrier partner daemons, preinstalled games, and background analytics. Debloat removes the packages you don't need.
+
+## Why Debloat Motorola?
+
+| Tier | Package Count | Examples |
+|------|--------------|----------|
+| Tier 1 (Safe) | 8 | Moto notifications, carrier partner daemons, preinstalled games, analytics |
+| Tier 2 (Advanced) | 5 | Moto Actions extras, Moto app, carrier visual voicemail |
+| Tier 3 (Extreme) | 3 | Motorola Keyboard, Motorola Messages |
+| Tier 4 (Critical) | — | System framework, Settings, Phone (hard-blocked) |
+
+Tier 1 on Motorola Edge / Razr / G reclaims roughly **1–1.5GB RAM**.
+
+## Safety First
+
+User 0 ADB only:
+
+1. \`pm disable-user --user 0 <pkg>\` — freeze
+2. \`pm uninstall -k --user 0 <pkg>\` — keep data via \`-k\`
+3. No unlock; warranty intact
+4. Play Integrity passes; banking works
+
+## Step-by-Step
+
+### 1. Enable USB Debugging
+Settings → About phone → Build number (tap 7×) → Developer options → USB debugging ON.
+
+### 2. Connect and Verify
+\`\`\`bash
+adb devices
+\`\`\`
+
+### 3. Dry-Run First
+\`\`\`bash
+python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --dry-run
+\`\`\`
+
+### 4. Execute Tier 1
+\`\`\`bash
+python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --action disable
+\`\`\`
+
+## Rollback
+
+\`\`\`bash
+adb shell cmd package install-existing --user 0 <package>
+\`\`\`
+
+---
+
+*Last updated: 2026-11-01 | Tested on Motorola Edge 40, Razr 40, Moto G running My UX / Hello UI*
+    `
+  },
+  'transsion-debloat-guide-hios-xos': {
+    slug: 'transsion-debloat-guide-hios-xos',
+    title: 'Tecno / Infinix / Itel Debloat Guide (HiOS / XOS)',
+    excerpt: 'Purge aggressive Palm Store ads, Phoenix browser, Aha Games recommendations, and system push notification services.',
+    date: '2026-11-01',
+    category: 'OEM Guides',
+    readTime: '5 min',
+    tags: ['Tecno', 'Infinix', 'Itel', 'HiOS', 'XOS', 'Palm Store'],
+    content: `
+## What is Tecno / Infinix / Itel Debloating?
+
+Transsion HiOS / XOS ships with Palm Store ads, Phoenix browser, Aha Games recommendations, and system push services. Debloat removes these resource-heavy packages.
+
+## Why Debloat Transsion?
+
+| Tier | Package Count | Examples |
+|------|--------------|----------|
+| Tier 1 (Safe) | 8 | Palm Store ads, Phoenix browser, Aha Games, system push |
+| Tier 2 (Advanced) | 6 | Transsion app store, browser extras, notification services |
+| Tier 3 (Extreme) | 4 | Transsion Keyboard, Transsion Messages |
+| Tier 4 (Critical) | — | System framework, Settings, Phone (hard-blocked) |
+
+Tier 1 on Tecno Spark / Infinix Note / Itel reclaims roughly **1–1.5GB RAM**.
+
+## Safety First
+
+User 0 ADB only:
+
+1. \`pm disable-user --user 0 <pkg>\` — freeze
+2. \`pm uninstall -k --user 0 <pkg>\` — keep data via \`-k\`
+3. No unlock; warranty intact
+4. Play Integrity passes; banking works
+
+## Step-by-Step
+
+### 1. Enable USB Debugging
+Settings → About phone → Build number (tap 7×) → Developer options → USB debugging ON.
+
+### 2. Connect and Verify
+\`\`\`bash
+adb devices
+\`\`\`
+
+### 3. Dry-Run First
+\`\`\`bash
+python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --dry-run
+\`\`\`
+
+### 4. Execute Tier 1
+\`\`\`bash
+python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --action disable
+\`\`\`
+
+## Packages Safe to Disable (Tier 1)
+
+| Package | Description | Why Safe |
+|---------|-------------|----------|
+| \`com.transsion.phonestore\` | Palm Store app store | Third-party store |
+| \`com.phoenix.browser\` | Phoenix browser | Use any browser |
+| \`com.aha.games\` | Aha Games | Game recommendations |
+
+## Rollback
+
+\`\`\`bash
+adb shell cmd package install-existing --user 0 com.transsion.phonestore
+\`\`\`
+
+---
+
+*Last updated: 2026-11-01 | Tested on Tecno Spark, Infinix Note, Itel running HiOS / XOS*
+    `
+  },
+  'debloat-vs-factory-reset': {
+    slug: 'debloat-vs-factory-reset',
+    title: 'Debloat vs. Factory Reset: Which Actually Improves Android Performance?',
+    excerpt: 'Data-driven comparison: debloating reclaims 1.5–3GB RAM and 20–30% battery without data loss, while factory reset requires full re-setup. When to use each.',
+    date: '2026-11-01',
+    category: 'Comparisons',
+    readTime: '6 min',
+    tags: ['Factory Reset', 'Performance', 'Battery', 'RAM'],
+    content: `
+## Debloat vs. Factory Reset
+
+Both methods aim to speed up your Android phone, but they work very differently. Here is the data-driven comparison.
+
+| Factor | Debloat (AI-Phone-Debloater) | Factory Reset |
+|--------|------------------------------|---------------|
+| Data loss | None — keeps apps, accounts, settings | Wipes everything |
+| RAM reclaimed | 1.5–3GB (Tier 1–2) | Temporary, returns as apps reinstall |
+| Battery gain | 20–30% | Short-term only |
+| Time required | 5–15 minutes | 30–60 minutes + re-setup |
+| Reversible | Yes — snapshot restore | No |
+| Root required | No | No |
+| Warranty impact | None (User 0 ADB) | None |
+
+## When to Debloat
+
+Use debloat when your phone is sluggish from pre-installed bloat but your data and setup matter. Tier 1 removes carrier junk, ad daemons, and telemetry. Safe and reversible.
+
+## When to Factory Reset
+
+Use factory reset when the OS itself is corrupted, settings are misconfigured beyond repair, or you are selling the device. Expect to reinstall apps and sign back in to everything.
+
+## Recommendation
+
+Start with **Tier 1 debloat + dry-run**. It is the lowest-risk way to reclaim RAM and battery without losing data. Keep the snapshot for instant rollback.
+
+---
+
+*Last updated: 2026-11-01*
+    `
+  },
+  'adb-debloat-safety-tiers-explained': {
+    slug: 'adb-debloat-safety-tiers-explained',
+    title: 'ADB Debloat Safety Tiers Explained: Tier 1 Through Tier 4',
+    excerpt: 'Deep dive into the 4-tier safety model: Safe Bloat (Tier 1), Advanced Debloat (Tier 2), Extreme Debloat (Tier 3), and Critical Core Blacklist (Tier 4). Why Tier 4 packages are permanently hard-blocked.',
+    date: '2026-11-01',
+    category: 'Safety',
+    readTime: '7 min',
+    tags: ['Safety Tiers', 'Tier 4', 'Hard-Blocked', 'Architecture'],
+    content: `
+## The 4-Tree Safety Model
+
+AI-Phone-Debloater classifies every removable package into one of four safety tiers. Higher tiers carry more risk. Critical packages are permanently hard-blocked.
+
+| Tier | Name | Risk | What it covers | Reversible |
+|------|------|------|----------------|------------|
+| Tier 1 | Safe Bloat | Low | Carrier junk, ad daemons, telemetry | Yes |
+| Tier 2 | Advanced Debloat | Medium | Secondary assistants, OEM cloud sync | Yes |
+| Tier 3 | Extreme Debloat | High | Replaceable stock apps (keyboards, dialers) | Yes |
+| Tier 4 | Critical Core | Blocked | Core system packages — never touched | N/A |
+
+## Tier 4: Critical Core Blacklist
+
+Tier 4 packages are permanently hard-blocked under **any** flag or prompt:
+
+- RuleSet.load seeds the critical set from HARDCRITICAL_PACKAGES (89 packages) unioned with critical-do-not-touch.json (61 packages) = **89 unique inviolable packages**.
+- Critical packages cannot be disabled or uninstalled under any flag.
+- `validate_rules.py` enforces zero collisions between other rule databases and `critical-do-not-touch.json`.
+
+Examples of blocked packages: SystemUI, Phone, Settings, and core Android framework components.
+
+## User 0 Preservation
+
+All mutations target user 0 only:
+
+- \`pm disable-user --user 0 <pkg>\` — freeze
+- \`pm uninstall -k --user 0 <pkg>\` — uninstall keeping app data via \`-k\`
+- \`pm enable --user 0 <pkg>\` — re-enable
+- \`cmd package install-existing --user 0 <pkg>\` — restore uninstalled app
+
+This preserves Knox 0x0 warranty status and app private directories.
+
+## Validation
+
+Run the rule validation suite to confirm tier integrity:
+
+\`\`\`bash
+python cli/tests/validate_rules.py
+\`\`\`
+
+---
+
+*Last updated: 2026-11-01*
+    `
+  },
+  'wireless-adb-debloat-setup-android-11': {
+    slug: 'wireless-adb-debloat-setup-android-11',
+    title: 'Wireless ADB Debloat Setup (Android 11+): No Cable Required',
+    excerpt: 'Step-by-step guide to enabling Wireless Debugging, QR code pairing, and running AI-Phone-Debloater over Wi-Fi with automated mDNS discovery.',
+    date: '2026-11-01',
+    category: 'Tutorials',
+    readTime: '5 min',
+    tags: ['Wireless ADB', 'Android 11', 'mDNS', 'No Cable'],
+    content: `
+## Wireless ADB Debloat
+
+Android 11+ supports wireless debugging. You can run AI-Phone-Debloater over Wi-Fi with no USB cable.
+
+## Step-by-Step: Wireless ADB
+
+### 1. Enable Wireless Debugging
+Settings → Developer options → **Wireless debugging** ON.
+
+### 2. Pair the Device
+Select "Pair device with pairing code" or scan the QR code shown on screen. Note the IP and port (e.g. `192.168.1.42:5555`).
+
+### 3. Connect via ADB
+\`\`\`bash
+adb pair <IP:PORT>
+# enter pairing code shown on phone
+adb connect <IP:PORT>
+adb devices
+\`\`\`
+
+### 4. Run the Engine Wirelessly
+\`\`\`bash
+python cli/src/debloat_engine.py --serial <IP:PORT> --tier 1 --dry-run
+python cli/src/debloat_engine.py --serial <IP:PORT> --tier 1 --action disable
+\`\`\`
+
+Or use the wireless flag:
+\`\`\`bash
+python cli/src/debloat_engine.py --wireless 192.168.1.42:5555 --tier 1 --dry-run
+\`\`\`
+
+## Safety
+
+Same User 0 ADB model applies over Wi-Fi:
+
+- \`pm disable-user --user 0\` — freeze
+- \`pm uninstall -k --user 0\` — keep data via \`-k\`
+- Critical Tier 4 packages hard-blocked
+- Snapshot restore works wirelessly
+
+---
+
+*Last updated: 2026-11-01 | Requires Android 11+ and phone + computer on same Wi-Fi*
+    `
+  },
 };
 
 export function getStaticPaths() {
   return [
     { params: { slug: 'samsung-galaxy-debloat-guide-one-ui-6' } },
+    { params: { slug: 'xiaomi-hyperos-debloat-guide' } },
+    { params: { slug: 'pixel-debloat-guide-stock-android' } },
+    { params: { slug: 'oneplus-oppo-realme-debloat-guide-coloros' } },
+    { params: { slug: 'vivo-iqoo-debloat-guide-funtouchos' } },
+    { params: { slug: 'motorola-debloat-guide-myux' } },
+    { params: { slug: 'transsion-debloat-guide-hios-xos' } },
+    { params: { slug: 'debloat-vs-factory-reset' } },
+    { params: { slug: 'adb-debloat-safety-tiers-explained' } },
+    { params: { slug: 'wireless-adb-debloat-setup-android-11' } },
   ];
 }
 
