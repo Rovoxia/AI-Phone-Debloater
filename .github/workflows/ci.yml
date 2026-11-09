@@ -204,84 +204,11 @@ jobs:
           npm audit --audit-level moderate
 
   
-  # ---------- Release ----------
-  release:
-    name: Create Release
-    runs-on: ubuntu-latest
-    needs: [test, web-test, security]
-    if: startsWith(github.ref, 'refs/tags/v')
-
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Extract version from tag
-        id: ver
-        run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
-
-      - name: Generate release notes
-        run: |
-          LAST_TAG=$(git describe --tags --abbrev=0 HEAD 2>/dev/null || true)
-          if [ -n "$LAST_TAG" ]; then
-            RANGE="${LAST_TAG}..HEAD"
-          else
-            RANGE="$(git rev-list --max-parents=0 HEAD)"
-          fi
-          NOTES=$(git log --pretty=format:"%s" $RANGE | grep -v "^\s*$" | head -100)
-          {
-            echo "# Release ${{ steps.ver.outputs.version }}"
-            echo ""
-            echo "AI-Phone-Debloater v${{ steps.ver.outputs.version }}"
-            echo ""
-            echo "## Changes"
-            echo '```'
-            echo "$NOTES"
-            echo '```'
-          } > RELEASE_NOTES.md
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
-          body_path: RELEASE_NOTES.md
-          draft: false
-          prerelease: false
-          generate_release_notes: true
-
-      - name: Upload web dist as release asset
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: web/dist/index.html
-          asset_name: web-dashboard-${{ steps.ver.outputs.version }}.html
-          asset_content_type: text/html
-
-  # ---------- Deploy ----------
-  deploy:
-    name: Deploy
-    runs-on: ubuntu-latest
-    needs: release
-    if: startsWith(github.ref, 'refs/tags/v')
-
-    environment: production
-
-    steps:
-      - name: Deploy
-        run: |
-          echo "Production deployment for ${{ github.ref_name }}."
-          echo "Configure target environment secrets and deployment steps externally.
-
   # ---------- Final gate summary ----------
-  final-status:
+final-status:
     name: Pipeline Summary
     runs-on: ubuntu-latest
-    needs: [lint, validate, test, web-test, security, release, deploy]
+    needs: [lint, validate, test, web-test, security]
     if: always()
 
     steps:
@@ -292,6 +219,4 @@ jobs:
           echo "test=${{ needs.test.result }}" >> $GITHUB_STEP_SUMMARY
           echo "web-test=${{ needs.web-test.result }}" >> $GITHUB_STEP_SUMMARY
           echo "security=${{ needs.security.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "release=${{ needs.release.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "deploy=${{ needs.deploy.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "Pipeline status: ${{ needs.release.result }}"
+          echo "Pipeline status: ${{ needs.lint.result }}"
