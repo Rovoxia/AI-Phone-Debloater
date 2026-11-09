@@ -45,3 +45,7 @@ web/.env.*
 
 # Local Claude Code configuration
 CLAUDE.md
+
+# Local agent/skill tooling (not part of the shipped product)
+.agents/
+.claude/
