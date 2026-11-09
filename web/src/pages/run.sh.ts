@@ -55,9 +55,11 @@ if [ -f "$INSTALLED_VERSION_FILE" ]; then
 fi
 
 NEW_VERSION_FILE="\${EXTRACTED_ROOT}/VERSION"
-NEW_VERSION="1.0.0"
 if [ -f "$NEW_VERSION_FILE" ]; then
     NEW_VERSION=\$(tr -d '\r\n' < "$NEW_VERSION_FILE")
+else
+    echo "[ERROR] VERSION file not found in repository archive." >&2
+    exit 1
 fi
 
 echo "[INFO] Syncing CLI to \${INSTALL_DIR} (Version: \${NEW_VERSION})..."

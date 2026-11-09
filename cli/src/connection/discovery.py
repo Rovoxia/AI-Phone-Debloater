@@ -375,6 +375,7 @@ __all__ = [
     "LanDiscovery",
     "MdnsDiscovery",
     "validate_endpoint",
+    "validate_host",
     "validate_ip_address",
     "validate_port",
 ]

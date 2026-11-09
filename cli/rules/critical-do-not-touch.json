@@ -552,6 +552,258 @@
       "severity": "CRITICAL_BRICK_RISK",
       "safe_to_remove": false,
       "recommended_action": "never"
+    },
+    {
+      "package": "com.android.bips",
+      "name": "BIP services",
+      "category": "framework_core",
+      "description": "BIP services required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.browser",
+      "name": "System browser",
+      "category": "framework_core",
+      "description": "System browser required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.calendar",
+      "name": "Calendar provider",
+      "category": "framework_core",
+      "description": "Calendar provider required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.contacts",
+      "name": "Contacts storage",
+      "category": "framework_core",
+      "description": "Contacts storage required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.desktopclock",
+      "name": "Clock / alarm",
+      "category": "framework_core",
+      "description": "Clock / alarm required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.dialer",
+      "name": "Dialer",
+      "category": "telephony_radio_emergency",
+      "description": "Dialer required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.keyboard",
+      "name": "AOSP keyboard",
+      "category": "framework_core",
+      "description": "AOSP keyboard required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.launcher",
+      "name": "Home launcher",
+      "category": "framework_core",
+      "description": "Home launcher required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.location",
+      "name": "Location services",
+      "category": "framework_core",
+      "description": "Location services required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.mediacaserver",
+      "name": "Media CAS server",
+      "category": "framework_core",
+      "description": "Media CAS server required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.printspooler",
+      "name": "Print spooler",
+      "category": "framework_core",
+      "description": "Print spooler required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.providers.calendar",
+      "name": "Calendar provider",
+      "category": "settings_providers",
+      "description": "Calendar provider required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.providers.downloads",
+      "name": "Download provider",
+      "category": "settings_providers",
+      "description": "Download provider required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.providers.telephony",
+      "name": "Telephony provider",
+      "category": "settings_providers",
+      "description": "Telephony provider required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.providers.userdictionary",
+      "name": "User dictionary",
+      "category": "settings_providers",
+      "description": "User dictionary required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.systemupdate",
+      "name": "System updates",
+      "category": "framework_core",
+      "description": "System updates required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.twilight",
+      "name": "Night light",
+      "category": "framework_core",
+      "description": "Night light required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.vending",
+      "name": "Google Play Store",
+      "category": "google_play_services",
+      "description": "Google Play Store required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.wallpaper",
+      "name": "Wallpaper service",
+      "category": "framework_core",
+      "description": "Wallpaper service required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.android.wifi",
+      "name": "Wi-Fi stack",
+      "category": "wifi_bluetooth_network",
+      "description": "Wi-Fi stack required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.google.android.inputmethod.latin",
+      "name": "Gboard keyboard",
+      "category": "google_play_services",
+      "description": "Gboard keyboard required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.google.android.webview",
+      "name": "Android System WebView",
+      "category": "google_play_services",
+      "description": "Android System WebView required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.samsung.android.app.rss",
+      "name": "Samsung RSS feed",
+      "category": "optional_feature",
+      "description": "Samsung RSS feed required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.samsung.android.app.samsungshare",
+      "name": "Samsung share service",
+      "category": "optional_feature",
+      "description": "Samsung share service required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.samsung.android.app.sbrowser",
+      "name": "Samsung Internet browser",
+      "category": "optional_feature",
+      "description": "Samsung Internet browser required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.samsung.android.mdxservice",
+      "name": "Samsung mobile device exchange",
+      "category": "optional_feature",
+      "description": "Samsung mobile device exchange required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.samsung.android.oneconnect",
+      "name": "Samsung One Connect",
+      "category": "optional_feature",
+      "description": "Samsung One Connect required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
+    },
+    {
+      "package": "com.samsung.android.scloud",
+      "name": "Samsung cloud service",
+      "category": "optional_feature",
+      "description": "Samsung cloud service required by the system or core user experience.",
+      "severity": "CRITICAL_BRICK_RISK",
+      "safe_to_remove": false,
+      "recommended_action": "never"
     }
   ]
 }
