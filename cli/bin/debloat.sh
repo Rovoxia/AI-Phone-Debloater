@@ -2,9 +2,20 @@
 set -euo pipefail
 
 BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CLI_DIR="$BIN_DIR/.."
-ROOT_DIR="$BIN_DIR/../.."
-cd "$ROOT_DIR"
+CLI_DIR="$(cd "$BIN_DIR/.." && pwd)"
+ROOT_DIR="$(cd "$BIN_DIR/../.." && pwd)"
+
+if [ -f "$ROOT_DIR/VERSION" ]; then
+    APP_VERSION=$(tr -d '\r\n' < "$ROOT_DIR/VERSION")
+    cd "$ROOT_DIR"
+elif [ -f "$CLI_DIR/VERSION" ]; then
+    APP_VERSION=$(tr -d '\r\n' < "$CLI_DIR/VERSION")
+    ROOT_DIR="$CLI_DIR"
+    cd "$CLI_DIR"
+else
+    echo "[ERROR] VERSION file not found at $ROOT_DIR/VERSION or $CLI_DIR/VERSION" >&2
+    exit 1
+fi
 
 PY=""
 for cmd in python3 python; do
@@ -54,13 +65,6 @@ if [ -z "$PY" ]; then
     exit 1
 fi
 echo "Using Python: $PY"
-
-if [ -f "$ROOT_DIR/VERSION" ]; then
-    APP_VERSION=$(tr -d '\r\n' < "$ROOT_DIR/VERSION")
-else
-    echo "[ERROR] VERSION file not found at $ROOT_DIR/VERSION" >&2
-    exit 1
-fi
 
 # Detect or bootstrap ADB
 if [ -f "$CLI_DIR/tools/platform-tools/adb" ]; then
