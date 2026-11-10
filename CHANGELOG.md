@@ -80,3 +80,15 @@ chore: update CHANGELOG and add 10 new blog posts with getStaticPaths
 Merge pull request #22 from Rovoxia/release/v1.0.2
 chore(release): bump version to 1.0.2 and add Twitter/OG image fixes
 ```
+
+# Release v1.1.0
+
+## Changes
+```
+Merge pull request #21 from Rovoxia/QA
+Merge branch 'main' into QA (resolve version to 1.1.0)
+chore(release): bump version to 1.1.0
+feat(seo): add 24-bit RGB og-image and progressive JPEG fallback for Twitter cards
+fix(ci): resolve ruff lint errors in bridge server and test suite
+feat(webapp): add in-browser WebADB workspace and cross-platform 1-click bridge
+```
