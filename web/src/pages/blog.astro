@@ -127,29 +127,58 @@ const categories = [...new Set(posts.map(p => p.category))].sort();
     <meta property="og:title" content={TITLE} />
     <meta property="og:description" content={DESCRIPTION} />
     <meta property="og:site_name" content="AI Phone Debloater" />
-    <meta property="og:image" content={`${SITE_URL}/og-image.svg`} />
+    <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
+    <meta property="og:image:secure_url" content={`${SITE_URL}/og-image.png`} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="AI Phone Debloater Guides & Android Optimization Blog" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={TITLE} />
     <meta name="twitter:description" content={DESCRIPTION} />
-    <meta name="twitter:image" content={`${SITE_URL}/og-image.svg`} />
+    <meta name="twitter:image" content={`${SITE_URL}/og-image.png`} />
+    <meta name="twitter:image:alt" content="AI Phone Debloater Guides & Android Optimization Blog" />
 
     <!-- JSON-LD Blog Structured Data -->
-    <script type="application/ld+json" is:inline>
-      {
-        "@context": "https://schema.org",
-        "@type": "Blog",
-        "name": "AI Phone Debloater Blog",
-        "description": "OEM-specific debloat guides, Android optimization tutorials, and safety deep-dives",
-        "url": "https://debloater.rovoxia.com/blog",
-        "publisher": {
-          "@type": "Organization",
-          "name": "Rovoxia",
-          "url": "https://rovoxia.com"
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://debloater.rovoxia.com/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Blog & Guides",
+              "item": "https://debloater.rovoxia.com/blog"
+            }
+          ]
         },
-        "blogPosts": [
-          {posts.map(post => ({
+        {
+          "@type": "Blog",
+          "name": "AI Phone Debloater Blog & Guides",
+          "description": "OEM-specific debloat guides, Android optimization tutorials, and safety deep-dives",
+          "url": "https://debloater.rovoxia.com/blog",
+          "inLanguage": "en-US",
+          "isPartOf": {
+            "@type": "WebSite",
+            "@id": "https://debloater.rovoxia.com/#website",
+            "name": "AI Phone Debloater"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Rovoxia",
+            "url": "https://rovoxia.com"
+          },
+          "blogPosts": posts.map(post => ({
             "@type": "BlogPosting",
             "headline": post.title,
             "description": post.excerpt,
@@ -157,10 +186,10 @@ const categories = [...new Set(posts.map(p => p.category))].sort();
             "url": `https://debloater.rovoxia.com/blog/${post.slug}`,
             "author": { "@type": "Organization", "name": "Rovoxia" },
             "keywords": post.tags.join(", ")
-          }))}
-        ]
-      }
-    </script>
+          }))
+        }
+      ]
+    })} />
 
     <script is:inline>
       (function() {
@@ -190,7 +219,7 @@ const categories = [...new Set(posts.map(p => p.category))].sort();
             <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">Android Optimization</span>
           </h1>
           <p class="text-slate-600 dark:text-slate-300 text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
-            OEM-specific debloat guides, safety deep-dives, and step-by-step tutorials. Every guide is tested against real devices and our 324+ curated safety rules.
+            OEM-specific debloat guides, safety deep-dives, and step-by-step tutorials. Every guide is tested against real devices and our 352 curated safety rules.
           </p>
         </div>
       </section>
