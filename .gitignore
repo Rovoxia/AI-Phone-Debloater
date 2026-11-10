@@ -11,6 +11,7 @@ AiPhoneDebloater/
 
 # Device scan exports & AI plans
 *.txt
+!web/public/*.txt
 scan.txt
 *device-profile*.json
 *device-profile*.md

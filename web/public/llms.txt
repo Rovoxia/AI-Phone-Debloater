@@ -1,0 +1,89 @@
+# AI-Phone-Debloater (debloater.rovoxia.com)
+> Universal Rootless Android ADB Debloater & Bloatware Removal Tool (Android 8.0 to 15+)
+> Built for AI Coding Agents (Claude Code, ChatGPT, Gemini, Cursor) and CLI Developers.
+
+## Project Summary
+AI-Phone-Debloater is an open-source, rootless Android bloatware removal engine powered by Python standard library (zero pip dependencies) and standard Android Debug Bridge (ADB). It removes OEM bloatware, aggressive ad-serving daemons, and tracking telemetry across Samsung One UI, Xiaomi HyperOS/MIUI, Google Pixel, OnePlus OxygenOS, BBK (Oppo/Vivo/Realme), Motorola, Huawei, and Transsion (Tecno/Infinix).
+
+- Official Website: https://debloater.rovoxia.com
+- Master AI Prompt Endpoint: https://debloater.rovoxia.com/prompt.md
+- Full Technical LLM Guide: https://debloater.rovoxia.com/llms-full.txt
+- Pricing Specification for Agents: https://debloater.rovoxia.com/pricing.md
+- GitHub Repository: https://github.com/Rovoxia/AI-Phone-Debloater.git
+- Author / Organization: Rovoxia (https://rovoxia.com)
+- License: MIT License (100% Free & Open Source)
+- Core Engine: Python 3.8+ (`cli/src/debloat_engine.py`, standard library only, zero pip install)
+- Safety Rules: 352 curated rules across 4 safety tiers with code-level hard-blocked critical blacklist of 89 packages.
+
+## Instant 1-Command Runners (Zero-Git Required)
+- Windows (PowerShell):
+  `irm https://debloater.rovoxia.com/run.ps1 | iex`
+- macOS / Linux (Bash):
+  `curl -sSL https://debloater.rovoxia.com/run.sh | bash`
+
+## Core Safety Architecture & Guarantees
+1. 100% Reversible & Safe User 0 Execution:
+   - Operates strictly on `user 0` using `pm disable-user --user 0 <pkg>` or `pm uninstall -k --user 0 <pkg>`.
+   - The `-k` flag instructs Android's Package Manager to preserve application private directories (`/data/user/0/<pkg>`). Photos, contacts, WhatsApp messages, media, and credentials remain 100% untouched.
+2. Protected Core System Blacklist:
+   - The engine contains an inviolable, code-level blacklist of 89 critical core system packages (Android Framework `android`, `com.android.systemui`, `com.android.phone`, `com.android.settings`, `com.android.vending`, `com.google.android.gms`, Keystore, Telephony, Wi-Fi stack).
+   - Any attempt by an AI agent or manual command to touch these packages is intercepted and permanently blocked before execution.
+3. Untouched System Partition:
+   - Modern Android system partitions (`/system`, `/vendor`) are protected by kernel-level dm-verity. The engine never modifies the `/system` partition; it only alters user-profile package registration.
+4. Auto-Snapshots & 1-Click Rollback:
+   - Creates timestamped JSON snapshots in `~/AiPhoneDebloater/backups/` recording all package states before any debloat action.
+   - Any app can be restored instantly via `python cli/src/debloat_engine.py --restore <snapshot.json>` or `adb shell cmd package install-existing --user 0 <pkg>`.
+5. No Root & No Warranty Void:
+   - Does not require an unlocked bootloader or root access.
+   - Samsung Knox counter remains 0x0. SafetyNet and Google Play Integrity API pass without issues; banking apps and Google Pay continue working.
+
+## Safety Tier Definitions
+- Tier 1 (Safe Bloat - Default): Preloaded third-party bloat (Facebook, Microsoft, Netflix, Amazon), carrier telemetry, aggressive OEM ad daemons (Xiaomi MSA `com.miui.msa.global`), diagnostic loggers. 100% safe to disable for any user.
+- Tier 2 (Advanced Debloat): OEM voice assistants (Samsung Bixby `com.samsung.android.bixby.agent`), OEM cloud sync services (Samsung Cloud, Xiaomi Cloud), Digital Wellbeing, AR Zone / sticker apps. Disabling saves significant battery and CPU.
+- Tier 3 (Aggressive / Expert): Stock OEM apps (OEM stock calculators, stock notes, stock gallery, OEM keyboards) when the user prefers third-party or open-source alternatives.
+- Tier 4 (Critical System Blacklist - Protected): 89 core operating system packages that must NEVER be touched under any circumstances.
+
+## OEM Coverage
+- Samsung One UI: Bixby Voice, AR Zone, Game Optimizing Service (GOS), Knox Analytics, Link to Windows, Quick Share telemetry.
+- Xiaomi / POCO / Redmi (HyperOS & MIUI): MSA Ad Service, Joyose daemon, Mi Pay, GetApps store, Analytics, Hybrid Accessory, Mi Browser.
+- Google Pixel: Pixel Tips, Ambient Music Recognition, Device Personalization Services, ARCore, Feedback loggers.
+- OnePlus / Oppo / Realme / Vivo: HeyTap Cloud, OPBugreport, Membership services, LogKit, Dirac Sound, Red Cable Club promo daemons.
+- Motorola: Moto Display, Moto Suggestions, Ready For analytics, Lenovo diagnostic telemetry.
+- Huawei: EMUI telemetry, HiCare, Huawei Cloud sync, AppGallery services.
+- Transsion (Tecno / Infinix / itel): Palm Store, Carlcare telemetry, AHA Games, Phone Master optimization ads, HiOS launcher ads.
+- Universal (All OEMs): Facebook AppManager / Installer, Microsoft OneDrive / Link, Netflix Activation, Google Partner Setup.
+
+## Canonical AI Agent Master Prompt
+The master prompt is hosted at `prompt/master-prompt.md` and served at `https://debloater.rovoxia.com/prompt.md`. AI coding agents (Claude Code, Cursor, Windsurf, ChatGPT, Gemini) use this prompt to autonomously connect to ADB, scan packages, classify safety tiers, run dry-run simulations, and execute safe debloating with 100% reversible execution.
+
+## Engine Commands (cli/src/debloat_engine.py)
+- Interactive Menu: `python cli/src/debloat_engine.py --interactive`
+- Scan Packages: `python cli/src/debloat_engine.py --scan`
+- Dry-Run Simulation: `python cli/src/debloat_engine.py --dry-run --tier 1`
+- Debloat Execution: `python cli/src/debloat_engine.py --tier 1 --action disable`
+- Restore Snapshot: `python cli/src/debloat_engine.py --restore ~/AiPhoneDebloater/backups/snapshot_<model>_<timestamp>.json`
+- Rule Validation: `python cli/tests/validate_rules.py`
+- Connection Subsystem Tests: `python cli/tests/test_connection.py`
+
+## Frequently Asked Questions (AI-Extractable Answer Blocks)
+
+### What is AI-Phone-Debloater?
+AI-Phone-Debloater is an open-source, rootless Android bloatware removal engine powered by Python standard library (zero pip dependencies) and standard ADB commands. It classifies device packages into 4 safety tiers across 352 curated rules and permanently protects 89 critical OS packages.
+
+### Do I need root access to debloat my phone?
+No root access is required. AI-Phone-Debloater operates strictly via Android user-space (`User 0`) permissions using standard ADB commands (`pm disable-user --user 0`, `pm uninstall -k --user 0`). The bootloader stays locked, Samsung Knox remains 0x0, and banking apps function normally.
+
+### Does debloating void warranty or trip Samsung Knox?
+No. Samsung Knox Warranty Void fuse remains 0x0 because AI-Phone-Debloater never flashes custom bootloaders, kernels, or unauthorized system partitions. Read-only system partitions (`/system`) remain protected by dm-verity, leaving factory warranties and hardware tamper fuses completely unaffected.
+
+### Do banking apps and Google Pay continue working?
+Yes. Because the device bootloader remains locked and no root binaries (like Magisk or KernelSU) are installed, Google Play Integrity API passes all device CTS profile checks. Banking apps, Google Wallet, Samsung Pay, and Netflix HD continue functioning without restriction.
+
+### Will debloating affect official OTA system updates?
+No. Preloaded system apps live on the read-only system image and are merely unregistered for User 0. Because system partition cryptographic integrity remains untouched, official manufacturer over-the-air (OTA) software updates download and install smoothly.
+
+### Can critical Android packages be accidentally removed?
+No. The engine enforces an inviolable, code-level blacklist of 89 critical core operating system packages—including SystemUI, Telephony, PackageInstaller, Settings, and Google Play Services. Critical packages cannot be disabled or uninstalled under any flag, prompt, or tier selection.
+
+### What performance and battery gains can I expect?
+Debloating reclaims 1.5GB to 3GB+ of active RAM by stopping persistent background OEM services. Battery endurance improves by 20% to 30% by terminating background wakelocks, telemetry polling, and unauthorized ad-rendering daemons.
