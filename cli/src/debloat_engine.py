@@ -266,7 +266,7 @@ class Adb:
         return base
 
     def _run(self, cmd, timeout=None):
-        self.logger.verbose_log("$ " + subprocess.list2cmdline([str(c) for c in cmd]))
+        self.logger.verbose_log("$ " + subprocess.list2cmdline(cmd))
         rc, out, err = run_cmd(cmd, timeout=timeout or self.timeout)
         if rc != 0: self.logger.verbose_log(f"exit {rc}: {(err or out).strip()[:300]}")
         return rc, out, err
