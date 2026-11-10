@@ -1,6 +1,14 @@
 ---
 // src/components/Footer.astro
+import { readFileSync } from 'node:fs';
+
 const currentYear = new Date().getFullYear();
+let siteVersion = '1.0.1';
+try {
+  siteVersion = readFileSync(new URL('../../../VERSION', import.meta.url), 'utf8').trim() || '1.0.1';
+} catch {
+  // fallback
+}
 ---
 
 <footer
@@ -95,7 +103,7 @@ const currentYear = new Date().getFullYear();
               rel="noopener noreferrer"
               class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
             >
-              Latest Release (v1.0.0)
+              Latest Release (v{siteVersion})
             </a>
           </li>
         </ul>

@@ -9,7 +9,7 @@ import rulesData from '../data/rules-dataset.json';
 const SITE_URL = 'https://debloater.rovoxia.com';
 const CANONICAL_URL = `${SITE_URL}/oems`;
 const TITLE = 'Supported Android OEMs & Bloatware Rules | AI Phone Debloater';
-const DESCRIPTION = 'Explore 324 verified debloat rules across Xiaomi HyperOS, Samsung One UI, OnePlus, Oppo, Vivo, Google Pixel, Motorola, and Transsion. 100% rootless and reversible.';
+const DESCRIPTION = 'Explore 352 verified debloat rules across Xiaomi HyperOS, Samsung One UI, OnePlus, Oppo, Vivo, Google Pixel, Motorola, and Transsion. 100% rootless and reversible.';
 const KEYWORDS = 'OEM debloat rules, Xiaomi HyperOS debloat, Samsung One UI bloatware list, ColorOS debloat, FuntouchOS, Pixel telemetry, ADB debloat rules';
 
 const oemProfiles = [
@@ -106,9 +106,9 @@ const oemProfiles = [
     name: 'Core System Protection',
     skin: 'Hard-Blocked Invariant',
     badge: 'Tier 4',
-    tagline: '61 essential Android operating system packages permanently hard-blocked against removal to guarantee 100% bootloop prevention.',
+    tagline: '89 essential Android operating system packages permanently hard-blocked against removal to guarantee 100% bootloop prevention.',
     anchor: 'critical',
-    ruleCount: rulesData.stats.tier4CriticalCount || 61,
+    ruleCount: rulesData.stats.tier4CriticalCount || 89,
     color: 'rose',
     features: ['Android System Framework', 'System UI & Navigation', 'Settings Provider', 'Telephony & Emergency Services', 'Keymaster & Biometrics']
   }
@@ -138,15 +138,19 @@ const allRules = rulesData.rules;
     <meta property="og:title" content={TITLE} />
     <meta property="og:description" content={DESCRIPTION} />
     <meta property="og:site_name" content="AI Phone Debloater" />
-    <meta property="og:image" content={`${SITE_URL}/og-image.svg`} />
+    <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
+    <meta property="og:image:secure_url" content={`${SITE_URL}/og-image.png`} />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="AI Phone Debloater Supported OEMs & 352 Bloatware Rules Matrix" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={TITLE} />
     <meta name="twitter:description" content={DESCRIPTION} />
-    <meta name="twitter:image" content={`${SITE_URL}/og-image.svg`} />
+    <meta name="twitter:image" content={`${SITE_URL}/og-image.png`} />
+    <meta name="twitter:image:alt" content="AI Phone Debloater Supported OEMs & 352 Bloatware Rules Matrix" />
 
     <!-- Google Fonts (Optimized) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -157,43 +161,41 @@ const allRules = rulesData.rules;
     </noscript>
 
     <!-- JSON-LD Structured Data (Dataset & Breadcrumb) -->
-    <script type="application/ld+json" is:inline>
-      {
-        "@context": "https://schema.org",
-        "@graph": [
-          {
-            "@type": "BreadcrumbList",
-            "itemListElement": [
-              {
-                "@type": "ListItem",
-                "position": 1,
-                "name": "Home",
-                "item": "https://debloater.rovoxia.com/"
-              },
-              {
-                "@type": "ListItem",
-                "position": 2,
-                "name": "Supported OEMs & Rules",
-                "item": "https://debloater.rovoxia.com/oems"
-              }
-            ]
-          },
-          {
-            "@type": "Dataset",
-            "name": "AI Phone Debloater Curated OEM Rules Database",
-            "description": "324 classified package rules across Xiaomi, Samsung, OnePlus, Oppo, Vivo, Google Pixel, Motorola, and Transsion Android devices with safety tiers and rootless ADB actions.",
-            "url": "https://debloater.rovoxia.com/oems",
-            "keywords": ["Android debloat", "bloatware removal", "ADB packages", "Samsung One UI", "Xiaomi HyperOS"],
-            "license": "https://opensource.org/licenses/MIT",
-            "creator": {
-              "@type": "Organization",
-              "name": "Rovoxia",
-              "url": "https://github.com/Rovoxia"
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://debloater.rovoxia.com/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Supported OEMs & Rules",
+              "item": "https://debloater.rovoxia.com/oems"
             }
+          ]
+        },
+        {
+          "@type": "Dataset",
+          "name": "AI Phone Debloater Curated OEM Rules Database",
+          "description": "352 classified package rules across Xiaomi, Samsung, OnePlus, Oppo, Vivo, Google Pixel, Motorola, and Transsion Android devices with safety tiers and rootless ADB actions.",
+          "url": "https://debloater.rovoxia.com/oems",
+          "keywords": ["Android debloat", "bloatware removal", "ADB packages", "Samsung One UI", "Xiaomi HyperOS", "Google Pixel debloat", "OnePlus debloat", "rootless debloat"],
+          "license": "https://opensource.org/licenses/MIT",
+          "creator": {
+            "@type": "Organization",
+            "name": "Rovoxia",
+            "url": "https://rovoxia.com"
           }
-        ]
-      }
-    </script>
+        }
+      ]
+    })} />
     <script is:inline>
       (function() {
         try {
@@ -234,7 +236,7 @@ const allRules = rulesData.rules;
 
           <div class="flex flex-wrap items-center gap-3 shrink-0">
             <div class="text-right hidden sm:block">
-              <div class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">324</div>
+              <div class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">352</div>
               <div class="text-xs text-slate-500 dark:text-slate-400">Total Classified Packages</div>
             </div>
             <a
@@ -364,7 +366,7 @@ const allRules = rulesData.rules;
               Universal ({rulesData.stats.oemBreakdown['Universal'] || 81})
             </button>
             <button type="button" class="oem-filter px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 hover:border-rose-300 transition-colors cursor-pointer" data-brand="Core System">
-              Critical (61)
+              Critical (89)
             </button>
           </div>
 

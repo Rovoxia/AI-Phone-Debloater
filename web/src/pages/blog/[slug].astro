@@ -650,7 +650,7 @@ AI-Phone-Debloater classifies every removable package into one of four safety ti
 
 Tier 4 packages are permanently hard-blocked under **any** flag or prompt:
 
-- RuleSet.load seeds the critical set from HARDCRITICAL_PACKAGES (89 packages) unioned with critical-do-not-touch.json (61 packages) = **89 unique inviolable packages**.
+- RuleSet.load seeds the critical set from HARDCRITICAL_PACKAGES (89 packages) unioned with critical-do-not-touch.json (89 packages) = **89 unique inviolable packages**.
 - Critical packages cannot be disabled or uninstalled under any flag.
 - validate_rules.py enforces zero collisions between other rule databases and critical-do-not-touch.json.
 
@@ -784,7 +784,12 @@ const isoDate = post.date;
     <meta property="og:title" content={post.title} />
     <meta property="og:description" content={post.excerpt} />
     <meta property="og:site_name" content="AI Phone Debloater" />
-    <meta property="og:image" content={`${SITE_URL}/og-image.svg`} />
+    <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
+    <meta property="og:image:secure_url" content={`${SITE_URL}/og-image.png`} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${post.title} — AI Phone Debloater Guide`} />
     <meta property="article:published_time" content={isoDate} />
     <meta property="article:author" content="Rovoxia" />
     <meta property="article:section" content={post.category} />
@@ -794,24 +799,67 @@ const isoDate = post.date;
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={post.title} />
     <meta name="twitter:description" content={post.excerpt} />
-    <meta name="twitter:image" content={`${SITE_URL}/og-image.svg`} />
+    <meta name="twitter:image" content={`${SITE_URL}/og-image.png`} />
+    <meta name="twitter:image:alt" content={`${post.title} — AI Phone Debloater Guide`} />
 
-    <!-- JSON-LD BlogPosting Schema -->
-    <script type="application/ld+json" is:inline>
-      {
-        "@context": "https://schema.org",
-        "@type": "BlogPosting",
-        "headline": {post.title},
-        "description": {post.excerpt},
-        "datePublished": {isoDate},
-        "dateModified": {isoDate},
-        "author": { "@type": "Organization", "name": "Rovoxia", "url": "https://rovoxia.com" },
-        "publisher": { "@type": "Organization", "name": "Rovoxia", "logo": { "@type": "ImageObject", "url": "https://debloater.rovoxia.com/favicon.svg" } },
-        "mainEntityOfPage": { "@type": "WebPage", "@id": CANONICAL_URL },
-        "keywords": {post.tags.join(', ')},
-        "articleSection": {post.category}
-      }
-    </script>
+    <!-- JSON-LD Structured Data (TechArticle & Breadcrumbs) -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://debloater.rovoxia.com/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Blog",
+              "item": "https://debloater.rovoxia.com/blog"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": post.title,
+              "item": CANONICAL_URL
+            }
+          ]
+        },
+        {
+          "@type": "TechArticle",
+          "headline": post.title,
+          "description": post.excerpt,
+          "image": `${SITE_URL}/og-image.png`,
+          "datePublished": isoDate,
+          "dateModified": isoDate,
+          "author": {
+            "@type": "Organization",
+            "name": "Rovoxia",
+            "url": "https://rovoxia.com"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Rovoxia",
+            "url": "https://rovoxia.com",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://debloater.rovoxia.com/favicon.svg"
+            }
+          },
+          "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": CANONICAL_URL
+          },
+          "keywords": post.tags.join(', '),
+          "articleSection": post.category,
+          "inLanguage": "en-US"
+        }
+      ]
+    })} />
 
     <script is:inline>
       (function() {

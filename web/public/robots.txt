@@ -1,0 +1,36 @@
+# robots.txt for AI-Phone-Debloater (debloater.rovoxia.com)
+User-agent: *
+Allow: /
+
+# Explicit AI Search & Discovery Bots
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: bingbot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+# Sitemaps
+Sitemap: https://debloater.rovoxia.com/sitemap-index.xml
+Sitemap: https://debloater.rovoxia.com/sitemap.xml
+Sitemap: https://debloater.rovoxia.com/sitemap-0.xml
+
+# Machine-Readable AI Context & Prompts
+# LLMs Context: https://debloater.rovoxia.com/llms.txt
+# LLMs Full Technical Reference: https://debloater.rovoxia.com/llms-full.txt
+# Master AI Prompt: https://debloater.rovoxia.com/prompt.md
+# Pricing for AI Agents: https://debloater.rovoxia.com/pricing.md
