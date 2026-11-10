@@ -30,8 +30,33 @@ if not defined PY (
         )
     )
 )
+:: If Python is not found, auto-bootstrap via PowerShell
 if not defined PY (
-    echo [ERROR] Python 3 not found. Install from https://www.python.org/downloads/
+    echo [INFO] Python 3 not found on system. Auto-downloading Python...
+    powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+        "$ErrorActionPreference = 'Stop';" ^
+        "$installer = Join-Path $env:TEMP 'python-installer.exe';" ^
+        "$url = 'https://www.python.org/ftp/python/3.12.7/python-3.12.7-amd64.exe';" ^
+        "Write-Host '[INFO] Downloading official Python 3.12 installer...';" ^
+        "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;" ^
+        "(New-Object Net.WebClient).DownloadFile($url, $installer);" ^
+        "Write-Host '[INFO] Installing Python silently...';" ^
+        "Start-Process -FilePath $installer -ArgumentList '/quiet InstallAllUsers=0 PrependPath=1 Include_test=0' -Wait;" ^
+        "Remove-Item $installer -Force -ErrorAction SilentlyContinue;" ^
+        "Write-Host '[OK] Python installation complete.'"
+    echo [INFO] Python 3 installed but not on PATH yet; refreshing PATH...
+    set "PATH=%PATH%;C:\Python312;C:\Python312\Scripts;C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python312;C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python312\Scripts"
+    for %%p in (python python3 py) do (
+        if not defined PY (
+            %%p -c "import sys; sys.exit(0 if sys.version_info[0]>=3 else 1)" >nul 2>&1
+            if not errorlevel 1 set "PY=%%p"
+        )
+    )
+)
+
+if not defined PY (
+    echo [ERROR] Python 3 could not be found or installed.
+    echo Please install Python 3 manually from https://www.python.org/downloads/
     pause
     exit /b 1
 )
