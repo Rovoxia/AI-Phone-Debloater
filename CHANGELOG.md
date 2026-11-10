@@ -63,3 +63,11 @@ docs: sync changelogs, versions, and user docs with current state
 Merge branch 'main' into QA
 chore: update CHANGELOG and add 10 new blog posts with getStaticPaths
 ```
+
+# Release v1.0.2
+
+## Changes
+```
+Merge pull request #22 from Rovoxia/release/v1.0.2
+chore(release): bump version to 1.0.2 and add Twitter/OG image fixes
+```
