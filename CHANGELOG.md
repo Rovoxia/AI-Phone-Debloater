@@ -4,17 +4,26 @@ All notable changes to AI-Phone-Debloater are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.0] - 2026-11-10
 
 ### Added
 
-- Automated release pipeline on tag push (`v*`) with changelog generation
-- Release workflow updates changelog.md and creates GitHub Release
+- In-browser WebApp Workspace at `/app` (`web/src/pages/app.astro`) with direct WebUSB ADB connection via `@yume-chan/adb`
+- Universal 1-click Local ADB Bridge for cross-browser support (Firefox, Safari, driver-locked environments):
+  - Windows: `irm https://debloater.rovoxia.com/bridge.ps1 | iex`
+  - macOS / Linux: `curl -sSL https://debloater.rovoxia.com/bridge.sh | bash`
+- Standalone Python standard library bridge server (`cli/src/bridge_server.py`) on `127.0.0.1:53123`
+- Defense-in-depth enforcement of 89 Tier 4 critical packages across browser UI, WebADB client, and bridge server
+- Pre-mutation snapshot backups with JSON export, import, and 1-click restore
+- Interactive execution drawer, dry-run simulation mode, and search filters
 
-### Fixed
+## [1.0.1] - 2026-11-10
 
-- Release workflow first-release guard disabled via version comparison
-- Release workflow tag trigger added for automatic changelog + GitHub Release creation
+### Added
+
+- Social media Open Graph poster (`og-image.png` & `og-image.jpg`)
+- AI search discovery files (`llms.txt`, `llms-full.txt`, `robots.txt`, `pricing.md`)
+- Supported OEMs package matrix sync (352 rules)
 
 ## [1.0.0] - 2026-11-03
 

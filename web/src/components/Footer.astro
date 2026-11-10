@@ -3,9 +3,9 @@
 import { readFileSync } from 'node:fs';
 
 const currentYear = new Date().getFullYear();
-let siteVersion = '1.0.1';
+let siteVersion = '1.1.0';
 try {
-  siteVersion = readFileSync(new URL('../../../VERSION', import.meta.url), 'utf8').trim() || '1.0.1';
+  siteVersion = readFileSync(new URL('../../../VERSION', import.meta.url), 'utf8').trim() || '1.1.0';
 } catch {
   // fallback
 }
