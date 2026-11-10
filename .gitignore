@@ -13,6 +13,7 @@ AiPhoneDebloater/
 *.txt
 !web/public/*.txt
 scan.txt
+scans/
 *device-profile*.json
 *device-profile*.md
 debloat-plan.json
