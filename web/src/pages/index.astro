@@ -3,6 +3,7 @@
 import '../styles/global.css';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
+import { SITE_VERSION } from '../lib/version';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -154,7 +155,7 @@ try {
             "name": "AI Phone Debloater",
             "operatingSystem": "Android 8.0 - 15+, Windows, macOS, Linux",
             "applicationCategory": "UtilitiesApplication",
-            "softwareVersion": "1.1.0",
+            "softwareVersion": SITE_VERSION,
             "description": "The safe, open-source Android debloater and bloatware remover powered by AI agent master prompts, automated CLI, and WebApp workspace with 352 curated OEM safety rules and 89 hard-blocked core packages.",
             "offers": {
               "@type": "Offer",

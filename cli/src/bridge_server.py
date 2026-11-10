@@ -24,8 +24,10 @@ import json
 import os
 import re
 import shutil
+import signal
 import socket
 import subprocess
+import sys
 import threading
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -42,7 +44,19 @@ RULES_DIR = PROJECT_ROOT / "cli" / "rules"
 CRITICAL_FILE = RULES_DIR / "critical-do-not-touch.json"
 
 DEFAULT_PORT = 53123
-VERSION = "1.1.0"
+
+def load_version() -> str:
+    for cand in (PROJECT_ROOT / "VERSION", SCRIPT_DIR.parent / "VERSION", Path.cwd() / "VERSION"):
+        if cand.is_file():
+            try:
+                val = cand.read_text(encoding="utf-8").strip()
+                if val:
+                    return val
+            except (OSError, ValueError):
+                pass
+    return "1.0.0"
+
+VERSION = load_version()
 TIMESTAMP_FORMAT = "%Y%m%d_%H%M%S"
 
 BACKUPS_DIR = Path.home() / "AiPhoneDebloater" / "backups"
@@ -610,8 +624,15 @@ class BridgeHandler(BaseHTTPRequestHandler):
 
 
 # ---------------------------------------------------------------------------
-# Server
+# Server & Lifecycle
 # ---------------------------------------------------------------------------
+
+class ReusableThreadingHTTPServer(ThreadingHTTPServer):
+    """ThreadingHTTPServer with immediate address reuse enabled on socket."""
+
+    allow_reuse_address = True
+    daemon_threads = True
+
 
 def find_free_port(start: int = DEFAULT_PORT) -> int:
     for port in range(start, start + 200):
@@ -624,25 +645,63 @@ def find_free_port(start: int = DEFAULT_PORT) -> int:
     raise OSError(f"could not find a free port starting at {start}")
 
 
-def start_bridge(port: int = DEFAULT_PORT) -> None:
-    """Start the bridge server on ``port`` (falls back to a free port if busy)."""
+def start_bridge(port: int = DEFAULT_PORT, host: str = "127.0.0.1", fallback_port: bool = True) -> None:
+    """Start the bridge server on ``port`` (falls back to a free port if busy unless fallback_port=False)."""
     actual_port = port
     try:
-        httpd = ThreadingHTTPServer(("127.0.0.1", port), BridgeHandler)
-    except OSError:
+        httpd = ReusableThreadingHTTPServer((host, port), BridgeHandler)
+    except OSError as err:
+        if not fallback_port:
+            _log(f"port {port} is unavailable: {err}")
+            raise
         actual_port = find_free_port(port)
         _log(f"port {port} busy, using {actual_port}")
-        httpd = ThreadingHTTPServer(("127.0.0.1", actual_port), BridgeHandler)
+        httpd = ReusableThreadingHTTPServer((host, actual_port), BridgeHandler)
 
-    _log(f"AI-Phone-Debloater Local ADB Bridge running at http://127.0.0.1:{actual_port}")
+    _log(f"AI-Phone-Debloater Local ADB Bridge running at http://{host}:{actual_port} (v{VERSION})")
+
+    stop_event = threading.Event()
+
+    def handle_signal(sig_num: int, _frame: Any) -> None:
+        if not stop_event.is_set():
+            stop_event.set()
+            _log(f"Received signal {sig_num}, shutting down bridge server...")
+            threading.Thread(target=httpd.shutdown, daemon=True).start()
+
+    # Register POSIX & Windows termination signals
+    for sig in (getattr(signal, "SIGINT", None), getattr(signal, "SIGTERM", None)):
+        if sig is not None:
+            try:
+                signal.signal(sig, handle_signal)
+            except (ValueError, OSError):
+                pass
+
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
-        pass
+        _log("KeyboardInterrupt received, stopping...")
     finally:
         httpd.server_close()
         _log("bridge server stopped")
 
 
+def main() -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="AI-Phone-Debloater Local ADB Bridge HTTP Server")
+    parser.add_argument("--port", "-p", type=int, default=DEFAULT_PORT, help=f"HTTP server port (default: {DEFAULT_PORT})")
+    parser.add_argument("--host", type=str, default="127.0.0.1", help="HTTP server bind host (default: 127.0.0.1)")
+    parser.add_argument("--strict-port", action="store_true", help="Fail if the requested port is busy rather than selecting a fallback")
+    parser.add_argument("--version", "-v", action="version", version=f"AI-Phone-Debloater Bridge Server v{VERSION}")
+    args = parser.parse_args()
+
+    try:
+        start_bridge(port=args.port, host=args.host, fallback_port=not args.strict_port)
+        return 0
+    except (OSError, RuntimeError) as exc:
+        _log(f"Server error: {exc}")
+        return 1
+
+
 if __name__ == "__main__":
-    start_bridge(DEFAULT_PORT)
+    sys.exit(main())

@@ -17,62 +17,25 @@ for cmd in python3 python; do
 done
 
 if [ -z "$PY" ]; then
-    echo "[INFO] Python 3 not found. Attempting auto-install via system package manager..."
-    OS="$(uname -s)"
-    case "$OS" in
-        Linux)
-            if command -v apt-get >/dev/null 2>&1; then
-                sudo apt-get update -qq && sudo apt-get install -y -qq python3 || true
-            elif command -v apk >/dev/null 2>&1; then
-                sudo apk add python3 || true
-            elif command -v pacman >/dev/null 2>&1; then
-                sudo pacman -Sy --noconfirm python || true
-            elif command -v dnf >/dev/null 2>&1; then
-                sudo dnf install -y python3 || true
-            elif command -v yum >/dev/null 2>&1; then
-                sudo yum install -y python3 || true
-            fi
-            ;;
-        Darwin)
-            if command -v brew >/dev/null 2>&1; then
-                brew install python || true
-            fi
-            ;;
-    esac
-    for cmd in python3 python; do
-        if command -v "$cmd" >/dev/null 2>&1; then
-            if "$cmd" -c 'import sys; exit(0 if sys.version_info[0] >= 3 else 1)' >/dev/null 2>&1; then
-                PY="$cmd"
-                break
-            fi
-        fi
-    done
-fi
-
-if [ -z "$PY" ]; then
-    echo "[ERROR] Python 3 not found on system. Install Python 3 manually from https://www.python.org/downloads/"
+    echo "[ERROR] Python 3 not found. Install from https://www.python.org/downloads/"
     exit 1
 fi
+echo "Using Python: $PY"
 
 if [ -f "$ROOT_DIR/VERSION" ]; then
     APP_VERSION=$(tr -d '\r\n' < "$ROOT_DIR/VERSION")
-elif [ -f "$CLI_DIR/VERSION" ]; then
-    APP_VERSION=$(tr -d '\r\n' < "$CLI_DIR/VERSION")
 else
     echo "[ERROR] VERSION file not found at $ROOT_DIR/VERSION" >&2
     exit 1
 fi
 
-echo "Using Python: $PY"
-
-# 2. Check and bootstrap ADB
+# Detect or bootstrap ADB
 if [ -f "$CLI_DIR/tools/platform-tools/adb" ]; then
     chmod +x "$CLI_DIR/tools/platform-tools/adb" 2>/dev/null || true
     export PATH="$CLI_DIR/tools/platform-tools:$PATH"
 fi
-
 if ! command -v adb >/dev/null 2>&1; then
-    echo "[INFO] ADB not found on system. Auto-downloading Google Android Platform-Tools..."
+    echo "[INFO] ADB not found on PATH. Auto-downloading Google Android Platform-Tools..."
     OS="$(uname -s)"
     if [ "$OS" = "Darwin" ]; then
         PLATFORM_URL="https://dl.google.com/android/repository/platform-tools-latest-darwin.zip"
@@ -82,34 +45,69 @@ if ! command -v adb >/dev/null 2>&1; then
     mkdir -p "$CLI_DIR/tools"
     "$PY" -c "
 import urllib.request, zipfile, io, sys
-url = sys.argv[1]
-out_dir = sys.argv[2]
-print('[INFO] Fetching platform-tools from Google...')
+url = sys.argv[1]; out_dir = sys.argv[2]
+print('[INFO] Fetching platform-tools...')
 req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-with urllib.request.urlopen(req) as resp:
-    data = resp.read()
-print('[INFO] Extracting platform-tools archive...')
-with zipfile.ZipFile(io.BytesIO(data)) as z:
-    z.extractall(out_dir)
+with urllib.request.urlopen(req) as resp: data = resp.read()
+print('[INFO] Extracting...')
+with zipfile.ZipFile(io.BytesIO(data)) as z: z.extractall(out_dir)
 print('[OK] Download complete.')
 " "$PLATFORM_URL" "$CLI_DIR/tools" || true
-
     if [ -f "$CLI_DIR/tools/platform-tools/adb" ]; then
         chmod +x "$CLI_DIR/tools/platform-tools/adb" 2>/dev/null || true
         export PATH="$CLI_DIR/tools/platform-tools:$PATH"
-        echo "[OK] ADB platform-tools installed successfully."
+        echo "[OK] ADB platform-tools installed."
     else
-        echo "[WARNING] Automatic ADB download failed. Please install ADB manually or put it on PATH."
+        echo "[WARNING] ADB download failed. Install ADB manually or put it on PATH."
     fi
-else
-    echo "[OK] ADB runtime detected."
+fi
+
+echo "AI-Phone-Debloater v$APP_VERSION"
+
+MODE="${1:-}"
+if [ "$MODE" = "dump-rules" ]; then
+    mkdir -p scans
+    read -rp "Enter device model (e.g. pixel7a, xiaomi_note10): " MODEL
+    if [ -z "$MODEL" ]; then echo "ERROR: Model required."; exit 1; fi
+    read -rp "Enter manufacturer (Xiaomi, Samsung, OnePlus, etc.): " MFR
+    if [ -z "$MFR" ]; then echo "ERROR: Manufacturer required."; exit 1; fi
+    DUMP_FILE="scans/${MODEL}.txt"
+    echo "Dumping User 0 packages to $DUMP_FILE ..."
+    adb shell pm list packages -U --user 0 > "$DUMP_FILE"
+    echo "Dump saved: $DUMP_FILE"
+    echo "Generating draft rules for $MFR ..."
+    "$PY" cli/tools/scan_to_rules.py --input "$DUMP_FILE" --manufacturer "$MFR" --output "cli/rules/${MODEL}.json" --drop-uncategorized
+    echo "Draft rule file: cli/rules/${MODEL}.json"
+    echo "Running validation ..."
+    "$PY" cli/tests/validate_rules.py
+    echo "Validation passed: Zero collisions."
+    echo "Syncing web dataset ..."
+    "$PY" cli/generate_rules_dataset.py
+    echo "Creating upload package ..."
+    if command -v zip >/dev/null 2>&1; then
+        zip -r "scans/${MODEL}-rules.zip" "scans/${MODEL}.txt" "cli/rules/${MODEL}.json"
+    else
+        "$PY" -c "import zipfile,sys; z=zipfile.ZipFile(sys.argv[1],'w'); [z.write(f) for f in sys.argv[2:]]" "scans/${MODEL}-rules.zip" "scans/${MODEL}.txt" "cli/rules/${MODEL}.json"
+    fi
+    echo "Upload package: scans/${MODEL}-rules.zip"
+    echo "Upload this zip to GitHub for review and dataset build."
+    exit 0
+elif [ "$MODE" = "apply-rules" ]; then
+    MANIFEST="${2:-}"
+    if [ -z "$MANIFEST" ]; then echo "ERROR: Usage: debloat.sh apply-rules <manifest.json> [output.json]"; exit 1; fi
+    if [ ! -f "$MANIFEST" ]; then echo "ERROR: Manifest not found: $MANIFEST"; exit 1; fi
+    OUTFILE="${3:-cli/rules/${MANIFEST}.json}"
+    echo "Applying manifest $MANIFEST ..."
+    "$PY" cli/tools/scan_to_rules.py --input "$MANIFEST" --manufacturer "auto" --apply-manifest "$MANIFEST" --output "$OUTFILE"
+    echo "Running validation ..."
+    "$PY" cli/tests/validate_rules.py
+    echo "Syncing web dataset ..."
+    "$PY" cli/generate_rules_dataset.py
+    echo "SUCCESS."
+    exit 0
 fi
 
 echo "Launching AI-Phone-Debloater v$APP_VERSION..."
-# When invoked through a pipe (e.g. `curl ... | bash`), stdin is the script
-# pipe, not a terminal. Redirect it back from the controlling tty so the
-# interactive menu works; if there is no tty the engine reports a clean
-# error instead of crashing on a missing ADB device.
 if [ "$#" -eq 0 ] && [ ! -t 0 ]; then
     if [ -r /dev/tty ] && [ -w /dev/tty ]; then
         exec "$PY" "$CLI_DIR/src/debloat_engine.py" --interactive </dev/tty

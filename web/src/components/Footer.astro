@@ -1,14 +1,9 @@
 ---
 // src/components/Footer.astro
-import { readFileSync } from 'node:fs';
+import { SITE_VERSION } from '../lib/version';
 
 const currentYear = new Date().getFullYear();
-let siteVersion = '1.1.0';
-try {
-  siteVersion = readFileSync(new URL('../../../VERSION', import.meta.url), 'utf8').trim() || '1.1.0';
-} catch {
-  // fallback
-}
+const siteVersion = SITE_VERSION;
 ---
 
 <footer

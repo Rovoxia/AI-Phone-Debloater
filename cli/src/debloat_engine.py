@@ -51,7 +51,7 @@ def load_version() -> str:
                     return val
             except (OSError, ValueError):
                 pass
-    return "1.1.0"
+    return "1.0.0"
 
 __version__ = load_version()
 
@@ -152,6 +152,8 @@ class Logger:
     def ok(self, msg):
         if not self.quiet: print(f"  {green('[OK]')} {msg}")
     def warn(self, msg):
+        if not self.quiet: print(f"  {yellow('[WARN]')} {msg}")
+    def warning(self, msg):
         if not self.quiet: print(f"  {yellow('[WARN]')} {msg}")
     def error(self, msg):
         print(f"  {red('[ERR]')} {msg}", file=sys.stderr)
@@ -264,13 +266,24 @@ class Adb:
         return base
 
     def _run(self, cmd, timeout=None):
-        self.logger.verbose_log("$ " + subprocess.list2cmdline([str(c) for c in cmd]))
-        rc, out, err = run_cmd(cmd, timeout=timeout or self.timeout)
+        # Flatten and ensure every token is a string so list2cmdline / subprocess never gets a nested list
+        flat_cmd = []
+        for item in cmd:
+            if isinstance(item, (list, tuple)):
+                flat_cmd.extend(str(x) for x in item)
+            else:
+                flat_cmd.append(str(item))
+        self.logger.verbose_log("$ " + subprocess.list2cmdline(flat_cmd))
+        rc, out, err = run_cmd(flat_cmd, timeout=timeout or self.timeout)
         if rc != 0: self.logger.verbose_log(f"exit {rc}: {(err or out).strip()[:300]}")
         return rc, out, err
 
-    def shell(self, command: str, timeout=None):
-        return self._run(self._base() + ["shell", command], timeout=timeout)
+    def shell(self, command, timeout=None):
+        if isinstance(command, (list, tuple)):
+            cmd = self._base() + ["shell"] + [str(c) for c in command]
+        else:
+            cmd = self._base() + ["shell", str(command)]
+        return self._run(cmd, timeout=timeout)
 
     def devices(self):
         # No "-s": listing must not depend on (or fail because of) the selected serial.
