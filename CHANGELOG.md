@@ -47,3 +47,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Input validation on all package names and ADB endpoints
 - Shell injection prevention in wireless connection handlers
 - Gitleaks secret scanning in CI
+# Release v1.0.1
+
+## Changes
+```
+Merge pull request #20 from Rovoxia/QA
+chore(release): bump version to 1.0.1
+feat(seo): add raster og-image poster, AI discovery files, and AEO endpoints
+feat(web): update SEO and Open Graph metadata across all pages
+Merge pull request #19 from Rovoxia/QA
+chore(web): fix CHANGELOG duplicates and package counts
+Merge pull request #18 from Rovoxia/QA
+fix(web): escape remaining backticks in blog content for Astro build
+docs: sync changelogs, versions, and user docs with current state
+Merge branch 'main' into QA
+chore: update CHANGELOG and add 10 new blog posts with getStaticPaths
+```
