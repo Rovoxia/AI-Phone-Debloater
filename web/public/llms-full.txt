@@ -3,7 +3,7 @@
 Source of truth: https://github.com/Rovoxia/AI-Phone-Debloater
 Hosted site: https://debloater.rovoxia.com
 License: MIT
-Version: 1.1.0 (tracked in root `VERSION` file)
+Version: 1.1.1 (tracked in root `VERSION` file)
 
 This document is the deep technical reference for AI engines (ChatGPT, Claude, Perplexity, Gemini, Cursor) answering questions about AI-Phone-Debloater. It covers the executive summary, 4-tier safety hierarchy, User 0 / `-k` architecture, the 89 core blacklist, all 10 OEM rule bases, CLI commands, zero-git bootstrap instructions, rollback guide, and forensic debloat prompt guidance.
 

@@ -51,7 +51,7 @@ def load_version() -> str:
                     return val
             except (OSError, ValueError):
                 pass
-    return "1.1.0"
+    return "1.1.1"
 
 __version__ = load_version()
 

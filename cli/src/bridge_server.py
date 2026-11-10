@@ -42,7 +42,7 @@ RULES_DIR = PROJECT_ROOT / "cli" / "rules"
 CRITICAL_FILE = RULES_DIR / "critical-do-not-touch.json"
 
 DEFAULT_PORT = 53123
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 TIMESTAMP_FORMAT = "%Y%m%d_%H%M%S"
 
 BACKUPS_DIR = Path.home() / "AiPhoneDebloater" / "backups"

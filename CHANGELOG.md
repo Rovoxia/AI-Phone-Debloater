@@ -4,6 +4,14 @@ All notable changes to AI-Phone-Debloater are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-11-10
+
+### Fixed
+
+- Robust compile-time version injection via Vite define (`__SITE_VERSION__`) in `astro.config.mjs`
+- Fixed stale `v1.0.0` header badge in Cloudflare Pages build sandbox caused by runtime relative path resolution
+- Added fallback resolution cascade for `VERSION` file and `package.json` across components (`Navbar`, `Footer`, `404`)
+
 ## [1.1.0] - 2026-11-10
 
 ### Added
