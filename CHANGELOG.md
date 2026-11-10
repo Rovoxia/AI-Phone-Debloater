@@ -6,11 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [1.1.1] - 2026-11-10
 
+### Added
+
+- Single-Source-of-Truth (SSOT) versioning architecture centered on root `VERSION`
+- Dedicated standard-library `cli/sync_version.py` utility synchronizing `package.json`, `version.json`, and `llms-full.txt`
+- Automatic version sync hooks in `cli/generate_rules_dataset.py`, `cli/tests/validate_rules.py`, and `web/astro.config.mjs`
+
+### Changed
+
+- Python CLI engine (`debloat_engine.py`) and Local ADB Bridge (`bridge_server.py`) resolve application version dynamically from root `VERSION`
+- Centralized web components (`Navbar`, `Footer`, `404`, `index.astro`) to consume `SITE_VERSION` from `web/src/lib/version.ts`
+
 ### Fixed
 
 - Robust compile-time version injection via Vite define (`__SITE_VERSION__`) in `astro.config.mjs`
 - Fixed stale `v1.0.0` header badge in Cloudflare Pages build sandbox caused by runtime relative path resolution
-- Added fallback resolution cascade for `VERSION` file and `package.json` across components (`Navbar`, `Footer`, `404`)
 
 ## [1.1.0] - 2026-11-10
 
