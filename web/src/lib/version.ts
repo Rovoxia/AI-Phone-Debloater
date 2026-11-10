@@ -1,13 +1,17 @@
 /**
  * Single Source of Truth Version Module
  * =====================================
- * Resolves application SemVer directly from web/package.json.
- * Changing version in package.json automatically propagates across
- * the entire site, components, and pages.
+ * Dynamically resolves application SemVer from root `VERSION` file,
+ * Vite compile-time definition (__SITE_VERSION__), or web/package.json.
  */
 import pkg from '../../package.json';
 
-export const SITE_VERSION: string = pkg.version || '1.1.1';
+declare const __SITE_VERSION__: string | undefined;
+
+export const SITE_VERSION: string =
+  typeof __SITE_VERSION__ !== 'undefined' && __SITE_VERSION__
+    ? __SITE_VERSION__
+    : pkg.version || '1.0.0';
 
 export function getVersion(): string {
   return SITE_VERSION;
