@@ -1181,6 +1181,8 @@ def build_parser():
     p.add_argument("--adb-path", help="Path to the adb executable (default: PATH, bundled platform-tools, $AI_PHONE_DEBLOATER_ADB_PATH)")
     p.add_argument("--yes", "-y", action="store_true", help="Do not ask for confirmation (required for --tier without a terminal)")
     p.add_argument("--restore", metavar="SNAPSHOT", help="Restore packages from a backup snapshot (file name, path or unique part of the name)")
+    p.add_argument("--bridge", action="store_true", help="Start local WebApp ADB bridge server on port 53123")
+    p.add_argument("--port", type=int, default=53123, help="Port for the bridge server (default: 53123)")
     return p
 
 def main(argv=None):
@@ -1192,9 +1194,17 @@ def main(argv=None):
         parser.error("--restore cannot be combined with --scan/--tier/--export-json")
     if args.action and not args.tier:
         parser.error("--action requires --tier")
-    has_action = bool(args.scan or args.tier or args.restore or export or args.diagnostics or args.qr_pair or args.switch_transport)
+    has_action = bool(args.scan or args.tier or args.restore or export or args.diagnostics or args.qr_pair or args.switch_transport or args.bridge)
     if not has_action and not args.interactive and not DebloatEngine._tty():
-        parser.error("no action given and stdin is not a terminal; use --scan, --tier N, --diagnostics, --qr-pair or --restore SNAPSHOT")
+        parser.error("no action given and stdin is not a terminal; use --scan, --tier N, --diagnostics, --qr-pair, --bridge or --restore SNAPSHOT")
+
+    if args.bridge:
+        try:
+            from .bridge_server import start_bridge
+        except ImportError:
+            from bridge_server import start_bridge
+        start_bridge(port=args.port)
+        return 0
 
     logger = Logger(args.quiet, args.verbose)
     try:

@@ -106,309 +106,1040 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
       })();
     </script>
   </head>
-  <body class="bg-[#f8f9fa] text-[#202124] dark:bg-[#121212] dark:text-[#e8eaed] antialiased min-h-screen transition-colors duration-150">
+  <body class="bg-[#f8f9fa] text-[#202124] dark:bg-[#121212] dark:text-[#e8eaed] antialiased min-h-screen transition-colors duration-150 pb-16">
 
     <Navbar />
 
-    <main class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10">
-      <section class="flex min-h-[70vh] flex-col items-center justify-center text-center">
-        <div class="mb-8 w-full max-w-md sm:max-w-lg" aria-hidden="true">
-          <svg class="build-scene mx-auto h-auto w-full" viewBox="0 0 420 280" fill="none" xmlns="http://www.w3.org/2000/svg" role="img">
-            <title>A workspace being assembled</title>
+    <main class="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <header class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Rootless · User 0 · 89 packages locked</p>
+          <h1 class="mt-1 text-2xl font-semibold tracking-tight text-slate-900 dark:text-white sm:text-3xl">WebApp Workspace</h1>
+          <p class="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
+            Audit installed packages against the curated rule set, simulate removals, then freeze or uninstall only what is safe. Tier 4 core OS packages stay locked.
+          </p>
+        </div>
+        <div id="header-actions" class="flex flex-wrap gap-2">
+          <button type="button" data-open-snapshots class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-[#181c24] dark:text-slate-200 dark:hover:bg-slate-800">
+            Snapshots
+          </button>
+          <button type="button" id="btn-disconnect" hidden class="inline-flex items-center rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50 dark:border-rose-900/60 dark:bg-[#181c24] dark:text-rose-300 dark:hover:bg-rose-950/40">
+            Disconnect
+          </button>
+        </div>
+      </header>
 
-            {/* Ground line */}
-            <line class="ground" x1="48" y1="248" x2="372" y2="248" />
+      <!-- Connection -->
+      <section id="connect-panel" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-[#181c24] sm:p-6">
+        <div class="grid gap-4 lg:grid-cols-2">
+          <div class="rounded-xl border border-slate-200 p-4 dark:border-slate-800 dark:bg-[#10141e]">
+            <div class="flex items-center justify-between gap-2">
+              <h2 class="text-sm font-semibold text-slate-900 dark:text-white">Direct WebUSB</h2>
+              <span id="webusb-badge" class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">Checking…</span>
+            </div>
+            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
+              Chrome, Edge, Brave, or Opera. Plug the phone in over USB, accept the RSA fingerprint on the device, then pick it in the browser dialog.
+            </p>
+            <button type="button" id="btn-webusb" class="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
+              Connect via WebUSB
+            </button>
+          </div>
 
-            {/* Scaffold uprights and cross braces */}
-            <g class="scaffold">
-              <line x1="92" y1="248" x2="92" y2="36" />
-              <line x1="328" y1="248" x2="328" y2="36" />
-              <line x1="92" y1="92" x2="328" y2="92" />
-              <line x1="92" y1="168" x2="328" y2="168" />
-              <line x1="92" y1="168" x2="210" y2="92" />
-              <line x1="210" y1="168" x2="328" y2="92" />
-            </g>
-
-            {/* Crane boom swinging a UI block into place */}
-            <g class="crane">
-              <line x1="328" y1="36" x2="368" y2="36" />
-              <line class="cable" x1="358" y1="36" x2="358" y2="78" />
-              <rect class="hook-block" x="340" y="78" width="36" height="22" rx="4" />
-            </g>
-
-            {/* Phone frame that the workspace is built inside */}
-            <g class="phone">
-              <rect x="128" y="48" width="164" height="200" rx="18" />
-              <rect x="188" y="58" width="44" height="6" rx="3" />
-            </g>
-
-            {/* UI pieces sliding into the screen */}
-            <g class="ui">
-              <rect class="piece piece-sidebar" x="140" y="76" width="36" height="156" rx="6" />
-              <rect class="piece piece-header" x="184" y="76" width="96" height="22" rx="5" />
-              <rect class="piece piece-card-a" x="184" y="108" width="44" height="52" rx="5" />
-              <rect class="piece piece-card-b" x="236" y="108" width="44" height="52" rx="5" />
-              <rect class="piece piece-row-a" x="184" y="170" width="96" height="14" rx="4" />
-              <rect class="piece piece-row-b" x="184" y="192" width="72" height="14" rx="4" />
-              <rect class="piece piece-row-c" x="184" y="214" width="84" height="10" rx="4" />
-            </g>
-
-            {/* Spark that lands once the last piece is in */}
-            <circle class="spark" cx="280" cy="87" r="3" />
-          </svg>
+          <div class="rounded-xl border border-slate-200 p-4 dark:border-slate-800 dark:bg-[#10141e]">
+            <div class="flex items-center justify-between gap-2">
+              <h2 class="text-sm font-semibold text-slate-900 dark:text-white">1-Click Local Bridge</h2>
+              <span id="bridge-badge" class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">127.0.0.1:53123</span>
+            </div>
+            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
+              Works in every browser, including Firefox. The bridge talks to the official ADB on your machine and never leaves localhost.
+            </p>
+            <div class="mt-3 space-y-2">
+              <label class="block text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Windows PowerShell</label>
+              <div class="flex gap-2">
+                <code class="min-w-0 flex-1 truncate rounded-lg bg-slate-100 px-3 py-2 font-mono text-xs text-slate-800 dark:bg-[#0b0f17] dark:text-emerald-300" id="cmd-ps1">irm https://debloater.rovoxia.com/bridge.ps1 | iex</code>
+                <button type="button" data-copy="cmd-ps1" class="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-[#181c24] dark:text-slate-200">Copy</button>
+              </div>
+              <label class="block text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">macOS / Linux</label>
+              <div class="flex gap-2">
+                <code class="min-w-0 flex-1 truncate rounded-lg bg-slate-100 px-3 py-2 font-mono text-xs text-slate-800 dark:bg-[#0b0f17] dark:text-emerald-300" id="cmd-sh">curl -sSL https://debloater.rovoxia.com/bridge.sh | bash</code>
+                <button type="button" data-copy="cmd-sh" class="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-[#181c24] dark:text-slate-200">Copy</button>
+              </div>
+            </div>
+            <button type="button" id="btn-bridge" class="mt-4 inline-flex w-full items-center justify-center rounded-lg border border-emerald-600 px-4 py-2.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950/40 sm:w-auto">
+              Connect to Local Bridge
+            </button>
+          </div>
         </div>
 
-        <span class="inline-flex items-center rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-violet-700 dark:text-violet-300">
-          Upcoming
-        </span>
+        <details class="mt-4 rounded-xl border border-slate-200 dark:border-slate-800">
+          <summary class="cursor-pointer select-none px-4 py-3 text-sm font-medium text-slate-800 dark:text-slate-200">USB debugging setup</summary>
+          <ol class="list-decimal space-y-1 px-8 pb-4 text-sm text-slate-600 dark:text-slate-400">
+            <li>Open Settings, then About phone, and tap Build number seven times to unlock Developer options.</li>
+            <li>Open Developer options and turn on USB debugging. On Android 11+ also turn on Wireless debugging if you pair over Wi-Fi.</li>
+            <li>Connect the cable (or pair wirelessly) and tap Allow on the RSA fingerprint prompt. Check “Always allow” only on a computer you trust.</li>
+            <li>On Linux, if the device never appears, install the platform-tools udev rules and replug the cable.</li>
+            <li>WebUSB needs Chromium. Firefox and Safari should use the local bridge above.</li>
+          </ol>
+        </details>
+        <p id="connect-error" class="mt-3 hidden text-sm text-rose-600 dark:text-rose-400" role="alert"></p>
+      </section>
 
-        <h1 class="mt-5 text-2xl font-normal tracking-tight text-slate-900 dark:text-white sm:text-3xl">
-          WebApp Workspace — Coming Soon
-        </h1>
+      <!-- Device -->
+      <section id="device-card" hidden class="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-[#181c24] sm:p-5">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 id="dev-model" class="text-lg font-semibold text-slate-900 dark:text-white">Device</h2>
+              <span id="dev-conn" class="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300"></span>
+            </div>
+            <p id="dev-meta" class="mt-1 font-mono text-xs text-slate-500 dark:text-slate-400"></p>
+          </div>
+          <dl class="grid grid-cols-3 gap-3 text-center sm:text-right">
+            <div>
+              <dt class="text-[11px] uppercase tracking-wide text-slate-500">Packages</dt>
+              <dd id="stat-total" class="text-lg font-semibold text-slate-900 dark:text-white">0</dd>
+            </div>
+            <div>
+              <dt class="text-[11px] uppercase tracking-wide text-slate-500">Disabled</dt>
+              <dd id="stat-disabled" class="text-lg font-semibold text-amber-600 dark:text-amber-400">0</dd>
+            </div>
+            <div>
+              <dt class="text-[11px] uppercase tracking-wide text-slate-500">Selected</dt>
+              <dd id="stat-selected" class="text-lg font-semibold text-emerald-600 dark:text-emerald-400">0</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
 
-        <p class="mt-3 max-w-xl text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-          We're building something powerful. The visual WebApp workspace is under active construction and will be available soon.
-        </p>
+      <!-- Filters + table -->
+      <section id="workspace" hidden class="mt-4">
+        <div class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-[#181c24] sm:p-4">
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <label class="relative min-w-0 flex-1">
+              <span class="sr-only">Search packages</span>
+              <input id="search" type="search" placeholder="Search package, title, OEM, or category" class="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-3 pr-3 text-sm text-slate-900 outline-none ring-emerald-500/40 placeholder:text-slate-400 focus:ring-2 dark:border-slate-700 dark:bg-[#10141e] dark:text-slate-100" />
+            </label>
+            <label class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+              <span class="shrink-0">OEM</span>
+              <select id="filter-oem" class="rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm dark:border-slate-700 dark:bg-[#10141e] dark:text-slate-100"></select>
+            </label>
+            <label class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+              <span class="shrink-0">Status</span>
+              <select id="filter-status" class="rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm dark:border-slate-700 dark:bg-[#10141e] dark:text-slate-100">
+                <option value="all">All</option>
+                <option value="installed">Installed</option>
+                <option value="disabled">Disabled</option>
+              </select>
+            </label>
+          </div>
 
-        <div class="mt-8 flex flex-col items-center gap-3 sm:flex-row">
-          <a
-            href="/#cli"
-            class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700"
-          >
-            <span>&larr; Use the CLI instead</span>
-          </a>
-          <a
-            href="https://github.com/Rovoxia/AI-Phone-Debloater"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-[#181c24] dark:text-slate-300 dark:hover:bg-slate-800"
-          >
-            Watch on GitHub
-          </a>
+          <div class="mt-3 flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label="Package tiers">
+            <button type="button" data-tier="all" class="tier-tab shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold">All packages</button>
+            <button type="button" data-tier="1" class="tier-tab shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold">Tier 1 · Safe</button>
+            <button type="button" data-tier="2" class="tier-tab shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold">Tier 2 · Caution</button>
+            <button type="button" data-tier="3" class="tier-tab shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold">Tier 3 · Advanced</button>
+            <button type="button" data-tier="4" class="tier-tab shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold">Tier 4 · Locked (89)</button>
+            <button type="button" data-tier="0" class="tier-tab shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold">Unclassified</button>
+          </div>
+
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <button type="button" id="btn-select-tier1" class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">Select all Tier 1 (safe)</button>
+            <button type="button" id="btn-deselect" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-[#10141e] dark:text-slate-200">Deselect all</button>
+            <span id="visible-count" class="ml-auto text-xs text-slate-500"></span>
+          </div>
+        </div>
+
+        <div class="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#181c24]">
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[760px] border-collapse text-left text-sm">
+              <thead class="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500 dark:bg-[#10141e] dark:text-slate-400">
+                <tr>
+                  <th class="w-10 px-3 py-2 font-medium"><span class="sr-only">Select</span></th>
+                  <th class="px-3 py-2 font-medium">Tier</th>
+                  <th class="px-3 py-2 font-medium">Package</th>
+                  <th class="px-3 py-2 font-medium">Category</th>
+                  <th class="px-3 py-2 font-medium">Status</th>
+                  <th class="px-3 py-2 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="pkg-body"></tbody>
+            </table>
+          </div>
+          <div id="empty-state" hidden class="px-4 py-10 text-center text-sm text-slate-500">No packages match these filters.</div>
+          <div class="flex items-center justify-between border-t border-slate-200 px-3 py-2 text-xs text-slate-500 dark:border-slate-800">
+            <button type="button" id="page-prev" class="rounded-md border border-slate-200 px-2 py-1 dark:border-slate-700 disabled:opacity-40">Previous</button>
+            <span id="page-label"></span>
+            <button type="button" id="page-next" class="rounded-md border border-slate-200 px-2 py-1 dark:border-slate-700 disabled:opacity-40">Next</button>
+          </div>
         </div>
       </section>
     </main>
 
     <Footer />
+
+    <!-- Batch bar -->
+    <div id="batch-bar" hidden class="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-3 py-2 backdrop-blur dark:border-slate-800 dark:bg-[#10141e]/95">
+      <div class="mx-auto flex max-w-[1440px] flex-col gap-2 sm:flex-row sm:items-center">
+        <label class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+          Action
+          <select id="batch-action" class="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-[#181c24] dark:text-slate-100">
+            <option value="disable">Freeze · pm disable-user --user 0</option>
+            <option value="uninstall">Uninstall · pm uninstall -k --user 0</option>
+            <option value="enable">Restore · pm enable / install-existing</option>
+          </select>
+        </label>
+        <div class="flex items-center gap-2 text-xs" role="group" aria-label="Execution mode">
+          <button type="button" data-mode="dry-run" class="mode-btn rounded-lg px-3 py-1.5 font-semibold">Dry-run</button>
+          <button type="button" data-mode="apply" class="mode-btn rounded-lg px-3 py-1.5 font-semibold">Live</button>
+        </div>
+        <button type="button" id="btn-execute" class="sm:ml-auto inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
+          Run dry-run · 0 packages
+        </button>
+      </div>
+    </div>
+
+    <!-- Terminal drawer -->
+    <aside id="terminal" class="fixed bottom-0 right-0 z-40 flex w-full max-w-md translate-y-[calc(100%-2.5rem)] flex-col border-l border-t border-slate-800 bg-[#0b0f17] text-slate-200 shadow-2xl transition-transform duration-200 sm:bottom-14 sm:rounded-tl-xl" style="height: min(50vh, 420px);">
+      <div class="flex h-10 shrink-0 items-center gap-2 border-b border-slate-800 px-3">
+        <button type="button" id="term-toggle" class="text-xs font-semibold uppercase tracking-wide text-slate-300" aria-expanded="false">Terminal</button>
+        <span id="term-count" class="text-[11px] text-slate-500"></span>
+        <button type="button" id="term-copy" class="ml-auto text-[11px] font-medium text-slate-400 hover:text-white">Copy</button>
+        <button type="button" id="term-clear" class="text-[11px] font-medium text-slate-400 hover:text-white">Clear</button>
+      </div>
+      <pre id="term-log" class="min-h-0 flex-1 overflow-auto whitespace-pre-wrap break-all p-3 font-mono text-[11px] leading-relaxed"></pre>
+    </aside>
+
+    <!-- Confirm modal -->
+    <div id="modal-confirm" hidden class="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+      <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-800 dark:bg-[#181c24]">
+        <h2 id="confirm-title" class="text-base font-semibold text-slate-900 dark:text-white">Apply live changes?</h2>
+        <p id="confirm-body" class="mt-2 text-sm text-slate-600 dark:text-slate-300"></p>
+        <p class="mt-2 text-xs text-slate-500">A snapshot is saved to this browser before anything runs. Uninstall keeps app data (<span class="font-mono">-k</span>). Tier 4 packages are rejected even if they were selected.</p>
+        <div class="mt-4 flex justify-end gap-2">
+          <button type="button" id="confirm-cancel" class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium dark:border-slate-700">Cancel</button>
+          <button type="button" id="confirm-ok" class="rounded-lg bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-700">Apply live</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Snapshots modal -->
+    <div id="modal-snaps" hidden class="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="snaps-title">
+      <div class="flex max-h-[85vh] w-full max-w-2xl flex-col rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-[#181c24]">
+        <div class="flex items-center gap-2 border-b border-slate-200 px-5 py-3 dark:border-slate-800">
+          <h2 id="snaps-title" class="text-base font-semibold text-slate-900 dark:text-white">Snapshots &amp; rollback</h2>
+          <button type="button" id="snaps-close" class="ml-auto text-sm text-slate-500 hover:text-slate-900 dark:hover:text-white">Close</button>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 border-b border-slate-200 px-5 py-3 dark:border-slate-800">
+          <label class="inline-flex cursor-pointer items-center rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200">
+            Import JSON
+            <input id="snap-import" type="file" accept="application/json,.json" class="sr-only" />
+          </label>
+          <p class="text-xs text-slate-500">Restore reinstalls listed packages for user 0, then re-enables them. Critical packages are skipped.</p>
+        </div>
+        <ul id="snap-list" class="min-h-0 flex-1 space-y-2 overflow-auto px-5 py-3"></ul>
+      </div>
+    </div>
+
+    <script>
+      import {
+        WebAdbClient,
+        LocalBridgeClient,
+        CRITICAL_PACKAGES,
+        getLocalSnapshots,
+        saveLocalSnapshot,
+        deleteLocalSnapshot,
+        exportSnapshotFile,
+        type DebloatSnapshot,
+        type DeviceInfo,
+        type ExecutionResult,
+      } from '../lib/webadb';
+      import rulesData from '../data/rules-dataset.json';
+
+      type Action = 'disable' | 'uninstall' | 'enable';
+      type Mode = 'dry-run' | 'apply';
+      type LogLevel = 'INFO' | 'EXEC' | 'DRY-RUN' | 'BLOCKED' | 'ERROR';
+
+      interface RuleMeta {
+        package: string;
+        name: string;
+        brand: string;
+        tier: number;
+        category: string;
+        description: string;
+      }
+
+      interface Row {
+        pkg: string;
+        name: string;
+        brand: string;
+        tier: number;
+        category: string;
+        description: string;
+        disabled: boolean;
+        locked: boolean;
+      }
+
+      const PAGE_SIZE = 60;
+      const PS1 = 'irm https://debloater.rovoxia.com/bridge.ps1 | iex';
+      const SH = 'curl -sSL https://debloater.rovoxia.com/bridge.sh | bash';
+
+      const rules = rulesData.rules as RuleMeta[];
+      const ruleByPkg = new Map<string, RuleMeta>();
+      for (const rule of rules) ruleByPkg.set(rule.package, rule);
+
+      const webadb = new WebAdbClient();
+      const bridge = new LocalBridgeClient();
+
+      let transport: 'webusb' | 'bridge' | null = null;
+      let device: DeviceInfo | null = null;
+      let rows: Row[] = [];
+      const selected = new Set<string>();
+      let tierFilter: 'all' | '0' | '1' | '2' | '3' | '4' = 'all';
+      let page = 0;
+      let mode: Mode = 'dry-run';
+      let busy = false;
+      const logs: string[] = [];
+
+      const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+
+      function log(level: LogLevel, message: string) {
+        const stamp = new Date().toISOString().slice(11, 19);
+        const line = `[${stamp}] [${level}] ${message}`;
+        logs.push(line);
+        if (logs.length > 800) logs.splice(0, logs.length - 800);
+        const pre = $('term-log');
+        const span = document.createElement('div');
+        span.dataset.level = level;
+        span.textContent = line;
+        pre.appendChild(span);
+        pre.scrollTop = pre.scrollHeight;
+        $('term-count').textContent = `${logs.length} lines`;
+      }
+
+      function setError(message: string) {
+        const el = $('connect-error');
+        el.textContent = message;
+        el.classList.toggle('hidden', !message);
+      }
+
+      function tierLabel(tier: number): string {
+        if (tier === 1) return 'T1';
+        if (tier === 2) return 'T2';
+        if (tier === 3) return 'T3';
+        if (tier === 4) return 'T4';
+        return '—';
+      }
+
+      function isLocked(pkg: string, tier: number): boolean {
+        return tier === 4 || CRITICAL_PACKAGES.has(pkg);
+      }
+
+      function commandFor(action: Action, pkg: string): string {
+        if (action === 'disable') return `pm disable-user --user 0 ${pkg}`;
+        if (action === 'uninstall') return `pm uninstall -k --user 0 ${pkg}`;
+        return `pm enable --user 0 ${pkg}`;
+      }
+
+      function filtered(): Row[] {
+        const q = ($('search') as HTMLInputElement).value.trim().toLowerCase();
+        const oem = ($('filter-oem') as HTMLSelectElement).value;
+        const status = ($('filter-status') as HTMLSelectElement).value;
+        return rows.filter((row) => {
+          if (tierFilter !== 'all' && String(row.tier) !== tierFilter) return false;
+          if (oem !== 'all' && row.brand !== oem) return false;
+          if (status === 'disabled' && !row.disabled) return false;
+          if (status === 'installed' && row.disabled) return false;
+          if (!q) return true;
+          return (
+            row.pkg.toLowerCase().includes(q) ||
+            row.name.toLowerCase().includes(q) ||
+            row.brand.toLowerCase().includes(q) ||
+            row.category.toLowerCase().includes(q) ||
+            row.description.toLowerCase().includes(q)
+          );
+        });
+      }
+
+      function updateCounts() {
+        $('stat-selected').textContent = String(selected.size);
+        const actionable = [...selected].filter((pkg) => !CRITICAL_PACKAGES.has(pkg)).length;
+        const verb = mode === 'dry-run' ? 'Run dry-run' : 'Execute live';
+        $('btn-execute').textContent = `${verb} · ${actionable} package${actionable === 1 ? '' : 's'}`;
+        ($('btn-execute') as HTMLButtonElement).disabled = actionable === 0 || busy;
+      }
+
+      function paintMode() {
+        document.querySelectorAll<HTMLButtonElement>('.mode-btn').forEach((btn) => {
+          const on = btn.dataset.mode === mode;
+          btn.classList.toggle('is-on', on);
+          btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        updateCounts();
+      }
+
+      function paintTabs() {
+        document.querySelectorAll<HTMLButtonElement>('.tier-tab').forEach((btn) => {
+          btn.classList.toggle('is-on', btn.dataset.tier === tierFilter);
+        });
+      }
+
+      function renderTable() {
+        const list = filtered();
+        const pages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+        if (page >= pages) page = pages - 1;
+        const slice = list.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+        const body = $('pkg-body');
+        body.replaceChildren();
+        $('empty-state').hidden = list.length > 0;
+        $('visible-count').textContent = `${list.length} shown`;
+        $('page-label').textContent = list.length ? `${page + 1} / ${pages}` : '0 / 0';
+        ($('page-prev') as HTMLButtonElement).disabled = page === 0;
+        ($('page-next') as HTMLButtonElement).disabled = page >= pages - 1;
+
+        for (const row of slice) {
+          const tr = document.createElement('tr');
+          tr.className = 'border-t border-slate-100 align-top dark:border-slate-800/80';
+
+          const tdCheck = document.createElement('td');
+          tdCheck.className = 'px-3 py-2';
+          const box = document.createElement('input');
+          box.type = 'checkbox';
+          box.className = 'mt-1 h-4 w-4 accent-emerald-600';
+          box.checked = selected.has(row.pkg);
+          box.disabled = row.locked;
+          box.title = row.locked ? 'Tier 4 critical package — locked' : 'Select package';
+          box.addEventListener('change', () => {
+            if (row.locked || CRITICAL_PACKAGES.has(row.pkg)) {
+              box.checked = false;
+              selected.delete(row.pkg);
+              log('BLOCKED', `${row.pkg} is a Tier 4 critical package and cannot be selected.`);
+              return;
+            }
+            if (box.checked) selected.add(row.pkg);
+            else selected.delete(row.pkg);
+            updateCounts();
+          });
+          tdCheck.appendChild(box);
+
+          const tdTier = document.createElement('td');
+          tdTier.className = 'px-3 py-2';
+          const badge = document.createElement('span');
+          badge.className = `tier-badge tier-${row.tier || 0}`;
+          badge.textContent = row.locked ? `🔒 ${tierLabel(row.tier)}` : tierLabel(row.tier);
+          tdTier.appendChild(badge);
+
+          const tdPkg = document.createElement('td');
+          tdPkg.className = 'px-3 py-2';
+          const name = document.createElement('button');
+          name.type = 'button';
+          name.className = 'block max-w-[28rem] truncate text-left font-mono text-xs text-slate-900 hover:text-emerald-700 dark:text-slate-100 dark:hover:text-emerald-300';
+          name.textContent = row.pkg;
+          name.title = 'Copy package name';
+          name.addEventListener('click', async () => {
+            try {
+              await navigator.clipboard.writeText(row.pkg);
+              log('INFO', `Copied ${row.pkg}`);
+            } catch {
+              log('ERROR', 'Clipboard write was blocked by the browser.');
+            }
+          });
+          const friendly = document.createElement('div');
+          friendly.className = 'mt-0.5 text-xs font-medium text-slate-700 dark:text-slate-300';
+          friendly.textContent = row.name || 'Unclassified user app';
+          const desc = document.createElement('div');
+          desc.className = 'mt-0.5 max-w-xl text-xs text-slate-500 dark:text-slate-400';
+          desc.textContent = row.description || 'No curated rule. Treat as a user or OEM app and review before removing.';
+          tdPkg.append(name, friendly, desc);
+
+          const tdCat = document.createElement('td');
+          tdCat.className = 'px-3 py-2';
+          const cat = document.createElement('div');
+          cat.className = 'text-xs text-slate-600 dark:text-slate-300';
+          cat.textContent = row.category ? row.category.replaceAll('_', ' ') : 'unclassified';
+          const oem = document.createElement('div');
+          oem.className = 'mt-1 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300';
+          oem.textContent = row.brand || 'Unknown';
+          tdCat.append(cat, oem);
+
+          const tdStatus = document.createElement('td');
+          tdStatus.className = 'px-3 py-2';
+          const status = document.createElement('span');
+          status.className = row.disabled
+            ? 'rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-300'
+            : 'rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300';
+          status.textContent = row.disabled ? 'Disabled' : 'Installed';
+          tdStatus.appendChild(status);
+
+          const tdAct = document.createElement('td');
+          tdAct.className = 'px-3 py-2';
+          const wrap = document.createElement('div');
+          wrap.className = 'flex flex-wrap gap-1';
+          for (const action of ['disable', 'uninstall', 'enable'] as Action[]) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'rounded-md border border-slate-200 px-2 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800';
+            btn.textContent = action === 'disable' ? 'Freeze' : action === 'uninstall' ? 'Uninstall' : 'Restore';
+            const destructive = action !== 'enable';
+            btn.disabled = row.locked && destructive;
+            btn.title = btn.disabled ? 'Locked critical package' : commandFor(action, row.pkg);
+            btn.addEventListener('click', () => runPackages([row.pkg], action, mode));
+            wrap.appendChild(btn);
+          }
+          tdAct.appendChild(wrap);
+          tr.append(tdCheck, tdTier, tdPkg, tdCat, tdStatus, tdAct);
+          body.appendChild(tr);
+        }
+      }
+
+      function showWorkspace() {
+        $('connect-panel').hidden = true;
+        $('device-card').hidden = false;
+        $('workspace').hidden = false;
+        $('batch-bar').hidden = false;
+        $('btn-disconnect').hidden = false;
+        if (!device) return;
+        $('dev-model').textContent = `${device.manufacturer} ${device.model}`.trim();
+        $('dev-conn').textContent = device.connectionType === 'webusb' ? 'WebUSB' : 'Local bridge';
+        $('dev-meta').textContent = `serial ${device.serial} · Android ${device.androidVersion}${device.sdkVersion ? ` (SDK ${device.sdkVersion})` : ''}`;
+        $('stat-total').textContent = String(rows.length);
+        $('stat-disabled').textContent = String(rows.filter((r) => r.disabled).length);
+        updateCounts();
+        renderTable();
+      }
+
+      function resetWorkspace() {
+        transport = null;
+        device = null;
+        rows = [];
+        selected.clear();
+        $('connect-panel').hidden = false;
+        $('device-card').hidden = true;
+        $('workspace').hidden = true;
+        $('batch-bar').hidden = true;
+        $('btn-disconnect').hidden = true;
+      }
+
+      function buildRows(packages: string[], disabled: string[]): Row[] {
+        const disabledSet = new Set(disabled);
+        const seen = new Set<string>();
+        const built: Row[] = [];
+        for (const pkg of packages) {
+          if (!/^[a-zA-Z0-9._]+$/.test(pkg) || seen.has(pkg)) continue;
+          seen.add(pkg);
+          const rule = ruleByPkg.get(pkg);
+          const tier = CRITICAL_PACKAGES.has(pkg) ? 4 : rule?.tier ?? 0;
+          built.push({
+            pkg,
+            name: rule?.name ?? '',
+            brand: rule?.brand ?? '',
+            tier,
+            category: rule?.category ?? '',
+            description: rule?.description ?? '',
+            disabled: disabledSet.has(pkg),
+            locked: isLocked(pkg, tier),
+          });
+        }
+        built.sort((a, b) => a.tier - b.tier || a.pkg.localeCompare(b.pkg));
+        return built;
+      }
+
+      async function connectWebUsb() {
+        setError('');
+        if (!WebAdbClient.isSupported()) {
+          setError('This browser has no WebUSB. Use Chrome, Edge, Brave, or Opera — or the local bridge.');
+          return;
+        }
+        try {
+          log('INFO', 'Opening the WebUSB device picker.');
+          device = await webadb.connect();
+          transport = 'webusb';
+          log('INFO', `Authenticated ${device.model} (${device.serial}).`);
+          const [packages, disabled] = await Promise.all([
+            webadb.listPackages(),
+            webadb.listDisabledPackages(),
+          ]);
+          rows = buildRows(packages, disabled);
+          log('INFO', `Loaded ${rows.length} packages, ${disabled.length} disabled.`);
+          showWorkspace();
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          setError(message);
+          log('ERROR', message);
+        }
+      }
+
+      async function connectBridge() {
+        setError('');
+        log('INFO', 'Checking local bridge at http://127.0.0.1:53123/health');
+        const health = await bridge.checkHealth();
+        if (!health.ok) {
+          const message = 'Local bridge is not running. Paste the one-click command for your OS, then try again.';
+          setError(message);
+          log('ERROR', message);
+          return;
+        }
+        if (health.adbAvailable === false) {
+          log('ERROR', 'Bridge is up but adb was not found on this machine.');
+        }
+        let devices: Array<{ serial: string; model: string; state: string }>;
+        try {
+          devices = await bridge.getDevices();
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          setError(message);
+          log('ERROR', message);
+          return;
+        }
+        const online = devices.filter((d) => d.state === 'device');
+        if (online.length === 0) {
+          const message = devices.length
+            ? 'A device is listed but not authorized. Accept the USB debugging prompt, then reconnect.'
+            : 'No device is attached. Enable USB debugging and replug the cable.';
+          setError(message);
+          log('ERROR', message);
+          return;
+        }
+        const picked = online[0];
+        const props = await bridge.getDeviceProps(picked.serial);
+        device = {
+          serial: picked.serial,
+          manufacturer: props.manufacturer || 'Android',
+          model: props.model || picked.model || 'Device',
+          androidVersion: props.androidVersion || 'Unknown',
+          sdkVersion: props.sdkVersion || '',
+          connectionType: 'bridge',
+        };
+        transport = 'bridge';
+        log('INFO', `Bridge connected to ${device.model} (${device.serial}).`);
+        try {
+          const [packages, disabled] = await Promise.all([
+            bridge.listPackages(device.serial),
+            bridge.listDisabledPackages(device.serial),
+          ]);
+          rows = buildRows(packages, disabled);
+          log('INFO', `Loaded ${rows.length} packages, ${disabled.length} reported disabled.`);
+          showWorkspace();
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          setError(message);
+          log('ERROR', message);
+          resetWorkspace();
+        }
+      }
+
+      function makeSnapshot(action: Action, runMode: Mode, packages: string[]): DebloatSnapshot {
+        const stamp = new Date();
+        const id = `${stamp.getTime().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+        return {
+          id,
+          timestamp: stamp.toISOString().replace(/[:.]/g, '-'),
+          model: device?.model || 'unknown',
+          manufacturer: device?.manufacturer || '',
+          serial: device?.serial || '',
+          action,
+          mode: runMode,
+          packages,
+          disabledPackagesBefore: rows.filter((r) => r.disabled).map((r) => r.pkg),
+        };
+      }
+
+      function applyLocalStatus(results: ExecutionResult[], action: Action) {
+        const ok = new Set(results.filter((r) => r.status === 'success').map((r) => r.package));
+        for (const row of rows) {
+          if (!ok.has(row.pkg)) continue;
+          if (action === 'disable') row.disabled = true;
+          else if (action === 'enable') row.disabled = false;
+        }
+        $('stat-disabled').textContent = String(rows.filter((r) => r.disabled).length);
+      }
+
+      async function executeOnDevice(action: Action, runMode: Mode, packages: string[]): Promise<ExecutionResult[]> {
+        if (!device || !transport) throw new Error('Not connected.');
+        if (transport === 'webusb') {
+          const results: ExecutionResult[] = [];
+          for (const pkg of packages) {
+            const result = await webadb.execute(action, pkg, runMode);
+            results.push(result);
+          }
+          return results;
+        }
+        return bridge.execute(device.serial, runMode, action, packages);
+      }
+
+      async function runPackages(packages: string[], action: Action, runMode: Mode) {
+        if (busy || !device) return;
+        const unique = [...new Set(packages)].filter((pkg) => /^[a-zA-Z0-9._]+$/.test(pkg));
+        if (unique.length === 0) return;
+
+        const blocked = unique.filter((pkg) => CRITICAL_PACKAGES.has(pkg) && action !== 'enable');
+        const actionable = unique.filter((pkg) => !blocked.includes(pkg));
+        for (const pkg of blocked) {
+          log('BLOCKED', `${pkg} is an inviolable Tier 4 package. ${action} rejected.`);
+          selected.delete(pkg);
+        }
+        if (actionable.length === 0) {
+          updateCounts();
+          return;
+        }
+
+        if (runMode === 'apply') {
+          const snapshot = makeSnapshot(action, runMode, actionable);
+          saveLocalSnapshot(snapshot);
+          log('INFO', `Snapshot ${snapshot.id} saved locally before live ${action} of ${actionable.length} package(s).`);
+          if (transport === 'bridge') {
+            log('INFO', 'The local bridge also writes its own pre-mutation snapshot before apply.');
+          }
+        }
+
+        busy = true;
+        updateCounts();
+        const level: LogLevel = runMode === 'dry-run' ? 'DRY-RUN' : 'EXEC';
+        try {
+          for (const pkg of actionable) log(level, commandFor(action, pkg));
+          const results = await executeOnDevice(action, runMode, actionable);
+          for (const result of results) {
+            if (result.status === 'skipped_protected') log('BLOCKED', `${result.package}: ${result.output}`);
+            else if (result.status === 'failed') log('ERROR', `${result.package}: ${result.output || 'failed'}`);
+            else log(level, `${result.package}: ${result.output || 'ok'}`);
+          }
+          if (runMode === 'apply') {
+            applyLocalStatus(results, action);
+            const snaps = getLocalSnapshots();
+            if (snaps[0]) {
+              snaps[0].results = results;
+              saveLocalSnapshot(snaps[0]);
+            }
+            for (const pkg of actionable) {
+              if (results.some((r) => r.package === pkg && r.status === 'success')) selected.delete(pkg);
+            }
+          }
+          renderTable();
+        } catch (err) {
+          log('ERROR', err instanceof Error ? err.message : String(err));
+        } finally {
+          busy = false;
+          updateCounts();
+        }
+      }
+
+      function askConfirm(packages: string[], action: Action) {
+        const label = action === 'disable' ? 'freeze' : action === 'uninstall' ? 'uninstall (data kept)' : 'restore';
+        $('confirm-body').textContent = `This will ${label} ${packages.length} package${packages.length === 1 ? '' : 's'} on ${device?.model || 'the device'} for user 0.`;
+        $('modal-confirm').hidden = false;
+        const ok = $('confirm-ok');
+        const onOk = () => {
+          cleanup();
+          void runPackages(packages, action, 'apply');
+        };
+        const onCancel = () => cleanup();
+        function cleanup() {
+          $('modal-confirm').hidden = true;
+          ok.removeEventListener('click', onOk);
+          $('confirm-cancel').removeEventListener('click', onCancel);
+        }
+        ok.addEventListener('click', onOk);
+        $('confirm-cancel').addEventListener('click', onCancel);
+      }
+
+      function renderSnapshots() {
+        const list = $('snap-list');
+        list.replaceChildren();
+        const snaps = getLocalSnapshots();
+        if (snaps.length === 0) {
+          const empty = document.createElement('li');
+          empty.className = 'py-6 text-center text-sm text-slate-500';
+          empty.textContent = 'No snapshots yet. A snapshot is written automatically before every live change.';
+          list.appendChild(empty);
+          return;
+        }
+        for (const snap of snaps) {
+          const li = document.createElement('li');
+          li.className = 'rounded-xl border border-slate-200 p-3 dark:border-slate-800 dark:bg-[#10141e]';
+          const title = document.createElement('div');
+          title.className = 'text-sm font-medium text-slate-900 dark:text-white';
+          title.textContent = `${snap.manufacturer} ${snap.model}`.trim();
+          const meta = document.createElement('div');
+          meta.className = 'mt-0.5 font-mono text-[11px] text-slate-500';
+          meta.textContent = `${snap.timestamp} · ${snap.mode} ${snap.action} · ${snap.packages.length} packages · ${snap.serial}`;
+          const actions = document.createElement('div');
+          actions.className = 'mt-2 flex flex-wrap gap-2';
+
+          const restore = document.createElement('button');
+          restore.type = 'button';
+          restore.className = 'rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-40';
+          restore.textContent = 'Restore';
+          restore.disabled = !device;
+          restore.addEventListener('click', () => restoreSnapshot(snap));
+
+          const download = document.createElement('button');
+          download.type = 'button';
+          download.className = 'rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium dark:border-slate-700';
+          download.textContent = 'Download JSON';
+          download.addEventListener('click', () => exportSnapshotFile(snap));
+
+          const remove = document.createElement('button');
+          remove.type = 'button';
+          remove.className = 'rounded-lg px-2.5 py-1 text-xs font-medium text-rose-600';
+          remove.textContent = 'Delete';
+          remove.addEventListener('click', () => {
+            deleteLocalSnapshot(snap.id);
+            renderSnapshots();
+          });
+
+          actions.append(restore, download, remove);
+          li.append(title, meta, actions);
+          list.appendChild(li);
+        }
+      }
+
+      async function restoreSnapshot(snap: DebloatSnapshot) {
+        if (!device || busy) return;
+        const packages = snap.packages.filter((pkg) => /^[a-zA-Z0-9._]+$/.test(pkg) && !CRITICAL_PACKAGES.has(pkg));
+        const skipped = snap.packages.length - packages.length;
+        if (skipped > 0) log('BLOCKED', `Restore skipped ${skipped} critical or invalid package name(s).`);
+        if (packages.length === 0) return;
+        busy = true;
+        log('EXEC', `Restoring ${packages.length} package(s) from snapshot ${snap.id}.`);
+        try {
+          let results: ExecutionResult[];
+          if (transport === 'bridge') {
+            results = await bridge.restore(device.serial, packages);
+          } else {
+            results = [];
+            for (const pkg of packages) results.push(await webadb.execute('enable', pkg, 'apply'));
+          }
+          for (const result of results) {
+            const level: LogLevel = result.status === 'skipped_protected' ? 'BLOCKED' : result.status === 'failed' ? 'ERROR' : 'EXEC';
+            log(level, `${result.package}: ${result.output || result.status}`);
+          }
+          applyLocalStatus(results, 'enable');
+          renderTable();
+        } catch (err) {
+          log('ERROR', err instanceof Error ? err.message : String(err));
+        } finally {
+          busy = false;
+          updateCounts();
+        }
+      }
+
+      function fillOemFilter() {
+        const brands = [...new Set(rules.map((r) => r.brand).filter(Boolean))].sort();
+        const select = $('filter-oem') as HTMLSelectElement;
+        select.replaceChildren();
+        const all = document.createElement('option');
+        all.value = 'all';
+        all.textContent = 'All brands';
+        select.appendChild(all);
+        for (const brand of brands) {
+          const opt = document.createElement('option');
+          opt.value = brand;
+          opt.textContent = brand;
+          select.appendChild(opt);
+        }
+      }
+
+      function wire() {
+        fillOemFilter();
+        $('webusb-badge').textContent = WebAdbClient.isSupported() ? 'Supported' : 'Unavailable';
+        ($('btn-webusb') as HTMLButtonElement).disabled = !WebAdbClient.isSupported();
+
+        $('btn-webusb').addEventListener('click', () => void connectWebUsb());
+        $('btn-bridge').addEventListener('click', () => void connectBridge());
+        $('btn-disconnect').addEventListener('click', async () => {
+          if (transport === 'webusb') await webadb.disconnect();
+          log('INFO', 'Disconnected.');
+          resetWorkspace();
+        });
+
+        document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            const id = btn.dataset.copy || '';
+            const text = id === 'cmd-ps1' ? PS1 : SH;
+            try {
+              await navigator.clipboard.writeText(text);
+              btn.textContent = 'Copied';
+              setTimeout(() => { btn.textContent = 'Copy'; }, 1200);
+            } catch {
+              log('ERROR', 'Clipboard write was blocked by the browser.');
+            }
+          });
+        });
+
+        const rerender = () => { page = 0; renderTable(); };
+        $('search').addEventListener('input', rerender);
+        $('filter-oem').addEventListener('change', rerender);
+        $('filter-status').addEventListener('change', rerender);
+        document.querySelectorAll<HTMLButtonElement>('.tier-tab').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            tierFilter = (btn.dataset.tier as typeof tierFilter) || 'all';
+            paintTabs();
+            rerender();
+          });
+        });
+        $('page-prev').addEventListener('click', () => { page = Math.max(0, page - 1); renderTable(); });
+        $('page-next').addEventListener('click', () => { page += 1; renderTable(); });
+
+        $('btn-select-tier1').addEventListener('click', () => {
+          let added = 0;
+          for (const row of filtered()) {
+            if (row.tier !== 1 || row.locked || CRITICAL_PACKAGES.has(row.pkg)) continue;
+            if (!selected.has(row.pkg)) added += 1;
+            selected.add(row.pkg);
+          }
+          log('INFO', `Selected ${added} additional Tier 1 package(s) in the current view.`);
+          updateCounts();
+          renderTable();
+        });
+        $('btn-deselect').addEventListener('click', () => {
+          selected.clear();
+          updateCounts();
+          renderTable();
+        });
+
+        document.querySelectorAll<HTMLButtonElement>('.mode-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            mode = btn.dataset.mode === 'apply' ? 'apply' : 'dry-run';
+            paintMode();
+          });
+        });
+
+        $('btn-execute').addEventListener('click', () => {
+          const action = ($('batch-action') as HTMLSelectElement).value as Action;
+          const packages = [...selected];
+          if (mode === 'apply') askConfirm(packages, action);
+          else void runPackages(packages, action, 'dry-run');
+        });
+
+        $('modal-confirm').addEventListener('click', (event) => {
+          if (event.target === $('modal-confirm')) $('modal-confirm').hidden = true;
+        });
+
+        const openSnaps = () => { renderSnapshots(); $('modal-snaps').hidden = false; };
+        document.querySelectorAll('[data-open-snapshots]').forEach((btn) => btn.addEventListener('click', openSnaps));
+        $('snaps-close').addEventListener('click', () => { $('modal-snaps').hidden = true; });
+        $('modal-snaps').addEventListener('click', (event) => {
+          if (event.target === $('modal-snaps')) $('modal-snaps').hidden = true;
+        });
+
+        ($('snap-import') as HTMLInputElement).addEventListener('change', async (event) => {
+          const input = event.target as HTMLInputElement;
+          const file = input.files?.[0];
+          input.value = '';
+          if (!file) return;
+          try {
+            const parsed = JSON.parse(await file.text()) as Partial<DebloatSnapshot>;
+            if (!parsed || !Array.isArray(parsed.packages) || typeof parsed.serial !== 'string') {
+              throw new Error('File is not a debloater snapshot.');
+            }
+            const imported: DebloatSnapshot = {
+              id: `import-${Date.now().toString(36)}`,
+              timestamp: typeof parsed.timestamp === 'string' ? parsed.timestamp : new Date().toISOString(),
+              model: typeof parsed.model === 'string' ? parsed.model : 'imported',
+              manufacturer: typeof parsed.manufacturer === 'string' ? parsed.manufacturer : '',
+              serial: parsed.serial,
+              action: parsed.action === 'uninstall' || parsed.action === 'enable' ? parsed.action : 'disable',
+              mode: 'apply',
+              packages: parsed.packages.filter((pkg) => typeof pkg === 'string'),
+              disabledPackagesBefore: Array.isArray(parsed.disabledPackagesBefore) ? parsed.disabledPackagesBefore : [],
+            };
+            saveLocalSnapshot(imported);
+            log('INFO', `Imported snapshot with ${imported.packages.length} package(s).`);
+            renderSnapshots();
+          } catch (err) {
+            log('ERROR', err instanceof Error ? err.message : 'Could not import that file.');
+          }
+        });
+
+        let termOpen = false;
+        const setTerm = (open: boolean) => {
+          termOpen = open;
+          $('terminal').style.transform = open ? 'translateY(0)' : 'translateY(calc(100% - 2.5rem))';
+          $('term-toggle').setAttribute('aria-expanded', open ? 'true' : 'false');
+        };
+        $('term-toggle').addEventListener('click', () => setTerm(!termOpen));
+        $('term-clear').addEventListener('click', () => {
+          logs.length = 0;
+          $('term-log').replaceChildren();
+          $('term-count').textContent = '';
+        });
+        $('term-copy').addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(logs.join('\n'));
+          } catch {
+            log('ERROR', 'Clipboard write was blocked by the browser.');
+          }
+        });
+
+        paintTabs();
+        paintMode();
+        log('INFO', `Rule catalog ready: ${rulesData.stats.totalRules} rules, ${CRITICAL_PACKAGES.size} Tier 4 packages locked.`);
+        if (CRITICAL_PACKAGES.size !== 89) {
+          log('ERROR', `Expected 89 critical packages, found ${CRITICAL_PACKAGES.size}. Mutations stay blocked for every name in the set.`);
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('bridge') === '1') void connectBridge();
+      }
+
+      wire();
+    </script>
   </body>
 </html>
 
 <style>
-  .build-scene {
-    overflow: visible;
+  .tier-tab {
+    border: 1px solid rgb(226 232 240);
+    background: white;
+    color: rgb(71 85 105);
   }
-
-  .ground {
-    stroke: #94a3b8;
-    stroke-width: 2;
-    stroke-linecap: round;
-    opacity: 0.7;
+  :global(.dark) .tier-tab {
+    border-color: rgb(51 65 85);
+    background: #10141e;
+    color: rgb(203 213 225);
   }
-
-  :global(.dark) .ground {
-    stroke: #475569;
+  .tier-tab.is-on {
+    border-color: rgb(5 150 105);
+    background: rgb(5 150 105);
+    color: white;
   }
-
-  .scaffold line {
-    stroke: #a78bfa;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-dasharray: 260;
-    stroke-dashoffset: 260;
-    animation: draw 8s ease-in-out infinite;
+  .mode-btn {
+    border: 1px solid rgb(226 232 240);
+    color: rgb(71 85 105);
   }
-
-  :global(.dark) .scaffold line {
-    stroke: #8b5cf6;
+  :global(.dark) .mode-btn {
+    border-color: rgb(51 65 85);
+    color: rgb(203 213 225);
   }
-
-  .crane line {
-    stroke: #10b981;
-    stroke-width: 2.5;
-    stroke-linecap: round;
+  .mode-btn.is-on {
+    border-color: rgb(5 150 105);
+    background: rgb(16 185 129 / 0.15);
+    color: rgb(4 120 87);
   }
-
-  .crane {
-    transform-box: fill-box;
-    transform-origin: 0% 0%;
-    animation: swing 8s ease-in-out infinite;
+  :global(.dark) .mode-btn.is-on {
+    color: rgb(110 231 183);
   }
-
-  .cable {
-    stroke-dasharray: 42;
-    stroke-dashoffset: 42;
-    animation: drop 8s ease-in-out infinite;
+  .tier-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    padding: 0.1rem 0.45rem;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
   }
-
-  .hook-block {
-    fill: #10b981;
-    opacity: 0;
-    animation: carry 8s ease-in-out infinite;
-  }
-
-  .phone rect:first-child {
-    stroke: #64748b;
-    stroke-width: 2.5;
-    stroke-dasharray: 760;
-    stroke-dashoffset: 760;
-    animation: draw 8s ease-in-out infinite;
-  }
-
-  :global(.dark) .phone rect:first-child {
-    stroke: #94a3b8;
-  }
-
-  .phone rect:last-child {
-    fill: #94a3b8;
-    opacity: 0;
-    animation: fade-late 8s ease-in-out infinite;
-  }
-
-  .piece {
-    opacity: 0;
-  }
-
-  .piece-sidebar {
-    fill: #10b981;
-    animation: slide-left 8s ease-in-out infinite;
-  }
-
-  .piece-header {
-    fill: #8b5cf6;
-    animation: slide-down 8s ease-in-out infinite;
-  }
-
-  .piece-card-a,
-  .piece-card-b {
-    fill: #34d399;
-    opacity: 0.85;
-  }
-
-  .piece-card-a {
-    animation: slide-up 8s ease-in-out infinite;
-  }
-
-  .piece-card-b {
-    animation: slide-up 8s ease-in-out infinite;
-    animation-delay: 0.18s;
-  }
-
-  .piece-row-a,
-  .piece-row-b,
-  .piece-row-c {
-    fill: #c4b5fd;
-  }
-
-  :global(.dark) .piece-row-a,
-  :global(.dark) .piece-row-b,
-  :global(.dark) .piece-row-c {
-    fill: #6d28d9;
-  }
-
-  .piece-row-a {
-    animation: slide-right 8s ease-in-out infinite;
-  }
-
-  .piece-row-b {
-    animation: slide-right 8s ease-in-out infinite;
-    animation-delay: 0.15s;
-  }
-
-  .piece-row-c {
-    animation: slide-right 8s ease-in-out infinite;
-    animation-delay: 0.3s;
-  }
-
-  .spark {
-    fill: #10b981;
-    opacity: 0;
-    transform-box: fill-box;
-    transform-origin: center;
-    animation: spark 8s ease-in-out infinite;
-  }
-
-  @keyframes draw {
-    0% { stroke-dashoffset: 260; }
-    22%, 78% { stroke-dashoffset: 0; }
-    100% { stroke-dashoffset: 260; }
-  }
-
-  .phone rect:first-child {
-    animation-name: draw-frame;
-  }
-
-  @keyframes draw-frame {
-    0% { stroke-dashoffset: 760; }
-    28%, 78% { stroke-dashoffset: 0; }
-    100% { stroke-dashoffset: 760; }
-  }
-
-  @keyframes swing {
-    0%, 18% { transform: rotate(-8deg); }
-    42%, 70% { transform: rotate(0deg); }
-    100% { transform: rotate(-8deg); }
-  }
-
-  @keyframes drop {
-    0%, 16% { stroke-dashoffset: 42; }
-    30%, 62% { stroke-dashoffset: 0; }
-    78%, 100% { stroke-dashoffset: 42; }
-  }
-
-  @keyframes carry {
-    0%, 20% { opacity: 0; transform: translateY(-14px); }
-    34%, 58% { opacity: 1; transform: translateY(0); }
-    72%, 100% { opacity: 0; transform: translateY(-14px); }
-  }
-
-  @keyframes slide-left {
-    0%, 30% { opacity: 0; transform: translateX(-18px); }
-    46%, 76% { opacity: 1; transform: translateX(0); }
-    92%, 100% { opacity: 0; transform: translateX(-18px); }
-  }
-
-  @keyframes slide-down {
-    0%, 36% { opacity: 0; transform: translateY(-16px); }
-    52%, 76% { opacity: 1; transform: translateY(0); }
-    92%, 100% { opacity: 0; transform: translateY(-16px); }
-  }
-
-  @keyframes slide-up {
-    0%, 42% { opacity: 0; transform: translateY(16px); }
-    58%, 76% { opacity: 0.9; transform: translateY(0); }
-    92%, 100% { opacity: 0; transform: translateY(16px); }
-  }
-
-  @keyframes slide-right {
-    0%, 48% { opacity: 0; transform: translateX(18px); }
-    64%, 76% { opacity: 1; transform: translateX(0); }
-    92%, 100% { opacity: 0; transform: translateX(18px); }
-  }
-
-  @keyframes fade-late {
-    0%, 24% { opacity: 0; }
-    36%, 78% { opacity: 1; }
-    100% { opacity: 0; }
-  }
-
-  @keyframes spark {
-    0%, 66% { opacity: 0; transform: scale(0.4); }
-    72% { opacity: 1; transform: scale(1.4); }
-    80%, 100% { opacity: 0; transform: scale(0.4); }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .build-scene * {
-      animation: none !important;
-      stroke-dashoffset: 0 !important;
-      opacity: 1 !important;
-      transform: none !important;
-    }
-
-    .hook-block,
-    .spark,
-    .cable {
-      opacity: 0 !important;
-    }
-  }
+  .tier-1 { background: rgb(16 185 129 / 0.15); color: rgb(4 120 87); }
+  .tier-2 { background: rgb(245 158 11 / 0.18); color: rgb(146 64 14); }
+  .tier-3 { background: rgb(59 130 246 / 0.16); color: rgb(29 78 216); }
+  .tier-4 { background: rgb(244 63 94 / 0.16); color: rgb(190 18 60); }
+  .tier-0 { background: rgb(148 163 184 / 0.2); color: rgb(71 85 105); }
+  :global(.dark) .tier-1 { color: rgb(110 231 183); }
+  :global(.dark) .tier-2 { color: rgb(252 211 77); }
+  :global(.dark) .tier-3 { color: rgb(147 197 253); }
+  :global(.dark) .tier-4 { color: rgb(253 164 175); }
+  :global(.dark) .tier-0 { color: rgb(203 213 225); }
+  #term-log [data-level='INFO'] { color: #93c5fd; }
+  #term-log [data-level='EXEC'] { color: #6ee7b7; }
+  #term-log [data-level='DRY-RUN'] { color: #fcd34d; }
+  #term-log [data-level='BLOCKED'] { color: #fda4af; }
+  #term-log [data-level='ERROR'] { color: #fb7185; }
 </style>

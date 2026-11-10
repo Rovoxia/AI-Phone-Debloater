@@ -75,10 +75,11 @@ Unlike legacy debloating scripts that execute unvetted package removal commands 
 ## 🧭 Navigation
 
 - [💡 Quick Facts & Technical Summary](#quick-facts--technical-summary)
-- [⚡ Quickstart: 3 Ways to Debloat](#quickstart)
+- [⚡ Quickstart: 4 Ways to Debloat](#quickstart)
   - [Option A: 1-Click Master AI Agent Prompt](#option-a-1-click-master-ai-agent-prompt-recommended)
   - [Option B: Zero-Git Single-Command Runners](#option-b-zero-git-single-command-runners)
   - [Option C: Interactive Local CLI & Wireless ADB](#option-c-interactive-local-cli--wireless-adb)
+  - [Option D: WebApp Workspace (In-Browser ADB)](#option-d-webapp-workspace-in-browser-adb)
 - [🛡️ 4-Tier Safety Model](#safety-tiers)
 - [📊 Comparison Matrix](#comparison-matrix)
 - [📱 OEM Coverage Matrix](#oem-coverage-matrix)
@@ -91,7 +92,7 @@ Unlike legacy debloating scripts that execute unvetted package removal commands 
 ---
 
 <a id="quickstart"></a>
-## ⚡ Quickstart: 3 Ways to Debloat
+## ⚡ Quickstart: 4 Ways to Debloat
 
 Choose the debloating workflow that matches your preferred environment:
 
@@ -148,6 +149,23 @@ Connect your phone and PC to the same Wi-Fi network, enable **Wireless Debugging
 python cli/src/debloat_engine.py --wireless 192.168.1.50:5555
 ```
 *(The engine also supports automatic zero-configuration pairing via mDNS discovery on Android 11+).*
+
+---
+
+### Option D: WebApp Workspace (In-Browser ADB)
+
+Audit and debloat your phone visually directly inside your browser at **[debloater.rovoxia.com/app](https://debloater.rovoxia.com/app)**:
+- **Direct WebUSB (Chrome, Edge, Brave, Opera):** Plug in your USB cable and connect instantly with in-browser WebUSB.
+- **1-Click Local ADB Bridge (All Browsers & OS):** Single-command setup that starts a lightweight bridge and auto-opens the workspace:
+  - **Windows (PowerShell 5.1+):**
+    ```powershell
+    irm https://debloater.rovoxia.com/bridge.ps1 | iex
+    ```
+  - **macOS / Linux (Bash / Zsh):**
+    ```bash
+    curl -sSL https://debloater.rovoxia.com/bridge.sh | bash
+    ```
+- **Interactive Features:** Real-time package explorer, 4-tier filtering, dry-run simulation, 1-click batch freezing (`pm disable-user --user 0`), live execution terminal drawer, and pre-mutation JSON snapshots with instant rollback.
 
 ---
 
