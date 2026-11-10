@@ -103,6 +103,14 @@ def main() -> int:
         return 1
     print(f"Verified VERSION file: v{version}")
 
+    # Synchronize version metadata across manifests
+    sys.path.insert(0, str(repo_root / "cli"))
+    try:
+        from sync_version import sync_all
+        sync_all()
+    except Exception as e:
+        print(f"WARNING: Could not sync version metadata: {e}")
+
     return 0
 
 if __name__ == "__main__":

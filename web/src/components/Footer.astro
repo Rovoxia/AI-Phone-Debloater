@@ -1,8 +1,9 @@
 ---
 // src/components/Footer.astro
+import { SITE_VERSION } from '../lib/version';
+
 const currentYear = new Date().getFullYear();
-declare const __SITE_VERSION__: string;
-const siteVersion = typeof __SITE_VERSION__ !== 'undefined' ? __SITE_VERSION__ : '1.1.1';
+const siteVersion = SITE_VERSION;
 ---
 
 <footer

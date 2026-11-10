@@ -16,6 +16,12 @@ RULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rules")
 DATASET_PATH = os.path.normpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "web", "src", "data", "rules-dataset.json")
 )
+VERSION_FILE = os.path.normpath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "VERSION")
+)
+VERSION_JSON_PATH = os.path.normpath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "web", "src", "data", "version.json")
+)
 
 # manufacturer (from rule file header) -> (brand, oemId)
 OEM_MAP = {
@@ -106,6 +112,19 @@ def main():
         json.dump(dataset, fh, indent=2, ensure_ascii=False)
         fh.write("\n")
     print(f"Wrote {len(rules)} rules to {DATASET_PATH}")
+
+    try:
+        from sync_version import sync_all
+        sync_all()
+    except Exception:
+        if os.path.isfile(VERSION_FILE):
+            with open(VERSION_FILE, "r", encoding="utf-8") as vf:
+                ver = vf.read().strip()
+            if ver:
+                with open(VERSION_JSON_PATH, "w", encoding="utf-8") as vjf:
+                    json.dump({"version": ver}, vjf, indent=2)
+                    vjf.write("\n")
+                print(f"Synced version {ver} to {VERSION_JSON_PATH}")
 
 
 if __name__ == "__main__":

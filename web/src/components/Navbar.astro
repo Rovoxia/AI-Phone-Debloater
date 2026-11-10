@@ -2,10 +2,10 @@
 // src/components/Navbar.astro
 // Single-row sticky header, ultra-clean, pixel-perfect across all viewports.
 // Zero-JS interactivity: CSS group-hover/focus-within popovers + native <details> drawer with click-outside backdrop.
-const GITHUB_REPO = 'https://github.com/Rovoxia/AI-Phone-Debloater';
+import { SITE_VERSION } from '../lib/version';
 
-declare const __SITE_VERSION__: string;
-const siteVersion = typeof __SITE_VERSION__ !== 'undefined' ? __SITE_VERSION__ : '1.1.1';
+const GITHUB_REPO = 'https://github.com/Rovoxia/AI-Phone-Debloater';
+const siteVersion = SITE_VERSION;
 
 const oems = [
   {

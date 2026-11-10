@@ -42,7 +42,19 @@ RULES_DIR = PROJECT_ROOT / "cli" / "rules"
 CRITICAL_FILE = RULES_DIR / "critical-do-not-touch.json"
 
 DEFAULT_PORT = 53123
-VERSION = "1.1.1"
+
+def load_version() -> str:
+    for cand in (PROJECT_ROOT / "VERSION", SCRIPT_DIR.parent / "VERSION", Path.cwd() / "VERSION"):
+        if cand.is_file():
+            try:
+                val = cand.read_text(encoding="utf-8").strip()
+                if val:
+                    return val
+            except (OSError, ValueError):
+                pass
+    return "1.0.0"
+
+VERSION = load_version()
 TIMESTAMP_FORMAT = "%Y%m%d_%H%M%S"
 
 BACKUPS_DIR = Path.home() / "AiPhoneDebloater" / "backups"
