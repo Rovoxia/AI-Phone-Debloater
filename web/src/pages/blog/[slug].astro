@@ -765,7 +765,7 @@ const isoDate = post.date;
 ---
 
 <!doctype html>
-<html lang="en" class="scroll-smooth">
+<html lang="en" class="scroll-smooth" prefix="og: https://ogp.me/ns#">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -790,17 +790,33 @@ const isoDate = post.date;
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content={`${post.title} — AI Phone Debloater Guide`} />
+    <meta property="og:image" content={`${SITE_URL}/og-image.jpg`} />
+    <meta property="og:image:secure_url" content={`${SITE_URL}/og-image.jpg`} />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${post.title} — AI Phone Debloater Guide`} />
     <meta property="article:published_time" content={isoDate} />
     <meta property="article:author" content="Rovoxia" />
     <meta property="article:section" content={post.category} />
     {post.tags.map(tag => <meta property="article:tag" content={tag} />)}
 
-    <!-- Twitter Card -->
+    <!-- Twitter Card (X) -->
     <meta name="twitter:card" content="summary_large_image" />
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta name="twitter:domain" content="debloater.rovoxia.com" />
+    <meta property="twitter:domain" content="debloater.rovoxia.com" />
+    <meta name="twitter:url" content={CANONICAL_URL} />
+    <meta property="twitter:url" content={CANONICAL_URL} />
     <meta name="twitter:title" content={post.title} />
+    <meta property="twitter:title" content={post.title} />
     <meta name="twitter:description" content={post.excerpt} />
+    <meta property="twitter:description" content={post.excerpt} />
     <meta name="twitter:image" content={`${SITE_URL}/og-image.png`} />
+    <meta name="twitter:image:src" content={`${SITE_URL}/og-image.png`} />
+    <meta property="twitter:image" content={`${SITE_URL}/og-image.png`} />
     <meta name="twitter:image:alt" content={`${post.title} — AI Phone Debloater Guide`} />
+    <meta property="twitter:image:alt" content={`${post.title} — AI Phone Debloater Guide`} />
 
     <!-- JSON-LD Structured Data (TechArticle & Breadcrumbs) -->
     <script type="application/ld+json" set:html={JSON.stringify({
