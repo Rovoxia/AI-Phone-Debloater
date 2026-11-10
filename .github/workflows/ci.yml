@@ -43,7 +43,7 @@ jobs:
         run: shellcheck cli/bin/debloat.sh
 
       - name: Python syntax check
-        run: python -m py_compile cli/src/debloat_engine.py cli/tests/validate_rules.py cli/tests/test_connection.py
+        run: python -m py_compile cli/src/debloat_engine.py cli/src/bridge_server.py cli/tests/validate_rules.py cli/tests/test_connection.py cli/tests/test_bridge_server.py
 
       - name: Python style check
         run: |
@@ -90,6 +90,9 @@ jobs:
       - name: Run connection subsystem tests
         run: python cli/tests/test_connection.py
 
+      - name: Run bridge server unit tests
+        run: python cli/tests/test_bridge_server.py
+
       - name: Verify CLI help
         run: python cli/src/debloat_engine.py --help
 
@@ -130,9 +133,10 @@ jobs:
         run: |
           python cli/tests/validate_rules.py
           python cli/tests/test_connection.py
+          python cli/tests/test_bridge_server.py
 
       - name: Compile Python sources
-        run: python -m py_compile cli/src/debloat_engine.py cli/tests/validate_rules.py cli/tests/test_connection.py
+        run: python -m py_compile cli/src/debloat_engine.py cli/src/bridge_server.py cli/tests/validate_rules.py cli/tests/test_connection.py cli/tests/test_bridge_server.py
 
       - name: Smoke test launcher
         shell: bash
