@@ -153,6 +153,8 @@ class Logger:
         if not self.quiet: print(f"  {green('[OK]')} {msg}")
     def warn(self, msg):
         if not self.quiet: print(f"  {yellow('[WARN]')} {msg}")
+    def warning(self, msg):
+        if not self.quiet: print(f"  {yellow('[WARN]')} {msg}")
     def error(self, msg):
         print(f"  {red('[ERR]')} {msg}", file=sys.stderr)
     def verbose_log(self, msg):

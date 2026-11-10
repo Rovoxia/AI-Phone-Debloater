@@ -35,8 +35,8 @@ def sync_package_json(version: str) -> bool:
             pkg_file.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
             print(f"[sync] Updated {pkg_file.relative_to(REPO_ROOT)} -> {version}")
             return True
-    except Exception as e:
-        print(f"[sync] Error updating {pkg_file}: {e}")
+    except (OSError, json.JSONDecodeError):
+        print(f"[sync] Error updating {pkg_file}")
     return False
 
 
@@ -48,8 +48,8 @@ def sync_version_json(version: str) -> bool:
             v_json.write_text(json.dumps({"version": version}, indent=2) + "\n", encoding="utf-8")
             print(f"[sync] Updated {v_json.relative_to(REPO_ROOT)} -> {version}")
             return True
-    except Exception as e:
-        print(f"[sync] Error updating {v_json}: {e}")
+    except (OSError, json.JSONDecodeError):
+        print(f"[sync] Error updating {v_json}")
     return False
 
 
@@ -69,8 +69,8 @@ def sync_llms_full(version: str) -> bool:
             llms_file.write_text(updated, encoding="utf-8")
             print(f"[sync] Updated {llms_file.relative_to(REPO_ROOT)} -> {version}")
             return True
-    except Exception as e:
-        print(f"[sync] Error updating {llms_file}: {e}")
+    except OSError:
+        print(f"[sync] Error updating {llms_file}")
     return False
 
 
@@ -87,7 +87,7 @@ def main() -> int:
         version = sync_all()
         print(f"AI-Phone-Debloater version synced: v{version}")
         return 0
-    except Exception as e:
+    except (OSError, ValueError) as e:
         print(f"Error syncing version: {e}", file=sys.stderr)
         return 1
 

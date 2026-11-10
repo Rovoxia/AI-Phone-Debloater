@@ -108,7 +108,7 @@ def main() -> int:
     try:
         from sync_version import sync_all
         sync_all()
-    except Exception as e:
+    except (ImportError, OSError, ValueError) as e:
         print(f"WARNING: Could not sync version metadata: {e}")
 
     return 0

@@ -12,6 +12,8 @@ import os
 from collections import Counter
 from glob import glob
 
+logger = logging.getLogger("generate_rules_dataset")
+
 RULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rules")
 DATASET_PATH = os.path.normpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "web", "src", "data", "rules-dataset.json")
@@ -48,10 +50,10 @@ def load_rules():
             with open(path, "r", encoding="utf-8") as fh:
                 data = json.load(fh)
         except (json.JSONDecodeError, OSError) as exc:
-            logging.warning("Skipping malformed rule file %s: %s", source_file, exc)
+            logger.warning("Skipping malformed rule file %s: %s", source_file, exc)
             continue
         if not isinstance(data, dict) or not isinstance(data.get("rules"), list):
-            logging.warning("Skipping %s: missing 'rules' list", source_file)
+            logger.warning("Skipping %s: missing 'rules' list", source_file)
             continue
 
         manufacturer = data.get("manufacturer", "") or ""
@@ -116,7 +118,7 @@ def main():
     try:
         from sync_version import sync_all
         sync_all()
-    except Exception:
+    except (ImportError, OSError, ValueError):
         if os.path.isfile(VERSION_FILE):
             with open(VERSION_FILE, "r", encoding="utf-8") as vf:
                 ver = vf.read().strip()
