@@ -4,12 +4,16 @@ setlocal EnableDelayedExpansion
 set "BIN_DIR=%~dp0"
 set "CLI_DIR=%BIN_DIR%.."
 set "ROOT_DIR=%BIN_DIR%..\.."
-cd /d "%ROOT_DIR%"
 
 if exist "%ROOT_DIR%\VERSION" (
     set /p APP_VERSION=<"%ROOT_DIR%\VERSION"
+    cd /d "%ROOT_DIR%"
+) else if exist "%CLI_DIR%\VERSION" (
+    set /p APP_VERSION=<"%CLI_DIR%\VERSION"
+    set "ROOT_DIR=%CLI_DIR%"
+    cd /d "%CLI_DIR%"
 ) else (
-    echo [ERROR] VERSION file not found at %ROOT_DIR%\VERSION
+    echo [ERROR] VERSION file not found at %ROOT_DIR%\VERSION or %CLI_DIR%\VERSION
     exit /b 1
 )
 
