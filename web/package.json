@@ -1,7 +1,7 @@
 {
   "name": "debloater-rovoxia-com",
   "type": "module",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
@@ -12,6 +12,10 @@
   "dependencies": {
     "@astrojs/sitemap": "^3.2.1",
     "@tailwindcss/vite": "^4.0.12",
+    "@yume-chan/adb": "^2.6.4",
+    "@yume-chan/adb-credential-web": "^2.1.0",
+    "@yume-chan/adb-daemon-webusb": "^2.3.2",
+    "@yume-chan/stream-extra": "^2.6.1",
     "astro": "^7.4.7",
     "tailwindcss": "^4.0.12"
   },
