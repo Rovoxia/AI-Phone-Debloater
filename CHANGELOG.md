@@ -114,3 +114,18 @@ feat(seo): add 24-bit RGB og-image and progressive JPEG fallback for Twitter car
 fix(ci): resolve ruff lint errors in bridge server and test suite
 feat(webapp): add in-browser WebADB workspace and cross-platform 1-click bridge
 ```
+
+# Release v1.1.1
+
+## Changes
+```
+Merge pull request #23 from Rovoxia/QA
+fix(cli): resolve nested list command crash in adb shell and restore python bootstrap in debloat.bat
+feat: add CI version drift gate, SSOT test suite, npm scripts, and graceful bridge shutdown
+refactor(cli): simplify command string formatting in adb runner
+docs: update changelog for v1.1.1 SSOT version architecture
+fix(web): prioritize __SITE_VERSION__ Vite compile-time constant in version module
+refactor(cli): narrow exception handling and enhance logger compatibility
+feat(core): centralize version resolution via package.json and sync_version utility
+chore(release): bump version to 1.1.1 and inject version at build time
+```
