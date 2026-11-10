@@ -165,5 +165,15 @@ class TestBridgeHttpEndpoints(unittest.TestCase):
                 self.assertIn("protected", r["output"])
 
 
+    def test_reusable_server_address_reuse(self):
+        """Verify ReusableThreadingHTTPServer sets allow_reuse_address and daemon_threads."""
+        server = bridge_server.ReusableThreadingHTTPServer(("127.0.0.1", 0), bridge_server.BridgeHandler)
+        try:
+            self.assertTrue(server.allow_reuse_address)
+            self.assertTrue(server.daemon_threads)
+        finally:
+            server.server_close()
+
+
 if __name__ == "__main__":
     unittest.main()

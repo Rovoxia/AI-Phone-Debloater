@@ -9,13 +9,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 
 - Single-Source-of-Truth (SSOT) versioning architecture centered on root `VERSION`
-- Dedicated standard-library `cli/sync_version.py` utility synchronizing `package.json`, `version.json`, and `llms-full.txt`
+- Dedicated standard-library `cli/sync_version.py` utility with `--check` verification gate
+- Comprehensive SSOT test suite (`cli/tests/test_version_ssot.py`) validating SemVer formatting and multi-manifest consistency
+- Added `sync-version` and `check-version` npm scripts in `web/package.json`
 - Automatic version sync hooks in `cli/generate_rules_dataset.py`, `cli/tests/validate_rules.py`, and `web/astro.config.mjs`
+- `ReusableThreadingHTTPServer` socket reuse (`allow_reuse_address`) and graceful signal termination in `cli/src/bridge_server.py`
 
 ### Changed
 
 - Python CLI engine (`debloat_engine.py`) and Local ADB Bridge (`bridge_server.py`) resolve application version dynamically from root `VERSION`
 - Centralized web components (`Navbar`, `Footer`, `404`, `index.astro`) to consume `SITE_VERSION` from `web/src/lib/version.ts`
+- Added `--port`, `--host`, and `--strict-port` command line arguments to `bridge_server.py`
 
 ### Fixed
 

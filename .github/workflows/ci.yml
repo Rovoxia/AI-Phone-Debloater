@@ -93,6 +93,9 @@ jobs:
       - name: Run bridge server unit tests
         run: python cli/tests/test_bridge_server.py
 
+      - name: Run version SSOT tests
+        run: python cli/tests/test_version_ssot.py
+
       - name: Verify CLI help
         run: python cli/src/debloat_engine.py --help
 
@@ -105,6 +108,7 @@ jobs:
           VERSION_FILE=$(cat VERSION | tr -d '\r\n')
           echo "VERSION=$VERSION_FILE" >> $GITHUB_ENV
           python -c "import sys; sys.path.insert(0, 'cli/src'); import debloat_engine as e; assert e.__version__ == '$VERSION_FILE', f'version mismatch: engine={e.__version__} file=$VERSION_FILE'"
+          python cli/sync_version.py --check
 
       - name: Verify web dataset matches engine rules
         run: |
@@ -134,6 +138,7 @@ jobs:
           python cli/tests/validate_rules.py
           python cli/tests/test_connection.py
           python cli/tests/test_bridge_server.py
+          python cli/tests/test_version_ssot.py
 
       - name: Compile Python sources
         run: python -m py_compile cli/src/debloat_engine.py cli/src/bridge_server.py cli/tests/validate_rules.py cli/tests/test_connection.py cli/tests/test_bridge_server.py
