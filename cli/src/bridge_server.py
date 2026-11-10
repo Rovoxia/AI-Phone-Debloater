@@ -26,7 +26,6 @@ import re
 import shutil
 import socket
 import subprocess
-import sys
 import threading
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -159,13 +158,11 @@ def discover_adb(explicit: str | None = None) -> str:
             continue
         p = Path(cand)
         try:
-            if p.is_file():
-                if os.name == "nt" or os.access(str(p), os.X_OK):
-                    return str(p)
+            if p.is_file() and (os.name == "nt" or os.access(str(p), os.X_OK)):
+                return str(p)
             resolved = shutil.which(cand)
-            if resolved and Path(resolved).is_file():
-                if os.name == "nt" or os.access(resolved, os.X_OK):
-                    return resolved
+            if resolved and Path(resolved).is_file() and (os.name == "nt" or os.access(resolved, os.X_OK)):
+                return resolved
         except (OSError, ValueError):
             continue
 
@@ -182,6 +179,7 @@ def run_adb(args: list[str], adb_path: str, serial: str | None = None,
     try:
         proc = subprocess.run(
             cmd,
+            check=False,
             capture_output=True,
             stdin=subprocess.DEVNULL,
             text=True,

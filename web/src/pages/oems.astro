@@ -119,7 +119,7 @@ const allRules = rulesData.rules;
 ---
 
 <!doctype html>
-<html lang="en" class="scroll-smooth">
+<html lang="en" class="scroll-smooth" prefix="og: https://ogp.me/ns#">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -144,13 +144,29 @@ const allRules = rulesData.rules;
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="AI Phone Debloater Supported OEMs & 352 Bloatware Rules Matrix" />
+    <meta property="og:image" content={`${SITE_URL}/og-image.jpg`} />
+    <meta property="og:image:secure_url" content={`${SITE_URL}/og-image.jpg`} />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="AI Phone Debloater Supported OEMs & 352 Bloatware Rules Matrix" />
 
-    <!-- Twitter Card -->
+    <!-- Twitter Card (X) -->
     <meta name="twitter:card" content="summary_large_image" />
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta name="twitter:domain" content="debloater.rovoxia.com" />
+    <meta property="twitter:domain" content="debloater.rovoxia.com" />
+    <meta name="twitter:url" content={CANONICAL_URL} />
+    <meta property="twitter:url" content={CANONICAL_URL} />
     <meta name="twitter:title" content={TITLE} />
+    <meta property="twitter:title" content={TITLE} />
     <meta name="twitter:description" content={DESCRIPTION} />
+    <meta property="twitter:description" content={DESCRIPTION} />
     <meta name="twitter:image" content={`${SITE_URL}/og-image.png`} />
+    <meta name="twitter:image:src" content={`${SITE_URL}/og-image.png`} />
+    <meta property="twitter:image" content={`${SITE_URL}/og-image.png`} />
     <meta name="twitter:image:alt" content="AI Phone Debloater Supported OEMs & 352 Bloatware Rules Matrix" />
+    <meta property="twitter:image:alt" content="AI Phone Debloater Supported OEMs & 352 Bloatware Rules Matrix" />
 
     <!-- Google Fonts (Optimized) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />

@@ -1,10 +1,10 @@
 {
-  "totalCount": 354,
+  "totalCount": 352,
   "stats": {
-    "totalCount": 354,
-    "totalRules": 354,
+    "totalCount": 352,
+    "totalRules": 352,
     "tier1Count": 196,
-    "tier2Count": 68,
+    "tier2Count": 66,
     "tier3Count": 1,
     "tier4CriticalCount": 89,
     "oemBreakdown": {
@@ -17,7 +17,7 @@
       "Samsung": 44,
       "Transsion": 29,
       "Universal": 81,
-      "Xiaomi": 29
+      "Xiaomi": 27
     },
     "categoryBreakdown": {
       "ad": 4,
@@ -26,7 +26,6 @@
       "bloatware": 95,
       "browser": 1,
       "carrier": 34,
-      "cloud": 2,
       "framework_core": 23,
       "google_play_services": 9,
       "media_storage_core": 3,
@@ -2676,20 +2675,6 @@
       "severity": "SAFE"
     },
     {
-      "package": "com.miui.cloudsync",
-      "name": "",
-      "oemId": "xiaomi",
-      "brand": "Xiaomi",
-      "oemGroup": "Xiaomi",
-      "tier": 2,
-      "category": "cloud",
-      "description": "AUTO-DRAFT: unverified rule from test_dump.txt. Review tier/category before merge.",
-      "safe_to_remove": false,
-      "recommended_action": "disable",
-      "sourceFile": "xiaomi-miui-hyperos.json",
-      "severity": "CAUTION"
-    },
-    {
       "package": "com.miui.compass",
       "name": "Mi Compass",
       "oemId": "xiaomi",
@@ -4844,20 +4829,6 @@
       "recommended_action": "uninstall",
       "sourceFile": "universal-safe-to-remove.json",
       "severity": "SAFE"
-    },
-    {
-      "package": "com.xiaomi.bixby",
-      "name": "",
-      "oemId": "xiaomi",
-      "brand": "Xiaomi",
-      "oemGroup": "Xiaomi",
-      "tier": 2,
-      "category": "cloud",
-      "description": "AUTO-DRAFT: unverified rule from test_dump.txt. Review tier/category before merge.",
-      "safe_to_remove": false,
-      "recommended_action": "disable",
-      "sourceFile": "xiaomi-miui-hyperos.json",
-      "severity": "CAUTION"
     },
     {
       "package": "com.xiaomi.joyose",

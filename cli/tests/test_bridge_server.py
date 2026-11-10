@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Unit tests for AI-Phone-Debloater Local ADB Bridge Server (cli/src/bridge_server.py).
 Zero third-party pip dependencies; standard library unittest only.
@@ -7,16 +6,17 @@ Zero third-party pip dependencies; standard library unittest only.
 from __future__ import annotations
 
 import json
-import os
 import sys
+import threading
 import unittest
+import urllib.error
+import urllib.request
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(REPO_ROOT / "cli" / "src"))
 
-import bridge_server  # noqa: E402
+import bridge_server
 
 
 class TestBridgeServerHelpers(unittest.TestCase):
@@ -65,7 +65,6 @@ class TestBridgeHttpEndpoints(unittest.TestCase):
     def setUp(self):
         self.server = bridge_server.ThreadingHTTPServer(("127.0.0.1", 0), bridge_server.BridgeHandler)
         self.port = self.server.server_address[1]
-        import threading
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
 
@@ -75,7 +74,6 @@ class TestBridgeHttpEndpoints(unittest.TestCase):
 
     def test_cors_options(self):
         """Verify OPTIONS preflight request responds with 204 and CORS headers."""
-        import urllib.request
         req = urllib.request.Request(f"http://127.0.0.1:{self.port}/health", method="OPTIONS")
         with urllib.request.urlopen(req) as resp:
             self.assertEqual(resp.status, 204)
@@ -84,7 +82,6 @@ class TestBridgeHttpEndpoints(unittest.TestCase):
 
     def test_health_endpoint(self):
         """Verify GET /health returns version and status."""
-        import urllib.request
         with urllib.request.urlopen(f"http://127.0.0.1:{self.port}/health") as resp:
             self.assertEqual(resp.status, 200)
             data = json.loads(resp.read().decode("utf-8"))
@@ -94,27 +91,18 @@ class TestBridgeHttpEndpoints(unittest.TestCase):
 
     def test_packages_missing_serial_rejection(self):
         """Verify GET /packages rejects request without serial parameter."""
-        import urllib.request
-        import urllib.error
-
         with self.assertRaises(urllib.error.HTTPError) as ctx:
             urllib.request.urlopen(f"http://127.0.0.1:{self.port}/packages")
         self.assertEqual(ctx.exception.code, 400)
 
     def test_device_missing_serial_rejection(self):
         """Verify GET /device rejects request without serial parameter."""
-        import urllib.request
-        import urllib.error
-
         with self.assertRaises(urllib.error.HTTPError) as ctx:
             urllib.request.urlopen(f"http://127.0.0.1:{self.port}/device")
         self.assertEqual(ctx.exception.code, 400)
 
     def test_invalid_mode_rejection(self):
         """Verify POST /execute rejects payload containing invalid mode."""
-        import urllib.request
-        import urllib.error
-
         payload = {
             "serial": "test-device",
             "mode": "invalid-mode",
@@ -133,8 +121,6 @@ class TestBridgeHttpEndpoints(unittest.TestCase):
 
     def test_invalid_package_handled(self):
         """Verify POST /execute marks invalid package names as failed."""
-        import urllib.request
-
         payload = {
             "serial": "test-device",
             "mode": "dry-run",
@@ -157,8 +143,6 @@ class TestBridgeHttpEndpoints(unittest.TestCase):
 
     def test_critical_package_protected_in_execute(self):
         """Verify POST /execute refuses to mutate Tier 4 critical packages."""
-        import urllib.request
-
         payload = {
             "serial": "test-device",
             "mode": "dry-run",
