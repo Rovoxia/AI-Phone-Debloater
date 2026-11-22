@@ -51,15 +51,13 @@ set /a STEP+=1
 echo.
 
 :: --- Step 4: Python Test Suites (same as CI) ---
-echo [%STEP%] Running connection, bridge server and version SSOT tests...
-for %%T in (test_connection test_bridge_server test_version_ssot) do (
-    python cli\tests\%%T.py
-    if !ERRORLEVEL! neq 0 (
-        echo [FAIL] %%T failed!
-        set /a FAIL_COUNT+=1
-    ) else (
-        echo [PASS] %%T passed.
-    )
+echo [%STEP%] Running unit tests...
+python -m unittest discover -s cli\tests
+if %ERRORLEVEL% neq 0 (
+    echo [FAIL] Unit tests failed!
+    set /a FAIL_COUNT+=1
+) else (
+    echo [PASS] Unit tests passed.
 )
 python cli\sync_version.py --check
 if %ERRORLEVEL% neq 0 (

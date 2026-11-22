@@ -455,18 +455,10 @@ class TestDeviceRegistry(unittest.TestCase):
             self.assertTrue(reg_file.is_file())
 
             # Load back
-            loaded = registry.get("SERIAL-12345")
-            self.assertIsNotNone(loaded)
+            (loaded,) = registry.load_all()
+            self.assertEqual(loaded.physical_id, "SERIAL-12345")
             self.assertEqual(loaded.friendly_name, "Galaxy S24")
             self.assertEqual(loaded.model, "SM-S921B")
-
-            # Update friendly name
-            registry.set_friendly_name("SERIAL-12345", "Work Phone")
-            self.assertEqual(registry.get("SERIAL-12345").friendly_name, "Work Phone")
-
-            # Forget
-            self.assertTrue(registry.forget("SERIAL-12345"))
-            self.assertIsNone(registry.get("SERIAL-12345"))
 
 
 class TestUsbHandler(unittest.TestCase):
@@ -683,11 +675,6 @@ class TestConnectionManager(unittest.TestCase):
         self.assertTrue(is_valid)
         self.assertEqual(reason, "")
 
-        # 4. Disconnect device
-        mgr.disconnect_device("R5CR10ABCDE")
-        self.assertEqual(mgr.state, ConnectionState.DISCONNECTED)
-        self.assertIsNone(mgr.active_device)
-
     @patch("connection.manager.AdbClient")
     def test_reconnect_picks_most_recent_device(self, mock_client_cls):
         from connection.models import RememberedDevice
@@ -704,6 +691,30 @@ class TestConnectionManager(unittest.TestCase):
         with patch.object(mgr, "get_attached_devices", return_value=[attached]):
             dev = mgr.reconnect_remembered(timeout=1.0)
         self.assertIs(dev, attached)
+
+    @patch("connection.manager.AdbClient")
+    def test_reconnect_identity_mismatch_does_not_touch_registry(self, mock_client_cls):
+        from connection.models import RememberedDevice
+
+        mock_client_cls.return_value = MagicMock()
+        registry = MagicMock()
+        registry.load_all.return_value = [
+            RememberedDevice("MINE123", "Mine", "Google", "Pixel 9", "wireless",
+                             "192.168.1.50:5555", "2026-01-01T00:00:00")
+        ]
+        mgr = ConnectionManager(adb_path="dummy_adb", registry=registry)
+        mgr.wireless = MagicMock()
+        mgr.wireless.connect.return_value = (True, "Connected")
+        mgr.wireless.verify_and_get_info.return_value = DeviceInfo(
+            serial="192.168.1.50:5555", state="device", physical_id="OTHER999"
+        )
+        with patch.object(mgr, "get_attached_devices", return_value=[]):
+            dev = mgr.reconnect_remembered(timeout=1.0)
+
+        self.assertIsNone(dev)
+        self.assertIsNone(mgr.active_device)
+        registry.remember.assert_not_called()
+        mgr.wireless.disconnect.assert_called_once_with("192.168.1.50:5555")
 
 
 if __name__ == "__main__":

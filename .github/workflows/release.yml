@@ -2,110 +2,54 @@ name: Release
 
 on:
   push:
-    tags: ['v*']
-  pull_request:
     branches: [main]
-    types: [closed]
+    paths: [VERSION]
+  workflow_dispatch:
 
-permissions:
-  contents: write
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event.pull_request.merged == true
+    if: github.ref == 'refs/heads/main'
     permissions:
       contents: write
     env:
       GH_TOKEN: ${{ github.token }}
-      GITHUB_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          fetch-depth: 0
+          persist-credentials: false
 
-      - name: Determine version
+      - name: Validate VERSION
         id: ver
         run: |
-          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
-            TAG="${GITHUB_REF#refs/tags/}"
-          else
-            TAG="v$(cat VERSION | tr -d '\r\n')"
-          fi
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "version=${TAG#v}" >> $GITHUB_OUTPUT
-          echo "Version: $TAG"
-
-      - name: Verify version matches VERSION file
-        env:
-          TAG: ${{ steps.ver.outputs.tag }}
-        run: |
-          FILE_VER=$(cat VERSION | tr -d '\r\n')
-          if [ "$TAG" != "v$FILE_VER" ]; then
-            echo "::error::Tag $TAG does not match VERSION file ($FILE_VER)"
+          VERSION=$(tr -d '\r\n' < VERSION)
+          NUM='(0|[1-9][0-9]*)'
+          PRE='(0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)'
+          if ! [[ "$VERSION" =~ ^$NUM\.$NUM\.$NUM(-$PRE(\.$PRE)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
+            echo "::error::VERSION '$VERSION' is not valid SemVer"
             exit 1
           fi
-
-      - name: Check existing release
-        id: check
-        run: |
-          EXISTING=$(gh release list --limit 1 --json tagName --jq '.[0].tagName // empty' 2>/dev/null || true)
-          echo "latest_release=${EXISTING:-none}" >> $GITHUB_OUTPUT
-          echo "Latest release tag: ${EXISTING:-none}"
-
-      - name: Skip when already released
-        if: steps.check.outputs.latest_release == steps.ver.outputs.tag
-        env:
-          TAG: ${{ steps.ver.outputs.tag }}
-        run: echo "Release $TAG already exists. Skipping."
-
-      - name: Generate changelog
-        if: steps.check.outputs.latest_release != steps.ver.outputs.tag
-        env:
-          TAG: ${{ steps.ver.outputs.tag }}
-          LAST_TAG: ${{ steps.check.outputs.latest_release }}
-        run: |
-          if [ -n "$LAST_TAG" ] && [ "$LAST_TAG" != "none" ]; then
-            RANGE="${LAST_TAG}..HEAD"
-          else
-            RANGE="HEAD"
-          fi
-          NOTES=$(git log --pretty=format:"%s" "$RANGE" | grep -v "^\s*$" | head -100)
-          {
-            echo "# Release $TAG"
-            echo ""
-            echo "## Changes"
-            echo '```'
-            echo "$NOTES"
-            echo '```'
-          } > RELEASE_NOTES.md
-
-      - name: Update changelog.md
-        if: steps.check.outputs.latest_release != steps.ver.outputs.tag
-        env:
-          TAG: ${{ steps.ver.outputs.tag }}
-        run: |
-          {
-            echo ""
-            echo "# Release $TAG"
-            echo ""
-            echo "## Changes"
-            echo '```'
-            cat RELEASE_NOTES.md | sed '1,/^```$/d' | sed '/^```$/d'
-            echo '```'
-          } >> CHANGELOG.md
-          git add CHANGELOG.md
-          git -c user.name="Rovoxia" -c user.email="devs@rovoxia.com" commit -m "docs: update changelog for $TAG" || true
-          git push origin HEAD || true
+          python3 cli/sync_version.py --check
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
-        if: steps.check.outputs.latest_release != steps.ver.outputs.tag
         env:
-          TAG: ${{ steps.ver.outputs.tag }}
+          VERSION: ${{ steps.ver.outputs.version }}
         run: |
-          gh release create "$TAG" \
-            --title "Release $TAG" \
-            --notes-file RELEASE_NOTES.md
+          if gh release view "v$VERSION" > /dev/null 2>&1; then
+            echo "Release v$VERSION already exists. Skipping."
+            exit 0
+          fi
+          PRERELEASE=()
+          [[ "${VERSION%%+*}" == *-* ]] && PRERELEASE=(--prerelease)
+          gh release create "v$VERSION" --target "$GITHUB_SHA" --title "v$VERSION" --generate-notes "${PRERELEASE[@]}"

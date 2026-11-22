@@ -6,15 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+
+- CLI: `--package NAME` (repeatable) limits the plan to named packages; critical packages are refused with a non-zero exit
+- CLI: `--restore` with no value restores the newest snapshot of the connected phone; `--list-snapshots` lists snapshots newest first without a device
+- CLI: `--user N` targets another Android user, such as a work profile; snapshots record the user and restore uses it (old snapshots restore user 0)
+- CLI: `--bridge` accepts `--allow-origin URL` (repeatable) and forwards it to the bridge
+- CLI: the plan and confirmation list show the app name beside each package id
+- Web app: in bridge mode, "Pair over Wi-Fi (QR)" pairs and connects an Android 11+ phone by scanning a QR code. The bridge gains token-protected `POST /pair/qr`, `GET /pair/status` and `POST /pair/cancel`, which reuse the CLI's QR pairing code
+- Web app: the live-run confirmation lists each package with its app name
+- Web app: "Export CSV" downloads the currently filtered package list, with spreadsheet formula injection neutralised
+- `.github/dependabot.yml` opens update PRs for the SHA-pinned GitHub Actions
+
 ### Security
 
+- Every page ships a Content-Security-Policy: hash-based scripts and styles, no `unsafe-inline` or `unsafe-eval`, connections limited to the site and the local bridge at `http://127.0.0.1:53123`. Inline `onclick`/`onload` handlers and `style` attributes were replaced, and CI fails if built HTML contains one
+- `frame-ancestors 'none'`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin` are set in `web/public/_headers` and `web/nginx.conf`
+- Local bridge requires a per-session token (`X-Bridge-Token`) on every route except `GET /health`. The one-liner scripts generate it and pass it to the web app in the URL fragment; a bridge started by hand prints the URL to open
+- Engine no longer picks up `adb` from the current working directory unless it is passed with `--adb-path` or `AI_PHONE_DEBLOATER_ADB_PATH`
+- All GitHub Actions are pinned to full commit SHAs; the release job token is reduced to `contents: write` and the workflow no longer pushes to `main`
 - Local bridge no longer loses its Tier 4 guard in the one-liner install layout: rules are resolved relative to the script, and the bridge refuses to start if the critical list is empty
 - Local bridge now rejects requests from unknown origins. `Access-Control-Allow-Origin: *` is replaced by an allowlist (`https://debloater.rovoxia.com`, plus origins opted into with `--allow-origin URL`, for example `http://localhost:4321` for local web development), the `Host` header must be loopback (blocks DNS rebinding), and `POST` requires `Content-Type: application/json`
 - Package-name validation in the engine and bridge uses `fullmatch`, so a name with a trailing newline can no longer bypass the critical list
 - Removed the unauthenticated bridge `POST /shutdown` route and the `--host` flag; the bridge always binds `127.0.0.1`
 - Web app derives its Tier 4 set from `rules-dataset.json` instead of a hand-copied list that had drifted from `critical-do-not-touch.json` by 44 packages in each direction
 - Removed the `/api/adb` dev endpoint, which ran arbitrary `adb shell` commands from a query parameter
-- `debloat.bat` verifies the Authenticode signature of the downloaded Python installer and checks its exit code
+- `debloat.bat` runs the downloaded Python installer only if it carries a valid Authenticode signature from the Python Software Foundation, and checks its exit code
 - `adb` and `rules/` are no longer loaded from the current working directory
 - `VERSION` is validated with a strict SemVer `fullmatch`, and `release.yml` passes the tag to shell steps through `env` instead of inline interpolation
 - Installer one-liners use `curl -fsSL`, so an HTTP error page is no longer handed to `unzip`
@@ -38,6 +55,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Diagnostics reported "ADB not installed" when `adb` was on `PATH`, and aborted when mDNS discovery failed
 - Bridge: URL-encoded serials (wireless devices) are decoded; malformed bodies return `400`; a failed snapshot aborts the apply; critical packages can be enabled and restored; error responses are logged
 - Engine refuses to plan or apply changes when the critical list cannot be loaded
+- Web app: the batch run button is no longer hidden behind the collapsed terminal drawer on `/app`, and the drawer now expands
+- Mobile menu backdrop covers the screen, so tapping outside the menu closes it
+- Reconnecting to a remembered phone, or switching from USB to Wi-Fi, no longer saves a different phone found at the same address to `known_devices.json` or leaves it active; the wrong phone is disconnected
+- The legacy snapshot folder resolves beside `src/` in both the repository and the installed layout (was `~/cli/backups` when installed)
+- Bridge finds `adb.exe` on `PATH` on Windows with Python 3.11
+- Bridge reads the request body before rejecting a `POST`, so the client sees the `403`/`415`/`401` instead of a connection reset on Windows
+- `bridge.sh` no longer stops when `python3` is missing (the launcher installs it), reports clearly when neither `unzip` nor `python3` can extract the download, and quotes the temp directory in its cleanup trap
+- Rules: Transsion categories `ad`, `browser` and `theme_store` normalised to `adware`, `bloatware` and `optional_feature`; the critical `com.android.calendar` entry no longer duplicates the calendar provider's name and description
+- Tier 1/2/3 descriptions in README, QUICKSTART, CONTRIBUTING, `llms.txt`, `llms-full.txt`, the master prompt and the home page now match the rule data (Tier 3 is only the Transsion OTA updater; stock dialer, contacts, SMS, keyboards and launchers are Tier 4)
 - Unknown paths return a real 404 in `nginx.conf`; sitemap lists all pages
 - Home page sample table, README, SAFETY_GUIDELINES, SECURITY, pricing, `llms.txt` and the master prompt corrected to match the code (Python version, flags, rule counts, tier examples, restore commands)
 
@@ -47,7 +73,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Bridge `GET /packages` accepts `view=installed`
 - `validate_rules.py`, `generate_rules_dataset.py` and `astro.config.mjs` no longer rewrite version files. After editing `VERSION`, run `python cli/sync_version.py`; CI now fails on drift
 - Remembered devices are stored in `~/AiPhoneDebloater/known_devices.json`, which survives reinstall (the old registry is not migrated)
-- `test_all.bat` runs the same test scripts as CI
+- Unit tests run with `python -m unittest discover -s cli/tests` in CI and `test_all.bat`, so new test files run automatically
+- A GitHub release is created only when `VERSION` changes on `main` (or by manual dispatch), with generated notes. The workflow no longer appends commit lists to this file; add entries under `[Unreleased]` by hand
+- Master prompt (`prompt/master-prompt.md`, served at `/prompt.md`) rewritten for AI agents: classification comes from the engine's JSON scan, the new `--package`, `--restore` and `--list-snapshots` flags are used, approval must come from the user in chat, stop conditions and exit codes are stated, and the plan report no longer asks for invented RAM or battery figures
+- CI pins ruff to 0.17.6
+- Removed unused helpers from the connection layer (ADB client, device registry, connection manager, wireless handler, `DeviceState`)
 - Contributors target the `QA` branch (CONTRIBUTING)
 
 ### Removed
@@ -130,54 +160,3 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Input validation on all package names and ADB endpoints
 - Shell injection prevention in wireless connection handlers
 - Gitleaks secret scanning in CI
-# Release v1.0.1
-
-## Changes
-```
-Merge pull request #20 from Rovoxia/QA
-chore(release): bump version to 1.0.1
-feat(seo): add raster og-image poster, AI discovery files, and AEO endpoints
-feat(web): update SEO and Open Graph metadata across all pages
-Merge pull request #19 from Rovoxia/QA
-chore(web): fix CHANGELOG duplicates and package counts
-Merge pull request #18 from Rovoxia/QA
-fix(web): escape remaining backticks in blog content for Astro build
-docs: sync changelogs, versions, and user docs with current state
-Merge branch 'main' into QA
-chore: update CHANGELOG and add 10 new blog posts with getStaticPaths
-```
-
-# Release v1.0.2
-
-## Changes
-```
-Merge pull request #22 from Rovoxia/release/v1.0.2
-chore(release): bump version to 1.0.2 and add Twitter/OG image fixes
-```
-
-# Release v1.1.0
-
-## Changes
-```
-Merge pull request #21 from Rovoxia/QA
-Merge branch 'main' into QA (resolve version to 1.1.0)
-chore(release): bump version to 1.1.0
-feat(seo): add 24-bit RGB og-image and progressive JPEG fallback for Twitter cards
-fix(ci): resolve ruff lint errors in bridge server and test suite
-feat(webapp): add in-browser WebADB workspace and cross-platform 1-click bridge
-```
-
-# Release v1.1.1
-
-## Changes
-```
-Merge pull request #23 from Rovoxia/QA
-fix(cli): resolve nested list command crash in adb shell and restore python bootstrap in debloat.bat
-feat: add CI version drift gate, SSOT test suite, npm scripts, and graceful bridge shutdown
-refactor(cli): simplify command string formatting in adb runner
-docs: update changelog for v1.1.1 SSOT version architecture
-fix(web): prioritize __SITE_VERSION__ Vite compile-time constant in version module
-refactor(cli): narrow exception handling and enhance logger compatibility
-feat(core): centralize version resolution via package.json and sync_version utility
-chore(release): bump version to 1.1.1 and inject version at build time
-```

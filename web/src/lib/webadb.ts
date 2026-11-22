@@ -260,6 +260,10 @@ export class WebAdbClient {
  */
 export class LocalBridgeClient {
   private baseUrl: string;
+  private token = '';
+
+  /** Called when the bridge answers 401. Return a token to retry the request once, or '' to give up. */
+  public onTokenRequired: () => string = () => '';
 
   constructor(port: number = 53123) {
     this.baseUrl = `http://127.0.0.1:${port}`;
@@ -267,6 +271,28 @@ export class LocalBridgeClient {
 
   public setBaseUrl(url: string) {
     this.baseUrl = url.replace(/\/+$/, '');
+  }
+
+  public setToken(token: string) {
+    this.token = token;
+  }
+
+  // Every call but /health goes through here. The token header is sent only when a token is
+  // known, so a bridge that predates tokens (and does not allow the header in CORS) still works.
+  private async request(path: string, init: RequestInit & { headers?: Record<string, string> } = {}): Promise<Response> {
+    const send = () =>
+      fetch(`${this.baseUrl}${path}`, {
+        ...init,
+        headers: this.token ? { ...init.headers, 'X-Bridge-Token': this.token } : init.headers,
+      });
+    const sent = this.token;
+    let res = await send();
+    if (res.status === 401) {
+      // Ask once, unless a request that failed alongside this one already got a new token.
+      if (this.token === sent) this.token = this.onTokenRequired() || sent;
+      if (this.token !== sent) res = await send();
+    }
+    return res;
   }
 
   public async checkHealth(): Promise<{ ok: boolean; version?: string; adbAvailable?: boolean }> {
@@ -287,17 +313,20 @@ export class LocalBridgeClient {
   }
 
   public async getDevices(): Promise<Array<{ serial: string; model: string; state: string }>> {
-    const res = await fetch(`${this.baseUrl}/devices`, {
+    const res = await this.request('/devices', {
       method: 'GET',
       headers: { Accept: 'application/json' },
     });
+    if (res.status === 401) {
+      throw new Error('The bridge needs its session token. Copy the URL the bridge printed in its terminal and open it, or connect again and paste it.');
+    }
     if (!res.ok) throw new Error(`Bridge returned HTTP ${res.status}`);
     const data = await res.json();
     return data.devices || [];
   }
 
   public async listPackages(serial: string): Promise<string[]> {
-    const res = await fetch(`${this.baseUrl}/packages?serial=${encodeURIComponent(serial)}`, {
+    const res = await this.request(`/packages?serial=${encodeURIComponent(serial)}`, {
       method: 'GET',
       headers: { Accept: 'application/json' },
     });
@@ -307,8 +336,8 @@ export class LocalBridgeClient {
   }
 
   private async listView(serial: string, view: 'disabled' | 'installed'): Promise<string[]> {
-    const res = await fetch(
-      `${this.baseUrl}/packages?serial=${encodeURIComponent(serial)}&view=${view}`,
+    const res = await this.request(
+      `/packages?serial=${encodeURIComponent(serial)}&view=${view}`,
       { method: 'GET', headers: { Accept: 'application/json' } }
     );
     if (!res.ok) return [];
@@ -331,7 +360,7 @@ export class LocalBridgeClient {
     serial: string
   ): Promise<{ manufacturer?: string; model?: string; androidVersion?: string; sdkVersion?: string }> {
     try {
-      const res = await fetch(`${this.baseUrl}/device?serial=${encodeURIComponent(serial)}`, {
+      const res = await this.request(`/device?serial=${encodeURIComponent(serial)}`, {
         method: 'GET',
         headers: { Accept: 'application/json' },
         signal: AbortSignal.timeout(8000),
@@ -349,7 +378,7 @@ export class LocalBridgeClient {
     action: 'disable' | 'uninstall' | 'enable',
     packages: string[]
   ): Promise<ExecutionResult[]> {
-    const res = await fetch(`${this.baseUrl}/execute`, {
+    const res = await this.request('/execute', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ serial, mode, action, packages }),
@@ -363,7 +392,7 @@ export class LocalBridgeClient {
   }
 
   public async restore(serial: string, packages: string[]): Promise<ExecutionResult[]> {
-    const res = await fetch(`${this.baseUrl}/restore`, {
+    const res = await this.request('/restore', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ serial, packages }),
@@ -375,6 +404,55 @@ export class LocalBridgeClient {
     const data = await res.json();
     return data.results || [];
   }
+
+  private async pairCall(path: 'qr' | 'status' | 'cancel'): Promise<any> {
+    const res = await this.request(
+      `/pair/${path}`,
+      path === 'status'
+        ? { method: 'GET', headers: { Accept: 'application/json' } }
+        : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }
+    );
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 404) throw new Error('This bridge is too old for QR pairing. Run the one-click command again to update it.');
+    if (!res.ok) throw new Error(data.error || `Bridge returned HTTP ${res.status}`);
+    return data;
+  }
+
+  /**
+   * Starts Wi-Fi QR pairing on the bridge. `matrix` is the QR code (rows of 0/1, no quiet zone);
+   * it encodes the pairing password, so draw it and never log or store it.
+   */
+  public async startQrPairing(): Promise<QrPairingSession> {
+    // The bridge runs one session at a time and answers 409 to a second start. Cancel first, so a
+    // session this page no longer shows (after a reload, or from another tab) is replaced.
+    await this.pairCall('cancel');
+    const data = await this.pairCall('qr');
+    if (!Array.isArray(data.matrix) || !data.matrix.every(Array.isArray)) {
+      throw new Error('The bridge did not return a QR code.');
+    }
+    return { id: String(data.id), matrix: data.matrix, timeout: Number(data.timeout) || 120 };
+  }
+
+  public getQrPairingStatus(): Promise<QrPairingStatus> {
+    return this.pairCall('status');
+  }
+
+  public async cancelQrPairing(): Promise<void> {
+    await this.pairCall('cancel');
+  }
+}
+
+export interface QrPairingSession {
+  id: string;
+  matrix: number[][];
+  timeout: number;
+}
+
+export interface QrPairingStatus {
+  state: 'idle' | 'waiting' | 'paired' | 'failed' | 'expired';
+  id: string | null;
+  serial: string | null;
+  error: string | null;
 }
 
 /**
@@ -430,15 +508,22 @@ export function deleteLocalSnapshot(id: string): void {
   }
 }
 
-export function exportSnapshotFile(snapshot: DebloatSnapshot): void {
+export function downloadFile(filename: string, content: string, type: string): void {
   if (typeof window === 'undefined') return;
-  const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
+  const url = URL.createObjectURL(new Blob([content], { type }));
   const a = document.createElement('a');
   a.href = url;
-  a.download = `snapshot_${snapshot.model.replace(/[^a-zA-Z0-9_-]/g, '_')}_${snapshot.timestamp}.json`;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+export function exportSnapshotFile(snapshot: DebloatSnapshot): void {
+  downloadFile(
+    `snapshot_${snapshot.model.replace(/[^a-zA-Z0-9_-]/g, '_')}_${snapshot.timestamp}.json`,
+    JSON.stringify(snapshot, null, 2),
+    'application/json'
+  );
 }

@@ -165,7 +165,22 @@ Audit and debloat your phone visually directly inside your browser at **[debloat
     ```bash
     curl -sSL https://debloater.rovoxia.com/bridge.sh | bash
     ```
-- **Interactive Features:** Real-time package explorer, 4-tier filtering, dry-run simulation, 1-click batch freezing (`pm disable-user --user 0`), live execution terminal drawer, and pre-mutation JSON snapshots with instant rollback.
+- **Interactive Features:** Real-time package explorer, 4-tier filtering, dry-run simulation, 1-click batch freezing (`pm disable-user --user 0`), a confirmation dialog that lists each package with its app name, "Export CSV" of the currently filtered package list, live execution terminal drawer, and pre-mutation JSON snapshots with instant rollback.
+
+#### 🔑 Bridge session token
+The bridge listens on `127.0.0.1:53123`, accepts only a loopback `Host` and allowlisted web origins, and requires a per-session token on every route except `GET /health`. Requests without a matching `X-Bridge-Token` header get `401`.
+- The one-click scripts generate a fresh random token per run, pass it to the bridge in `AIPD_BRIDGE_TOKEN`, and open `https://debloater.rovoxia.com/app?bridge=1#token=<token>`. The token sits in the URL fragment, which browsers do not send to servers; the web app moves it to `sessionStorage` and removes it from the address bar.
+- If you start the bridge yourself (`python cli/src/bridge_server.py` or `python cli/src/debloat_engine.py --bridge`), it generates a token and prints the URL to open. If the web app asks for a token, paste that URL. Treat it as a password for that session.
+- To set your own token, `AIPD_BRIDGE_TOKEN` must be at least 16 characters from `A-Z a-z 0-9 . _ ~ -`.
+- For `npm run dev`, allow the dev origin: `python cli/src/bridge_server.py --allow-origin http://localhost:4321` (repeatable; also works with `--bridge`).
+- Direct callers send the header:
+  ```bash
+  curl -H "X-Bridge-Token: <token>" http://127.0.0.1:53123/devices
+  ```
+
+#### 📶 Pair over Wi-Fi from the web app
+
+With the local bridge running, open the URL it prints and choose **Pair over Wi-Fi (QR)**. On the phone (Android 11 or newer, on the same Wi-Fi network as the computer) go to Settings > Developer options > Wireless debugging > Pair device with QR code and scan the code on screen. The bridge pairs and connects through the adb on your computer, and the phone then opens in the app like a USB device. The code is valid for two minutes and for one pairing only; closing the dialog cancels it. The code never leaves your machine: the browser gets it from the bridge on 127.0.0.1, using the session token.
 
 ---
 
@@ -176,10 +191,10 @@ Every Android package evaluated by AI-Phone-Debloater is classified strictly int
 
 | Tier | Category | Description | Typical Packages | Risk Level |
 | :---: | :--- | :--- | :--- | :---: |
-| **Tier 1** | **Safe Bloat** *(Default)* | Carrier junk, third-party partner apps, aggressive ad daemons, diagnostic telemetry loggers. | `com.miui.msa.global`<br>`com.facebook.katana`<br>`com.amazon.appmanager`<br>`com.netflix.partner.activation` | 🟢 **Zero Risk**<br>(Safe for all users) |
-| **Tier 2** | **Advanced Debloat** | Secondary voice assistants, OEM cloud synchronization, AR stickers, wellbeing trackers. | `com.samsung.android.app.routines`<br>`com.heytap.cloud`<br>`com.miui.notes`<br>`com.google.android.apps.wellbeing` | 🟡 **Low Risk**<br>(Review feature usage) |
-| **Tier 3** | **Extreme Debloat** | Replaceable stock apps (keyboards, stock dialers, default SMS, OEM gallery apps, updaters). | `com.transsion.otaupdate`<br>*(Tier 3 currently has a single rule)* | 🟠 **Moderate Risk**<br>(Install replacement first) |
-| **Tier 4** | **Critical Core** *(Sentinel)* | Android framework, telephony call routing, modem HALs, keystore encryption, package installer. | `android`<br>`com.android.systemui`<br>`com.android.phone`<br>`com.android.packageinstaller` | 🔴 **HARD-BLOCKED**<br>(Never touched) |
+| **Tier 1** | **Safe Bloat** *(Default)* | 196 rules: carrier apps, preloaded partner apps, OEM ad daemons, telemetry, plus OEM extras like Bixby, AR Emoji/AR Zone, game hubs and duplicate OEM cloud apps. | `com.miui.msa.global`<br>`com.facebook.katana`<br>`com.amazon.appmanager`<br>`com.netflix.partner.activation` | 🟢 **Zero Risk**<br>(Safe for all users) |
+| **Tier 2** | **Advanced Debloat** | 66 rules: optional features some people use: wallets/Samsung Pass, DeX, Link to Windows, theme stores, Android Auto, Digital Wellbeing, routines, accessibility, OEM accounts/cloud, stock notes/recorder/file apps. | `com.samsung.android.app.routines`<br>`com.heytap.cloud`<br>`com.miui.notes`<br>`com.google.android.apps.wellbeing` | 🟡 **Low Risk**<br>(Review feature usage) |
+| **Tier 3** | **Extreme Debloat** | 1 rule: the Transsion OTA updater. Disabling it stops system updates. | `com.transsion.otaupdate` | 🟠 **Moderate Risk**<br>(Loses OS updates) |
+| **Tier 4** | **Critical Core** *(Sentinel)* | 89 packages: Android framework, telephony, keystore, package installer, plus stock dialer, contacts, SMS, keyboards and launchers. | `android`<br>`com.android.systemui`<br>`com.android.phone`<br>`com.android.packageinstaller` | 🔴 **HARD-BLOCKED**<br>(Never touched) |
 
 > [!WARNING]
 > ### ⚠️ Safety & Best Practices Notice • `No Root Required`
@@ -194,9 +209,9 @@ Every Android package evaluated by AI-Phone-Debloater is classified strictly int
    The engine queries device properties via ADB (`ro.product.manufacturer`, `ro.product.model`) and dynamically matches the corresponding OEM rulebook (`samsung-oneui.json`, `xiaomi-miui-hyperos.json`, `oneplus-oxygenos.json`, `google-pixel.json`, etc.) alongside `universal-safe-to-remove.json`.
 
 3. **Classification & Targeted Debloat**  
-   - **`--tier 1` (Safe Bloat):** Recommended default. Freezes carrier junk, partner bloat (Facebook, Netflix, Microsoft), and telemetry loggers without affecting any OS features.
-   - **`--tier 2` (Advanced):** Freezes secondary OEM assistants (Bixby, Celia), OEM cloud sync, and AR sticker utilities. Safe if you don't use those specific OEM features.
-   - **`--tier 3` (Extreme):** Targets replaceable stock utilities (OEM dialer, stock keyboard, gallery). Prerequisite: Install a third-party replacement app (e.g., Gboard, Google Phone) first.
+   - **`--tier 1` (Safe Bloat):** Recommended default. Freezes carrier apps, partner bloat (Facebook, Netflix, Microsoft), ad daemons, telemetry and OEM extras such as Bixby and AR Emoji, without affecting core OS features.
+   - **`--tier 2` (Advanced):** Freezes optional OEM and Google features (wallets, Samsung Pass, DeX, Link to Windows, theme stores, Digital Wellbeing, OEM accounts/cloud, stock utilities). Safe if you don't use those features.
+   - **`--tier 3` (Extreme):** Currently one rule: the Transsion OTA updater, which stops system updates when disabled. Stock dialer, contacts, SMS, keyboards and launchers are Tier 4 and never touched.
 
 4. **Dry-Run Simulation Before Execution**  
    Run `python cli/src/debloat_engine.py --tier 1 --dry-run` to inspect a full table of proposed changes, package descriptions, and reasons before modifying your device.
@@ -299,9 +314,31 @@ python cli/src/debloat_engine.py --wireless 192.168.1.100:5555
 # Target specific device when multiple phones are connected
 python cli/src/debloat_engine.py --serial R58M123456X --tier 1 --action disable
 
-# Restore device state from a timestamped snapshot
+# Preview one named package (repeatable; with --tier, only if it is in that tier)
+python cli/src/debloat_engine.py --package com.facebook.katana --dry-run
+
+# Act on another Android user, e.g. a work profile (default: 0)
+python cli/src/debloat_engine.py --tier 1 --user 10 --dry-run
+
+# List backup snapshots, newest first (no phone needed)
+python cli/src/debloat_engine.py --list-snapshots
+
+# Restore the newest snapshot of the connected phone
+python cli/src/debloat_engine.py --restore
+
+# Restore device state from a specific snapshot
 python cli/src/debloat_engine.py --restore snapshot_SM-S911B_20261101_120000.json
+
+# Start the local bridge for the web app (extra origin is optional, repeatable)
+python cli/src/debloat_engine.py --bridge --allow-origin http://localhost:4321
 ```
+
+Notes:
+- `--action disable|uninstall` (default `disable`) applies to `--tier` or `--package`.
+- `--package`: critical (Tier 4) packages are refused with a non-zero exit. A package with no rule is allowed with a warning and uses `--action`.
+- `--user N`: snapshots record the user, and `--restore` uses the user stored in the snapshot.
+- The plan and the confirmation list show the app name beside each package id.
+- The launchers (`cli/bin/debloat.sh`, `cli\bin\debloat.bat`) accept the same flags.
 
 ---
 
@@ -314,6 +351,8 @@ Every action performed by AI-Phone-Debloater is 100% reversible:
 Before executing changes, the engine creates a timestamped JSON snapshot under `~/AiPhoneDebloater/backups/`:
 ```bash
 python cli/src/debloat_engine.py --restore <SNAPSHOT_FILENAME>
+# or, with no value, the newest snapshot of the connected phone:
+python cli/src/debloat_engine.py --restore
 ```
 
 ### 2. Manual Raw ADB Single-Package Recovery
@@ -375,9 +414,11 @@ adb shell cmd package install-existing --user 0 <package_name>
 Contributions are welcomed! We actively accept pull requests for new OEM rule databases, bug fixes, and documentation improvements.
 
 1. Review [CONTRIBUTING.md](CONTRIBUTING.md) and [SAFETY_GUIDELINES.md](SAFETY_GUIDELINES.md).
-2. Validate any proposed rule changes locally using our test suite:
+2. Validate any proposed rule changes locally using our test suite (the same commands CI runs):
    ```bash
    python cli/tests/validate_rules.py
+   python -m unittest discover -s cli/tests
+   python cli/sync_version.py --check
    ```
 3. Open a Pull Request referencing the OEM model and Android version tested.
 

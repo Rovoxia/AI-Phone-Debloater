@@ -79,13 +79,22 @@ try {
 
     Write-Host "[SUCCESS] Ready!" -ForegroundColor Green
 
+    # Per-session token: the bridge refuses device calls without it. It reaches the web app
+    # in the URL fragment, which a browser never sends to any server.
+    $TokenBytes = New-Object byte[] 16
+    $Rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    try { $Rng.GetBytes($TokenBytes) } finally { $Rng.Dispose() }
+    $Token = [BitConverter]::ToString($TokenBytes).Replace('-', '').ToLower()
+
     Write-Host "[INFO] Opening WebApp workspace in default browser..." -ForegroundColor Green
-    Start-Process $AppUrl
+    Start-Process "$AppUrl#token=$Token"
 
     Write-Host "[INFO] Starting Python bridge server on port $BridgePort ..." -ForegroundColor Green
     Write-Host "[INFO] Bridge server active on http://127.0.0.1:$BridgePort" -ForegroundColor DarkGray
 
     Write-Host "[INFO] Press Ctrl+C in this terminal to stop the bridge when done." -ForegroundColor DarkGray
+    # Set only now, so the browser started above does not inherit it.
+    $env:AIPD_BRIDGE_TOKEN = $Token
     & (Join-Path $InstallDir "bin\\debloat.bat") --bridge --port $BridgePort
 }
 catch {
@@ -93,6 +102,7 @@ catch {
     exit 1
 }
 finally {
+    $env:AIPD_BRIDGE_TOKEN = $null
     if (Test-Path $TempDir) {
         Remove-Item -Recurse -Force $TempDir -ErrorAction SilentlyContinue
     }

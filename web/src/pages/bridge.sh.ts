@@ -23,7 +23,9 @@ sync_repo() {
 
     tmpdir="\$(mktemp -d)"
     zipfile="\${tmpdir}/repo.zip"
-    trap "rm -rf \"\${tmpdir}\"" EXIT
+    # tmpdir is local to this function, so it is expanded now, not when the trap runs.
+    # shellcheck disable=SC2064
+    trap "rm -rf \\"\${tmpdir}\\"" EXIT
 
     echo "[INFO] Fetching latest repository files..."
     curl -fsSL "\${ARCHIVE_URL}" -o "\${zipfile}"
@@ -31,8 +33,11 @@ sync_repo() {
     echo "[INFO] Extracting archive..."
     if command -v unzip &>/dev/null; then
         unzip -q "\${zipfile}" -d "\${tmpdir}"
-    else
+    elif command -v python3 &>/dev/null; then
         python3 -c "import zipfile; zipfile.ZipFile('\${zipfile}').extractall('\${tmpdir}')"
+    else
+        echo "[ERROR] Cannot extract the download: neither 'unzip' nor 'python3' is installed. Install unzip and run this command again." >&2
+        exit 1
     fi
 
     extracted_root="\$(find "\${tmpdir}" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
@@ -91,10 +96,16 @@ if ! command -v curl >/dev/null 2>&1; then
     exit 1
 fi
 
-if ! command -v python3 >/dev/null 2>&1; then
-    echo "[ERROR] Required tool 'python3' is not installed." >&2
+# No python3 check here: the launcher (bin/debloat.sh) finds or installs Python itself.
+
+# Per-session token: the bridge refuses device calls without it. It reaches the web app
+# in the URL fragment, which a browser never sends to any server.
+TOKEN="\$(od -An -N16 -tx1 /dev/urandom | tr -d ' \\n')"
+if [ "\${#TOKEN}" -ne 32 ]; then
+    echo "[ERROR] Could not generate a session token from /dev/urandom." >&2
     exit 1
 fi
+APP_URL="\${APP_URL}#token=\${TOKEN}"
 
 # Open default browser to the app with bridge=1 query param
 open_browser() {
@@ -105,7 +116,7 @@ open_browser() {
     elif command -v start >/dev/null 2>&1; then
         start "" "\${APP_URL}" >/dev/null 2>&1 || true
     else
-        echo "[WARN] No browser opener found. Opening manually: \${APP_URL}" >&2
+        echo "[WARN] No browser opener found. Open this URL yourself: \${APP_URL}" >&2
     fi
 }
 
@@ -115,7 +126,8 @@ open_browser
 
 echo "[INFO] Starting bridge server on http://127.0.0.1:\${PORT}"
 echo "[INFO] Press Ctrl+C in this terminal to stop the bridge when done."
-bash "\${INSTALL_DIR}/bin/debloat.sh" --bridge --port "\${PORT}"
+# The token is set for the bridge process only, not exported to the browser opened above.
+AIPD_BRIDGE_TOKEN="\${TOKEN}" bash "\${INSTALL_DIR}/bin/debloat.sh" --bridge --port "\${PORT}"
 `;
 
 export const GET: APIRoute = async () => {

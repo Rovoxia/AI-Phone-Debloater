@@ -42,9 +42,9 @@ if sys.version_info < (3, 11):  # noqa: UP036 - runtime guard for users on older
 
 try:
     # This ConnectionError is the connection layer's base exception; it shadows the builtin in this module.
-    from connection import ConnectionError, ConnectionManager, ConnectionUI
+    from connection import AdbClient, ConnectionError, ConnectionManager, ConnectionUI
 except ImportError:
-    from .connection import ConnectionError, ConnectionManager, ConnectionUI
+    from .connection import AdbClient, ConnectionError, ConnectionManager, ConnectionUI
 
 def load_version() -> str:
     # Installed flat layout (VERSION beside src/) first, then the repo root.
@@ -63,7 +63,8 @@ __version__ = load_version()
 # rules/ sits beside src/ in both the repo (cli/) and the installed flat layout.
 RULES_DIR_CANDIDATES = [SCRIPT_DIR.parent / "rules"]
 BACKUPS_DIR = Path.home() / "AiPhoneDebloater" / "backups"
-LOCAL_BACKUPS_DIR = PROJECT_ROOT / "cli" / "backups"
+# Legacy snapshot folder beside src/: cli/backups in the repo, <install dir>/backups in the flat layout.
+LOCAL_BACKUPS_DIR = SCRIPT_DIR.parent / "backups"
 
 TIMESTAMP_FORMAT = "%Y%m%d_%H%M%S"
 
@@ -240,16 +241,46 @@ def run_cmd(cmd, timeout=30.0, check=False, capture=True, env=None):
         raise AdbError(f"command exited {proc.returncode}: {printable}\nstdout: {stdout}\nstderr: {stderr}")
     return proc.returncode, stdout, stderr
 
+def user_id(value) -> int:
+    """Android user id (argparse type, also used for the value stored in snapshots)."""
+    n = int(value)
+    if n < 0: raise ValueError(f"negative user id: {value!r}")
+    return n
+
+def discover_adb(explicit=None):
+    """Resolve adb without trusting the working directory (same rule as bridge_server.discover_adb)."""
+    env_path = os.environ.get("AI_PHONE_DEBLOATER_ADB_PATH", "").strip()
+    bundled = SCRIPT_DIR.parent / "tools" / "platform-tools"
+    candidates = [explicit, env_path, str(bundled / "adb.exe"), str(bundled / "adb")]
+    # PATH, one directory at a time. A bare "adb" is never used: on Windows both shutil.which and
+    # CreateProcess look in the current working directory first, so a planted adb.exe there would win.
+    # adb.exe is named outright because Python 3.11's shutil.which() skips PATHEXT for a path with a directory.
+    names = ("adb.exe", "adb") if os.name == "nt" else ("adb",)
+    for d in os.get_exec_path():
+        candidates += [os.path.join(d, name) for name in names]
+    candidates += AdbClient.STANDARD_CANDIDATES
+    for cand in candidates:
+        # Only a path the user chose may be relative to the working directory.
+        if not cand or (not os.path.isabs(cand) and cand not in (explicit, env_path)): continue
+        try:
+            resolved = cand if Path(cand).is_file() else shutil.which(cand)
+            if resolved and Path(resolved).is_file() and (os.name == "nt" or os.access(resolved, os.X_OK)):
+                return str(resolved)
+        except (OSError, ValueError):
+            continue
+    return None
+
 class Adb:
-    def __init__(self, adb_path=None, serial=None, timeout=30.0, logger=None, connection_mgr=None):
+    def __init__(self, adb_path=None, serial=None, timeout=30.0, logger=None, connection_mgr=None, user=0):
         self.logger = logger or Logger()
         self.timeout = timeout
         self.serial = serial or None
+        self.user = user_id(user)  # Android user every pm/cmd package command targets
         if adb_path:
-            resolved = shutil.which(adb_path) or (adb_path if Path(adb_path).is_file() else None)
-            if not resolved:
+            # No shutil.which() here: a bare name would be looked up in the working directory on Windows.
+            if not Path(adb_path).is_file():
                 raise AdbError(f"adb not found at --adb-path {adb_path}")
-            self.adb_path = resolved
+            self.adb_path = str(adb_path)
         else:
             # Delegate to ConnectionManager's AdbClient for discovery
             self.connection_mgr = connection_mgr
@@ -346,20 +377,22 @@ class Adb:
         return m.group(1) if m else ""
 
     def disable_user(self, package: str, timeout=None):
-        return self.shell(f"pm disable-user --user 0 {validate_package(package)}", timeout=timeout)
+        return self.shell(f"pm disable-user --user {self.user} {validate_package(package)}", timeout=timeout)
 
     def uninstall_user(self, package: str, timeout=None):
-        return self.shell(f"pm uninstall -k --user 0 {validate_package(package)}", timeout=timeout)
+        return self.shell(f"pm uninstall -k --user {self.user} {validate_package(package)}", timeout=timeout)
 
-    def enable(self, package: str, timeout=None):
-        return self.shell(f"pm enable --user 0 {validate_package(package)}", timeout=timeout)
+    def enable(self, package: str, timeout=None, user=None):
+        user = self.user if user is None else user_id(user)
+        return self.shell(f"pm enable --user {user} {validate_package(package)}", timeout=timeout)
 
-    def install_existing(self, package: str, timeout=None):
+    def install_existing(self, package: str, timeout=None, user=None):
         validate_package(package)
-        rc, out, err = self.shell(f"cmd package install-existing --user 0 {package}", timeout=timeout)
+        user = self.user if user is None else user_id(user)
+        rc, out, err = self.shell(f"cmd package install-existing --user {user} {package}", timeout=timeout)
         if pm_succeeded(rc, out, err, package): return rc, out, err
         # Older Android releases only expose install-existing through "pm".
-        return self.shell(f"pm install-existing --user 0 {package}", timeout=timeout)
+        return self.shell(f"pm install-existing --user {user} {package}", timeout=timeout)
 
     def _exact_listed(self, package, **kwargs):
         try:
@@ -409,9 +442,9 @@ class RuleSet:
         self.critical_reasons[pkg] = reason
         self.safe.pop(pkg, None)
 
-    def _add_safe(self, pkg, tier, reason, source):
+    def _add_safe(self, pkg, tier, reason, source, name=""):
         if pkg in self.critical: return
-        self.safe[pkg] = {"tier": tier, "reason": reason, "source": source}
+        self.safe[pkg] = {"tier": tier, "reason": reason, "source": source, "name": name}
 
     @staticmethod
     def _entry_tier(entry, source):
@@ -464,7 +497,7 @@ class RuleSet:
                     self.logger.error(str(exc))
                     continue
                 if tier is not None:
-                    self._add_safe(pkg, tier, entry.get("description", ""), univ_path.name)
+                    self._add_safe(pkg, tier, entry.get("description", ""), univ_path.name, entry.get("name", ""))
         oem_files = []
         for rf in sorted(rules_dir.glob("*.json")):
             if rf.name in ("critical-do-not-touch.json", "universal-safe-to-remove.json"): continue
@@ -490,10 +523,14 @@ class RuleSet:
                     self.logger.error(str(exc))
                     continue
                 reason = entry.get("description", entry.get("reason", ""))
-                self._add_safe(pkg, tier, reason, rf.name)
+                self._add_safe(pkg, tier, reason, rf.name, entry.get("name", ""))
 
     def is_critical(self, pkg): return pkg in self.critical
     def critical_reason(self, pkg): return self.critical_reasons.get(pkg, "critical")
+    def label(self, pkg):
+        """Package id with the rule's app name beside it, when a rule names it."""
+        name = (self.safe.get(pkg) or {}).get("name")
+        return f"{pkg} ({name})" if name else pkg
     def tier_for(self, pkg):
         info = self.safe.get(pkg)
         return int(info["tier"]) if info else None
@@ -556,11 +593,11 @@ class SnapshotManager:
         return path
 
     def create(self, device, packages_meta, adb, targeted_pkgs=None):
-        """Record the pre-change state (user 0) of the packages about to be changed."""
+        """Record the pre-change state (for adb.user) of the packages about to be changed."""
         ts = datetime.now().strftime(TIMESTAMP_FORMAT)
         path = self.snapshot_path(device.model, ts)
-        enabled_set = set(adb.pm_list_packages(user=0, enabled=True))
-        user0_set = set(adb.pm_list_packages(user=0))
+        enabled_set = set(adb.pm_list_packages(user=adb.user, enabled=True))
+        user0_set = set(adb.pm_list_packages(user=adb.user))
         meta_by_name = {}
         for pkg in packages_meta or []:
             if isinstance(pkg, dict) and pkg.get("name"): meta_by_name[pkg["name"]] = pkg
@@ -573,7 +610,7 @@ class SnapshotManager:
                 "name": name, "enabled": name in enabled_set, "installed_user0": name in user0_set,
                 "tier": meta.get("tier", 0), "reason": meta.get("reason", ""), "source": meta.get("source", "")
             })
-        snapshot = {"created_at": datetime.now().isoformat(), "timestamp": ts, "device": device.to_dict(), "package_count": len(entries), "packages": entries}
+        snapshot = {"created_at": datetime.now().isoformat(), "timestamp": ts, "device": device.to_dict(), "user": adb.user, "package_count": len(entries), "packages": entries}
         tmp = path.with_suffix(".json.tmp")
         with tmp.open("w", encoding="utf-8") as fh: json.dump(snapshot, fh, indent=2)
         os.replace(tmp, path)
@@ -608,10 +645,10 @@ class SnapshotManager:
                 try:
                     with path.open("r", encoding="utf-8") as fh: data = json.load(fh)
                     if not isinstance(data, dict): raise TypeError("not a JSON object")
-                    results.append({"path": str(path), "name": path.name, "created_at": data.get("created_at"), "device": data.get("device") or {}, "package_count": data.get("package_count")})
+                    results.append({"path": str(path), "name": path.name, "created_at": data.get("created_at"), "device": data.get("device") or {}, "user": data.get("user", 0), "package_count": data.get("package_count")})
                 except (OSError, ValueError, TypeError) as exc:
                     self.logger.warning(f"Skipping unreadable snapshot {path.name}: {exc}")
-        results.sort(key=lambda r: r.get("created_at") or "", reverse=True)
+        results.sort(key=lambda r: str(r.get("created_at") or ""), reverse=True)
         return results
 
     def find_backup(self, ident):
@@ -637,15 +674,19 @@ class SnapshotManager:
 
 class DebloatEngine:
     def __init__(self, adb_path=None, serial=None, rules_dir=None, backups_dir=BACKUPS_DIR, quiet=False, verbose=False, dry_run=False, timeout=30.0,
-                 assume_yes=False, manufacturer=None):
+                 assume_yes=False, manufacturer=None, user=0):
         self.logger = Logger(quiet, verbose)
         self.dry_run = dry_run
         self.timeout = timeout
         self.rules_dir = rules_dir
         self.manufacturer_override = manufacturer
+        # Resolve adb here and hand the connection layer a real file, so its bare "adb" lookup never runs.
+        adb_path = discover_adb(adb_path)
+        if not adb_path:
+            raise AdbError("adb not found. Install Android platform-tools, put adb on PATH, set AI_PHONE_DEBLOATER_ADB_PATH or pass --adb-path.")
         self.connection_mgr = ConnectionManager(adb_path=adb_path, timeout=timeout, logger_obj=self.logger)
         self.connection_ui = ConnectionUI(self.connection_mgr)
-        self.adb = Adb(self.connection_mgr.adb.adb_path, serial or os.environ.get("ANDROID_SERIAL"), timeout, self.logger)
+        self.adb = Adb(adb_path, serial or os.environ.get("ANDROID_SERIAL"), timeout, self.logger, user=user)
         self.device = DeviceInfo(self.adb, self.logger)
         self.rules = RuleSet(self.logger)
         self.snapshot_mgr = SnapshotManager(Path(backups_dir), self.logger)
@@ -829,10 +870,10 @@ class DebloatEngine:
         self.ensure_ready()
         self.logger.section("Scanning installed packages")
         with Progress(self.logger, "Querying package manager"):
-            # Two calls total (all + enabled, both for user 0 which every action targets)
+            # Two calls total (all + enabled, both for the user every action targets)
             # instead of one "pm list" per package.
-            raw = sorted(set(self.adb.pm_list_packages(user=0)))
-            enabled_set = set(self.adb.pm_list_packages(user=0, enabled=True))
+            raw = sorted(set(self.adb.pm_list_packages(user=self.adb.user)))
+            enabled_set = set(self.adb.pm_list_packages(user=self.adb.user, enabled=True))
         results = []
         for name in raw:
             tier, reason, source = self.rules.classify(name)
@@ -887,9 +928,9 @@ class DebloatEngine:
             return report
         show = print if (require_confirm and not self._confirmed) else self.logger.info  # the user must see what they confirm
         show(f"\nTarget Packages for {action}:")
-        for p in actionable: show(f"  - {p}")
+        for p in actionable: show(f"  - {self.rules.label(p)}")
         if self.dry_run:
-            self.logger.info(f"[DRY-RUN] Would {action} {len(actionable)} package(s) for user 0. No snapshot written, no changes made.")
+            self.logger.info(f"[DRY-RUN] Would {action} {len(actionable)} package(s) for user {self.adb.user}. No snapshot written, no changes made.")
             report["planned"] = list(actionable)
             return report
         if require_confirm and not self._confirm(f"Proceed with {action} on {len(actionable)} package(s)?"):
@@ -934,6 +975,37 @@ class DebloatEngine:
             return {"action": action, "total": 0, "dry_run": self.dry_run, "cancelled": False, "executed": [], "failed": [], "skipped_protected": []}
         return self.execute_plan(pkgs, action=action, packages_meta=results, **kwargs)
 
+    def _refuse_critical(self, names):
+        bad = [n for n in names if self.rules.is_critical(n)]
+        if bad:
+            raise DebloatError("Refusing critical (Tier 4) package(s): " + ", ".join(f"{n} ({self.rules.critical_reason(n)})" for n in bad)
+                               + ". Nothing was changed.")
+
+    def debloat_packages(self, names, tier=None, action="disable", **kwargs):
+        """--package: limit the plan to the named packages (and to `tier` when one is given)."""
+        names = list(dict.fromkeys(validate_package(n) for n in names))
+        self._refuse_critical(names)  # before any device access; repeated once the rule files are loaded
+        results = self.scan()
+        self._refuse_critical(names)
+        by_name = {p["name"]: p for p in results}
+        pkgs, missing = [], []
+        for name in names:
+            info = by_name.get(name)
+            if not info:
+                missing.append({"package": name, "error": f"not installed for user {self.adb.user}"})
+                self.logger.error(f"Not installed for user {self.adb.user}, skipped: {name}")
+            elif tier and info["tier"] != tier:
+                self.logger.warning(f"Not a Tier {tier} package, skipped: {name}")
+            elif action == "disable" and not info["enabled"]:
+                self.logger.info(f"Already disabled, skipped: {name}")
+            else:
+                if not info["tier"]:
+                    self.logger.warning(f"No rule for {name}; applying {action} only because it was named with --package.")
+                pkgs.append(name)
+        report = self.execute_plan(pkgs, action=action, packages_meta=results, **kwargs)
+        report["failed"] += missing
+        return report
+
     def export_scan(self, results, out_path=None):
         if out_path:
             path = Path(out_path)
@@ -969,32 +1041,46 @@ class DebloatEngine:
         self.logger.ok(f"Exported: {md_path}")
         return json_path, md_path
 
-    def restore_package(self, pkg, enable=True):
-        """Undo "pm uninstall -k --user 0" (install-existing) and/or "pm disable-user" (enable). Returns (ok, message)."""
+    def restore_package(self, pkg, enable=True, user=None):
+        """Undo "pm uninstall -k --user N" (install-existing) and/or "pm disable-user" (enable). Returns (ok, message)."""
         validate_package(pkg)
+        user = self.adb.user if user is None else user_id(user)
         if self.dry_run:
-            self.logger.info(f"[DRY-RUN] Would restore {pkg} (install-existing{' + enable' if enable else ''}).")
+            self.logger.info(f"[DRY-RUN] Would restore {pkg} for user {user} (install-existing{' + enable' if enable else ''}).")
             return True, "dry-run"
         is_valid, reason = self.connection_mgr.validate_active_device()
         if not is_valid:
             return False, f"Safety check failed: {reason}"
         try:
-            if not self.adb.is_installed_user(pkg, 0):
-                rc, out, err = self.adb.install_existing(pkg, self.timeout)
+            if not self.adb.is_installed_user(pkg, user):
+                rc, out, err = self.adb.install_existing(pkg, self.timeout, user)
                 if not pm_succeeded(rc, out, err, pkg):
                     return False, f"install-existing failed: {(err or out).strip() or f'exit {rc}'}"
             if enable:
-                rc, out, err = self.adb.enable(pkg, self.timeout)
+                rc, out, err = self.adb.enable(pkg, self.timeout, user)
                 if not pm_succeeded(rc, out, err, pkg):
                     return False, f"enable failed: {(err or out).strip() or f'exit {rc}'}"
         except AdbError as exc:
             return False, str(exc)
         return True, ""
 
-    def restore(self, ident, action="auto", selected_pkgs=None):
+    def restore(self, ident=None, action="auto", selected_pkgs=None):
+        if ident is None:
+            self.ensure_connected()
+            # Newest first. Only this phone's snapshots (same serial, or same model for USB vs wireless serials).
+            backups = [b for b in self.list_backups()
+                       if b["device"].get("serial") == self.device.serial or b["device"].get("model") == self.device.model]
+            if not backups:
+                raise DebloatError(f"No backup snapshot found for this device ({self.device.serial}). Run --list-snapshots and pass one to --restore.")
+            ident = backups[0]["path"]
+            self.logger.info(f"Restoring the newest snapshot: {ident}")
         snap_path = self.snapshot_mgr.find_backup(ident)
         if not snap_path: raise DebloatError(f"Backup not found: {ident}")
         data = self.snapshot_mgr.load(snap_path)
+        try:
+            user = user_id(data.get("user", 0))  # snapshots written before --user existed are user 0
+        except (TypeError, ValueError):
+            raise DebloatError(f"Snapshot {snap_path} has an invalid user: {data.get('user')!r}") from None
         self.ensure_connected()
         snap_dev = data.get("device") or {}
         if snap_dev.get("serial") and snap_dev.get("serial") != self.device.serial and snap_dev.get("model") != self.device.model:
@@ -1015,7 +1101,7 @@ class DebloatEngine:
                 report["skipped"].append(pkg)  # was not installed for user 0 before the change
                 continue
             # Restore the recorded pre-change state: a package that was already disabled stays disabled.
-            ok, msg = self.restore_package(pkg, enable=bool(entry.get("enabled", True)))
+            ok, msg = self.restore_package(pkg, enable=bool(entry.get("enabled", True)), user=user)
             if ok:
                 report["restored"].append(pkg)
                 self.logger.ok(f"Restored: {pkg}")
@@ -1179,7 +1265,11 @@ def build_parser():
     p.add_argument("--interactive", "-i", action="store_true", help="Interactive menu (default when no action is given)")
     p.add_argument("--scan", "-s", action="store_true", help="Scan and classify installed packages")
     p.add_argument("--tier", type=int, choices=[1, 2, 3], help="Target safety tier (1=Safe, 2=Advanced, 3=Extreme)")
-    p.add_argument("--action", choices=["disable", "uninstall"], default=None, help="Debloat action for --tier (default: disable)")
+    p.add_argument("--action", choices=["disable", "uninstall"], default=None, help="Debloat action for --tier/--package (default: disable)")
+    p.add_argument("--package", action="append", default=[], metavar="NAME",
+                   help="Limit the plan to this package (repeatable); with --tier, only if it is in that tier. Critical packages are refused")
+    p.add_argument("--user", type=user_id, default=0, metavar="N",
+                   help="Android user id to act on (default: 0). --restore uses the user recorded in the snapshot")
     p.add_argument("--wireless", "-w", help="Connect to wireless ADB device (IP:Port)")
     p.add_argument("--qr-pair", action="store_true", help="Connect wirelessly via Android 11+ QR code pairing")
     p.add_argument("--diagnostics", action="store_true", help="Run comprehensive connection diagnostics (ADB, USB, Wireless)")
@@ -1192,10 +1282,14 @@ def build_parser():
     p.add_argument("--export-json", nargs="?", const=True, metavar="PATH", help="Export scan results as JSON (optionally to PATH)")
     p.add_argument("--serial", help="ADB serial of the device to use when several are attached (default: $ANDROID_SERIAL)")
     p.add_argument("--adb-path", help="Path to the adb executable (default: PATH, bundled platform-tools, $AI_PHONE_DEBLOATER_ADB_PATH)")
-    p.add_argument("--yes", "-y", action="store_true", help="Do not ask for confirmation (required for --tier without a terminal)")
-    p.add_argument("--restore", metavar="SNAPSHOT", help="Restore packages from a backup snapshot (file name, path or unique part of the name)")
+    p.add_argument("--yes", "-y", action="store_true", help="Do not ask for confirmation (required for --tier/--package without a terminal)")
+    p.add_argument("--restore", nargs="?", const=True, metavar="SNAPSHOT",
+                   help="Restore packages from a backup snapshot (file name, path or unique part of the name; the newest snapshot if omitted)")
+    p.add_argument("--list-snapshots", action="store_true", help="List backup snapshots, newest first, and exit (no device needed)")
     p.add_argument("--bridge", action="store_true", help="Start local WebApp ADB bridge server on port 53123")
     p.add_argument("--port", type=int, default=53123, help="Port for the bridge server (default: 53123)")
+    p.add_argument("--allow-origin", action="append", default=[], metavar="URL",
+                   help="With --bridge: extra web origin allowed to call the bridge, e.g. http://localhost:4321 (repeatable)")
     return p
 
 def main(argv=None):
@@ -1203,26 +1297,38 @@ def main(argv=None):
     args = parser.parse_args(argv)
     export_path = args.export_json if isinstance(args.export_json, str) else None
     export = bool(args.export_json)
-    if args.restore and (args.tier or args.scan or export):
-        parser.error("--restore cannot be combined with --scan/--tier/--export-json")
-    if args.action and not args.tier:
-        parser.error("--action requires --tier")
-    has_action = bool(args.scan or args.tier or args.restore or export or args.diagnostics or args.qr_pair or args.switch_transport or args.bridge)
+    if args.restore and (args.tier or args.package or args.scan or export):
+        parser.error("--restore cannot be combined with --scan/--tier/--package/--export-json")
+    if args.action and not (args.tier or args.package):
+        parser.error("--action requires --tier or --package")
+    if args.allow_origin and not args.bridge:
+        parser.error("--allow-origin requires --bridge")
+    has_action = bool(args.scan or args.tier or args.package or args.restore or args.list_snapshots or export or args.diagnostics
+                      or args.qr_pair or args.switch_transport or args.bridge)
     if not has_action and not args.interactive and not DebloatEngine._tty():
-        parser.error("no action given and stdin is not a terminal; use --scan, --tier N, --diagnostics, --qr-pair, --bridge or --restore SNAPSHOT")
+        parser.error("no action given and stdin is not a terminal; use --scan, --tier N, --package NAME, --diagnostics, --qr-pair, --bridge, "
+                     "--list-snapshots or --restore [SNAPSHOT]")
 
     if args.bridge:
         try:
             from .bridge_server import start_bridge
         except ImportError:
             from bridge_server import start_bridge
-        start_bridge(port=args.port)
+        start_bridge(port=args.port, allow_origins=args.allow_origin)
         return 0
 
     logger = Logger(args.quiet, args.verbose)
     try:
+        if args.list_snapshots:
+            backups = SnapshotManager(BACKUPS_DIR, logger).list_backups()  # newest first
+            if not backups: print("No backup snapshots found.")
+            for b in backups:
+                dev = b["device"] if isinstance(b["device"], dict) else {}
+                print(f"{b['path']}\n    {b['created_at'] or '?'} | {dev.get('manufacturer', '?')} {dev.get('model', '?')} ({dev.get('serial', '?')})"
+                      f" | user {b['user']} | {b['package_count'] if b['package_count'] is not None else '?'} package(s)")
+            return 0
         engine = DebloatEngine(adb_path=args.adb_path, serial=args.serial, quiet=args.quiet, verbose=args.verbose,
-                               dry_run=args.dry_run, assume_yes=args.yes, manufacturer=args.manufacturer)
+                               dry_run=args.dry_run, assume_yes=args.yes, manufacturer=args.manufacturer, user=args.user)
         if args.diagnostics:
             engine.connection_ui.handle_diagnostics_flow()
             return 0
@@ -1236,10 +1342,11 @@ def main(argv=None):
         if args.wireless and not engine.connect_wireless(args.wireless):
             return 1
         if args.restore:
-            report = engine.restore(args.restore)
+            report = engine.restore(None if args.restore is True else args.restore)
             return 1 if report["failed"] else 0
-        if args.tier:
-            report = engine.debloat_tier(args.tier, action=args.action or "disable", auto_snapshot=not args.no_backup)
+        if args.tier or args.package:
+            plan = {"action": args.action or "disable", "auto_snapshot": not args.no_backup}
+            report = engine.debloat_packages(args.package, tier=args.tier, **plan) if args.package else engine.debloat_tier(args.tier, **plan)
             if export and engine.last_scan is not None:
                 engine.export_scan(engine.last_scan, export_path)
             return 1 if (report.get("failed") or report.get("cancelled")) else 0

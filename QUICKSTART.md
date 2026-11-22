@@ -81,14 +81,21 @@ curl -sSL https://debloater.rovoxia.com/run.sh | bash
 From the interactive menu:
 - Press **`1`** to **Scan & Audit** your phone (classifies all installed apps into Safety Tiers).
 - Press **`2`** to **Dry-Run Simulate Tier 1** (simulates removal without making any device changes).
-- Press **`3`** to **Safely Debloat Tier 1** (removes carrier junk, preloaded bloatware, and ad telemetry).
-- Press **`4`** to **Deep Debloat Tier 2** (removes Bixby/assistants, OEM cloud sync, and digital wellbeing).
-- Press **`5`** to **Extreme Debloat Tier 3** (removes non-essential stock app utilities).
+- Press **`3`** to **Safely Debloat Tier 1** (disables carrier apps, preloaded bloatware, ad daemons, telemetry, and OEM extras like Bixby and AR Emoji).
+- Press **`4`** to **Deep Debloat Tier 2** (disables optional features such as wallets, Samsung Pass, DeX, theme stores, Digital Wellbeing, and OEM accounts/cloud).
+- Press **`5`** to **Extreme Debloat Tier 3** (disables the Transsion OTA updater, the only Tier 3 rule; this stops system updates).
 - Press **`6`** to **Export for AI** (creates a JSON device profile for Claude, ChatGPT, or Cursor).
 - Press **`7`** to **List Backups** (shows all timestamped snapshot archives).
 - Press **`8`** to **Restore from Backup** (1-click snapshot rollback bringing back any app).
 - Press **`9`** to **Restore Single Package** (re-enables/reinstalls any single app).
 - Press **`w`** to **Connect via Wireless ADB (Wi-Fi)** (debloat without USB cable).
+
+The launchers also accept the engine's flags directly, for example:
+```bash
+bash cli/bin/debloat.sh --package com.facebook.katana --dry-run   # preview one app (repeatable)
+bash cli/bin/debloat.sh --list-snapshots                          # backups, newest first
+bash cli/bin/debloat.sh --restore                                 # restore the newest snapshot of this phone
+```
 
 ---
 

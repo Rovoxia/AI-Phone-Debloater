@@ -81,15 +81,6 @@ class DeviceRegistry:
                     pass
             return False
 
-    def get(self, physical_id: str) -> RememberedDevice | None:
-        """Look up a remembered device by its physical ID."""
-        if not physical_id:
-            return None
-        for dev in self.load_all():
-            if dev.physical_id == physical_id:
-                return dev
-        return None
-
     def remember(self, info: DeviceInfo, friendly_name: str | None = None) -> RememberedDevice:
         """
         Record or update a successfully connected device.
@@ -130,26 +121,3 @@ class DeviceRegistry:
         logger.info(f"Remembered device: {record.friendly_name} ({record.physical_id})")
         return record
 
-    def forget(self, physical_id: str) -> bool:
-        """Remove a device from remembered devices."""
-        devices = self.load_all()
-        filtered = [d for d in devices if d.physical_id != physical_id]
-        if len(filtered) != len(devices):
-            self.save_all(filtered)
-            logger.info(f"Forgot device with physical ID: {physical_id}")
-            return True
-        return False
-
-    def set_friendly_name(self, physical_id: str, new_name: str) -> bool:
-        """Update friendly name for a device."""
-        devices = self.load_all()
-        for dev in devices:
-            if dev.physical_id == physical_id:
-                dev.friendly_name = new_name.strip()
-                self.save_all(devices)
-                return True
-        return False
-
-    def clear(self) -> bool:
-        """Clear all remembered devices."""
-        return self.save_all([])

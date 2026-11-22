@@ -29,7 +29,6 @@ class ConnectionState(Enum):
     DISCONNECTED = "disconnected"
     INITIALIZING = "initializing"
     DISCOVERING = "discovering"
-    DEVICE_FOUND = "device_found"
     WAITING_FOR_AUTHORIZATION = "waiting_for_authorization"
     PAIRING = "pairing"
     PAIRED = "paired"
@@ -62,18 +61,6 @@ class TransportType(Enum):
         if ":" in s or s.count(".") == 3 or "._adb" in s:  # IP or mDNS name
             return cls.WIRELESS
         return cls.USB
-
-
-class DeviceState(Enum):
-    """State reported by ``adb devices`` / ``adb get-state``."""
-
-    DEVICE = "device"
-    UNAUTHORIZED = "unauthorized"
-    OFFLINE = "offline"
-    RECOVERY = "recovery"
-    SIDELOAD = "sideload"
-    BOOTLOADER = "bootloader"
-    UNKNOWN = "unknown"
 
 
 @dataclass
@@ -313,7 +300,6 @@ class RememberedDevice:
 __all__ = [
     "ConnectionState",
     "DeviceInfo",
-    "DeviceState",
     "DiagnosticItem",
     "DiagnosticReport",
     "DiscoveredService",

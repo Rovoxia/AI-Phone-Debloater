@@ -1,0 +1,7 @@
+version: 2
+updates:
+  # Workflows pin actions to commit SHAs; this opens PRs when a pinned action has a new release.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

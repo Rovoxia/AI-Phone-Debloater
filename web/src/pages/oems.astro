@@ -171,7 +171,7 @@ const allRules = rulesData.rules;
     <!-- Google Fonts (Optimized) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" media="print" data-async-css />
     <noscript>
       <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
     </noscript>
@@ -492,8 +492,8 @@ const allRules = rulesData.rules;
 
     <Footer />
 
-    <!-- Client-side filter & search script -->
-    <script is:inline>
+    <!-- Client-side filter & search script. Processed by Astro (not is:inline) so the build adds its hash to the CSP. -->
+    <script>
       (function() {
         const searchInput = document.getElementById('search-input');
         const filterBtns = document.querySelectorAll('.oem-filter');

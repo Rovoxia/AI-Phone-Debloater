@@ -24,7 +24,6 @@ import os
 import re
 import shutil
 import subprocess
-import time
 from pathlib import Path
 
 from .exceptions import (
@@ -32,7 +31,6 @@ from .exceptions import (
     AdbServerError,
     AdbVersionError,
     ConnectionError,
-    DeviceAmbiguousError,
     DeviceNotFoundError,
 )
 
@@ -121,9 +119,6 @@ class _LoggerAdapter:
             except TypeError:
                 pass
 
-    def warn(self, msg: str, *args) -> None:
-        self.warning(msg, *args)
-
     def error(self, msg: str, *args) -> None:
         formatted = self._fmt(msg, *args)
         if hasattr(self._target, "error"):
@@ -180,7 +175,6 @@ class AdbClient:
         raw_logger = logger or logger_obj or logging.getLogger("ai_phone_debloater.connection.adb_client")
         self._logger = _LoggerAdapter(raw_logger)
         self.adb_path = self._discover_adb(adb_path)
-        self._server_started: bool = False
 
     # ------------------------------------------------------------------
     # Path discovery
@@ -354,12 +348,6 @@ class AdbClient:
         self.run_adb(["start-server"])
         return self.is_server_running()
 
-    def kill_server(self) -> bool:
-        """Kill the ADB server. Returns True when no longer reachable."""
-        self.run_adb(["kill-server"])
-        time.sleep(0.5)
-        return not self.is_server_running()
-
     def is_server_running(self) -> bool:
         """Check whether the ADB server is reachable on localhost:5037.
 
@@ -398,26 +386,10 @@ class AdbClient:
                 if len(parts) >= 5:
                     return parts[4]
         # Fallback: first version-like token anywhere in output.
-        import re
-
         match = re.search(r"(\d+\.\d+\.\d+)", stdout)
         if match:
             return match.group(1)
         raise AdbVersionError(f"could not parse adb version from output: {stdout!r}")
-
-    def check_min_version(self, min_version: str = "1.0.41") -> None:
-        """Raise :class:`AdbVersionError` when the installed adb is older than
-        ``min_version``. Wireless pairing requires adb >= 1.0.41."""
-        installed = self.get_version()
-
-        def parse(ver: str) -> tuple[int, ...]:
-            return tuple(int(part) for part in ver.split(".") if part.isdigit())
-
-        if parse(installed) < parse(min_version):
-            raise AdbVersionError(
-                f"adb {installed} is too old; >= {min_version} required for "
-                "wireless pairing/connect operations"
-            )
 
     # ------------------------------------------------------------------
     # Device listing
@@ -482,44 +454,6 @@ class AdbClient:
 
         raise DeviceNotFoundError(f"device not found: {serial}")
 
-    def get_device_serial(self, serial: str) -> str:
-        """Return the serial for a single device, raising specific errors."""
-        dev = self.lookup_device(serial)
-        if dev is None:
-            raise DeviceNotFoundError(f"device not found: {serial}")
-        return dev["serial"]
-
-    def lookup_device(self, serial: str) -> dict[str, str] | None:
-        """Search the device listing for a serial. Returns dict or None."""
-        devices = self.list_devices()
-        for dev in devices:
-            if dev["serial"] == serial:
-                return dev
-        return None
-
-    def get_device_model(self, serial: str) -> str:
-        """Return the model property for a serial, empty string if not found."""
-        dev = self.lookup_device(serial)
-        if dev is None:
-            return ""
-        return dev.get("model", "")
-
-    def resolve_serial(self) -> str:
-        """Return the single attached device serial, or raise.
-
-        Raises :class:`DeviceNotFoundError` when no device is attached and
-        :class:`DeviceAmbiguousError` when more than one device is attached.
-        """
-        devices = self.list_devices()
-        if not devices:
-            raise DeviceNotFoundError("no devices attached")
-        if len(devices) > 1:
-            serials = ", ".join(d["serial"] for d in devices)
-            raise DeviceAmbiguousError(
-                f"multiple devices attached; specify -s serial: {serials}"
-            )
-        return devices[0]["serial"]
-
     def getprop(self, prop: str, serial: str | None = None, timeout: float | None = None) -> str:
         """Query an Android system property via `getprop <prop>`."""
         if not re.match(r"^[A-Za-z0-9._-]+$", prop):
@@ -530,15 +464,3 @@ class AdbClient:
         except (OSError, AdbServerError):
             return ""
 
-    def is_device_online(self, serial: str) -> bool:
-        """Return True when the device reports state 'device' (authorized)."""
-        try:
-            return self.get_device_state(serial) == "device"
-        except (DeviceNotFoundError, ConnectionError):
-            return False
-
-    def close(self) -> None:
-        """Placeholder for symmetry with transport layers that hold resources.
-        Does nothing here (the ADB server is a long-lived daemon we do not
-        own)."""
-        self._server_started = False
