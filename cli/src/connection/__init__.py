@@ -31,7 +31,6 @@ from .manager import ConnectionManager
 from .models import (
     ConnectionState,
     DeviceInfo,
-    DeviceState,
     DiagnosticItem,
     DiagnosticReport,
     DiscoveredService,
@@ -69,7 +68,6 @@ __all__ = [
     "DeviceNotFoundError",
     "DeviceOfflineError",
     "DeviceRegistry",
-    "DeviceState",
     "DeviceUnauthorizedError",
     "DiagnosticItem",
     "DiagnosticReport",

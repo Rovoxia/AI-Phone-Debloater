@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any
 
 from .adb_client import AdbClient
 from .device_identity import DeviceIdentityManager
@@ -20,7 +19,7 @@ from .exceptions import (
     DeviceUnauthorizedError,
     SecurityValidationError,
 )
-from .models import DeviceInfo, TransportType
+from .models import DeviceInfo
 
 logger = logging.getLogger("rovoxia.connection.wireless")
 
@@ -32,11 +31,9 @@ class WirelessConnectionHandler:
         self,
         adb_client: AdbClient,
         identity_manager: DeviceIdentityManager | None = None,
-        logger_obj: Any | None = None,
     ) -> None:
         self.adb = adb_client
         self.identity = identity_manager or DeviceIdentityManager(adb_client)
-        self.custom_logger = logger_obj
 
     def connect(self, address: str, timeout: float = 15.0) -> tuple[bool, str]:
         """
@@ -105,14 +102,6 @@ class WirelessConnectionHandler:
         logger.info(f"Switching device {serial or 'default'} to TCP/IP port {port}...")
         rc, out, err = self.adb.run_adb(["tcpip", str(port)], serial=serial, timeout=15.0)
         return rc == 0 and ("restarting in tcp mode" in (out + err).lower() or rc == 0)
-
-    def list_wireless_devices(self) -> list[dict[str, str]]:
-        """List currently connected wireless ADB devices."""
-        all_devs = self.adb.list_devices()
-        return [
-            d for d in all_devs
-            if TransportType.from_serial(d.get("serial", "")) == TransportType.WIRELESS
-        ]
 
     def verify_and_get_info(self, endpoint: str) -> DeviceInfo:
         """

@@ -11,7 +11,6 @@ from __future__ import annotations
 import logging
 import time
 from collections.abc import Callable
-from typing import Any
 
 from .adb_client import AdbClient
 from .device_identity import DeviceIdentityManager
@@ -33,11 +32,9 @@ class UsbConnectionHandler:
         self,
         adb_client: AdbClient,
         identity_manager: DeviceIdentityManager | None = None,
-        logger_obj: Any | None = None,
     ) -> None:
         self.adb = adb_client
         self.identity = identity_manager or DeviceIdentityManager(adb_client)
-        self.custom_logger = logger_obj
 
     def list_usb_devices(self) -> list[dict[str, str]]:
         """

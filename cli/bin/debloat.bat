@@ -45,7 +45,8 @@ if not defined PY (
         "Write-Host '[INFO] Downloading official Python 3.12 installer...';" ^
         "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;" ^
         "(New-Object Net.WebClient).DownloadFile($url, $installer);" ^
-        "if ((Get-AuthenticodeSignature $installer).Status -ne 'Valid') { Remove-Item $installer -Force; Write-Host '[ERROR] Python installer signature is not valid; not running it.'; exit 1 };" ^
+        "$sig = Get-AuthenticodeSignature $installer;" ^
+        "if ($sig.Status -ne 'Valid' -or $sig.SignerCertificate.Subject -notlike 'CN=Python Software Foundation,*') { Remove-Item $installer -Force; Write-Host '[ERROR] Python installer is not signed by the Python Software Foundation; not running it.'; exit 1 };" ^
         "Write-Host '[INFO] Installing Python silently...';" ^
         "$p = Start-Process -FilePath $installer -ArgumentList '/quiet InstallAllUsers=0 PrependPath=1 Include_test=0' -Wait -PassThru;" ^
         "Remove-Item $installer -Force -ErrorAction SilentlyContinue;" ^

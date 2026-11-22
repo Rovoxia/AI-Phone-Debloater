@@ -53,8 +53,6 @@ class ConnectionManager:
         logger_obj: Any | None = None,
         registry: DeviceRegistry | None = None,
     ) -> None:
-        self.timeout = float(timeout)
-        self.custom_logger = logger_obj
         self._state_lock = threading.RLock()
         self._state = ConnectionState.DISCONNECTED
         self._active_device: DeviceInfo | None = None
@@ -67,8 +65,8 @@ class ConnectionManager:
         self.registry = registry or DeviceRegistry()
         self.mdns = MdnsDiscovery(self.adb, logger_obj=logger_obj)
         self.lan = LanDiscovery(logger_obj=logger_obj)
-        self.usb = UsbConnectionHandler(self.adb, self.identity, logger_obj=logger_obj)
-        self.wireless = WirelessConnectionHandler(self.adb, self.identity, logger_obj=logger_obj)
+        self.usb = UsbConnectionHandler(self.adb, self.identity)
+        self.wireless = WirelessConnectionHandler(self.adb, self.identity)
         self.qr_pairing = QrPairingManager(
             self.adb, self.identity, self.wireless, self.mdns, logger_obj=logger_obj
         )
@@ -162,28 +160,6 @@ class ConnectionManager:
                 devices.append(DeviceInfo(serial=serial, state=state, transport_type=tt))
 
         return devices
-
-    def detect_connected_hardware(self) -> tuple[list[DeviceInfo], list[tuple[DeviceInfo, DeviceInfo]]]:
-        """
-        Identify unique physical devices and detect duplicate transports
-        (e.g. phone attached over both USB and Wi-Fi simultaneously).
-        Returns (unique_physical_devices, duplicate_pairs).
-        """
-        all_devs = self.get_attached_devices()
-        unique: list[DeviceInfo] = []
-        duplicates: list[tuple[DeviceInfo, DeviceInfo]] = []
-
-        for dev in all_devs:
-            found_dup = False
-            for u in unique:
-                if self.identity.is_same_physical_device(dev, u):
-                    duplicates.append((u, dev))
-                    found_dup = True
-                    break
-            if not found_dup:
-                unique.append(dev)
-
-        return unique, duplicates
 
     # -----------------------------------------------------------------------
     # Connection Operations
@@ -356,40 +332,29 @@ class ConnectionManager:
                     self.set_active_device(dev)
                     return dev
 
-            # 2. Try last known endpoint as fallback (USB or wireless)
-            if target_record.last_endpoint:
+            # 2. Try last known endpoint as fallback. Verify identity before
+            # activating, because set_active_device() writes to the registry.
+            endpoint = target_record.last_endpoint
+            if endpoint:
                 try:
-                    dev = self.connect_wifi(target_record.last_endpoint, timeout=timeout)
-                    if dev and dev.physical_id == target_record.physical_id:
+                    dev = self._open_wifi(endpoint, timeout=timeout)
+                    if dev.physical_id == target_record.physical_id:
+                        self.set_active_device(dev)
                         return dev
-                    # Mismatch: drop the wrong device and disconnect it silently
-                    self._active_device = None
-                    if dev and dev.serial != target_record.last_endpoint:
-                        try:
-                            self.wireless.disconnect(target_record.last_endpoint)
-                        except (ConnectionError, OSError) as exc:
-                            logger.debug(f"Disconnection failed for {target_record.last_endpoint}: {exc}")
+                    logger.warning(f"Device at {endpoint} is not {target_record.friendly_name}; ignoring it.")
+                    self.wireless.disconnect(endpoint)
                 except (ConnectionError, OSError) as exc:
-                    logger.debug(f"Connection failed for {target_record.last_endpoint}: {exc}")
+                    logger.debug(f"Reconnection via {endpoint} failed: {exc}")
 
             self._set_state(ConnectionState.DISCONNECTED)
             return None
 
-    def disconnect_device(self, serial: str | None = None) -> bool:
-        """Disconnect the specified device or the active device."""
-        with self._state_lock:
-            target = serial or (self._active_device.serial if self._active_device else None)
-            if not target:
-                return False
-
-            if ":" in target:
-                self.wireless.disconnect(target)
-
-            if self._active_device and self._active_device.serial == target:
-                self._active_device = None
-                self._set_state(ConnectionState.DISCONNECTED)
-
-            return True
+    def _open_wifi(self, address: str, timeout: float = 15.0) -> DeviceInfo:
+        """`adb connect` and read the device's identity without activating or remembering it."""
+        ok, msg = self.wireless.connect(address, timeout=timeout)
+        if not ok:
+            raise ConnectionError(f"Wireless connection failed: {msg}")
+        return self.wireless.verify_and_get_info(address)
 
     # -----------------------------------------------------------------------
     # Device Consistency & Safety Validation
@@ -476,9 +441,9 @@ class ConnectionManager:
                         "Check Wi-Fi settings on the phone or use mDNS discovery."
                     )
 
-                new_device = self.connect_wifi(new_endpoint)
+                new_device = self._open_wifi(new_endpoint)
 
-                # Verify same physical device
+                # Verify same physical device before activating (which also remembers it)
                 if not self.identity.is_same_physical_device(current, new_device):
                     self.wireless.disconnect(new_endpoint)
                     raise ConnectionError(
@@ -516,13 +481,3 @@ class ConnectionManager:
     def run_diagnostics(self) -> DiagnosticReport:
         """Run the comprehensive connection diagnostics suite."""
         return self.diagnostics.run_all()
-
-    def get_connection_status(self) -> dict[str, Any]:
-        """Return a structured snapshot of connection health and active device."""
-        with self._state_lock:
-            return {
-                "state": self._state.value,
-                "active_device": self._active_device.to_dict() if self._active_device else None,
-                "is_connected": self._active_device is not None and self._active_device.is_authorized(),
-                "server_running": self.adb.is_server_running(),
-            }
