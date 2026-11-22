@@ -6,7 +6,8 @@ AI-Phone-Debloater is an open-source Android debloating utility. Security update
 
 | Version | Supported |
 |---------|-----------|
-| 1.1.x   | :white_check_mark: |
+| 1.2.x   | :white_check_mark: |
+| < 1.2   | :x: |
 
 ## Reporting a Vulnerability
 

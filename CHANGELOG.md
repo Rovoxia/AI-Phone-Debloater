@@ -6,8 +6,52 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Web app: device panel with phone art, connection state and live stats (device, Android version, connection, serial, packages, enabled, disabled, uninstalled, bloat found by tier, protected, selected, last snapshot). Unknown values show a dash
+- A page per brand at `/oems/<brand>` with that brand's rules grouped by tier, how to apply them and the matching guide, plus `/oems/critical` listing the protected packages and why they are never changed
+- `/oems` shows each rule's description, filters by brand and tier, and a filtered view has a linkable URL
+- `/rss.xml` feed for the guides; sitemap `lastmod` for blog URLs
+- Light/dark theme toggle, skip link, visible keyboard focus and a web manifest with app icons
+- Structured data on every page from one graph (Organization, WebSite, SoftwareApplication, FAQPage, Dataset, BlogPosting, BreadcrumbList), and a CI step that fails on invalid JSON-LD
+- Copy buttons on the CLI commands of each brand page; RSS feed discovery link on every indexable page
+- Web app: deleting a snapshot asks for confirmation, and a note explains that the tool needs JavaScript when it is turned off
+
+### Changed
+
+- Site redesigned on one shared layout and design system: flat, typography-led, fluid type and spacing from 320px to 2560px, light and dark, self-hosted Inter and JetBrains Mono (no request to Google Fonts)
+- Home page rebuilt: new heading and product definition, five-step "How it works", three ways to use it with copy buttons, per-brand rule table, "How to undo a change"; FAQ and its structured data come from one source
+- Guides are Markdown files in a content collection; tables, lists and code render as real HTML, and tier counts and package tables are generated from the rule set
+- All ten guides rewritten against the rule set
+- Web app rebuilt on the shared layout: package list becomes cards on narrow screens, activity log and batch bar share one dock, Snapshots is a modal dialog, package status "Installed" is shown as "Enabled"
+- `llms.txt` follows the llms.txt convention with links to every page and guide; `robots.txt` reduced to one allow-all group plus the sitemap
+- Social share image redrawn
+- URLs no longer redirect: pages are built as flat files, so `/app`, `/oems`, `/blog` and guides answer directly instead of redirecting to a trailing slash
+- `/_astro/*` assets are served with long-lived immutable caching
+- Web app: the dry-run/live mode switch is removed. Every batch and per-package action opens a confirmation dialog that names the action, device and packages, and runs only after it is confirmed. Dry run remains a CLI feature (`--dry-run`)
+- Web app: the batch button names the action and count ("Freeze 3 selected") and is disabled when nothing is selected, and while a snapshot restore runs
+- Web app: the activity log keeps the newest 800 lines; the CSV export uses the same status words as the table (Enabled, Disabled, Uninstalled)
+- Tier badges read "Tier 1: Safe" to screen readers and in copied text
+- The master prompt and the wireless guide use the product's and the pairing button's current names
+
 ### Fixed
 
+- Home page structured data was invalid JSON and was ignored by search engines
+- Guides no longer contain invented tier tables and counts, unmeasured RAM and battery figures, "tested on" lists, the false "enable OEM unlocking" step, or advice to remove the Samsung keyboard, messages app, launcher and a critical package
+- Unmeasured performance figures and absolute guarantees removed from the site, `llms.txt`, `llms-full.txt`, `pricing.md`, the share image and six rule descriptions
+- `/oems` counts are computed from the rule set (cards now sum to the total and Huawei is listed); features and brands with no rule were removed
+- FAQ structured data now matches the visible FAQ
+- Huawei rule file used a lower-case manufacturer name
+- QR pairing connects only through the phone's `_adb-tls-connect` port. It no longer picks a legacy `_adb._tcp` entry on port 5555, which failed with "target machine actively refused it"
+- QR pairing recognises a phone that adb already auto-connected under its mDNS name, retries the connect step for up to 30 seconds while the port appears, and ignores pairing services whose name does not contain the session name
+- The "connect port not announced" pairing error gives steps that apply to both the web app and the CLI
+- Missing spaces between words and links or numbers on several pages (HTML whitespace compression setting)
+- Commands in running text no longer break after a hyphen; in tables they stay on one line and the table scrolls
+- Links and keyboard focus no longer land under the sticky header
+- With enlarged text, the header, code captions, wide tables and the web app's status line stay inside the page
+- With reduced motion, switching theme on the full package list no longer stalls
+- Web app: importing a file that is not a snapshot shows a plain message instead of a parser error
+- `llms-full.txt` no longer states Knox or Play Integrity outcomes that the project does not check
 - README and home page FAQ no longer say debloating never affects OTA updates: the Tier 3 Transsion updater rule stops them. The README CI badge now shows the real workflow status, and the documented one-liners use `curl -fsSL`
 
 ## [1.2.0] - 2026-11-22
