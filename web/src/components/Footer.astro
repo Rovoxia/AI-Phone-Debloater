@@ -294,7 +294,7 @@ const siteVersion = SITE_VERSION;
         </p>
         <button
           type="button"
-          onclick="window.scrollTo({top:0,behavior:'smooth'})"
+          data-back-to-top
           class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-800 dark:bg-[#151922] dark:text-slate-300 dark:hover:bg-slate-800 transition-colors shadow-sm cursor-pointer"
           aria-label="Back to top"
           title="Back to top"
@@ -322,11 +322,26 @@ const siteVersion = SITE_VERSION;
   }
   /* Reduce motion for back-to-top scroll */
   @media (prefers-reduced-motion: reduce) {
-    button[onclick*="scrollTo"] {
+    button[data-back-to-top] {
       scroll-behavior: auto !important;
     }
   }
 </style>
+
+<script>
+  // The site CSP has no 'unsafe-inline', so inline on* attributes do not run. Bind here instead.
+  document.querySelectorAll('[data-back-to-top]').forEach((button) => {
+    button.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  });
+
+  // Font stylesheets load with media="print" so they do not block rendering; switch them on once
+  // loaded (this replaces onload="this.media='all'"). `sheet` is set if the load already finished.
+  document.querySelectorAll<HTMLLinkElement>('link[data-async-css]').forEach((link) => {
+    const enable = () => { link.media = 'all'; };
+    link.addEventListener('load', enable);
+    if (link.sheet) enable();
+  });
+</script>
 
 <script type="application/ld+json" is:inline>
 {

@@ -1,0 +1,13 @@
+# Response headers for Cloudflare Pages. Keep web/nginx.conf in step with this file.
+#
+# The full Content-Security-Policy is a <meta> tag that Astro writes into every page
+# (security.csp in astro.config.mjs). frame-ancestors is ignored in a <meta> policy,
+# so it is sent as a header. Browsers enforce both policies together.
+#
+# Do not set Content-Type or Content-Disposition here: /run.sh, /run.ps1, /bridge.sh,
+# /bridge.ps1 and /prompt.md are piped into a shell (curl | bash, irm | iex).
+/*
+  Content-Security-Policy: frame-ancestors 'none'
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

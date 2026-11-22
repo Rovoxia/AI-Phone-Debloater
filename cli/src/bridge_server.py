@@ -15,16 +15,22 @@ Endpoints:
     GET  /device?serial=X | /api/device?serial=X
     POST /execute       | /api/execute   {serial, mode, action, packages}
     POST /restore       | /api/restore   {serial, packages}
+    POST /pair/qr       | /api/pair/qr       {}  start Wi-Fi QR pairing, returns the QR matrix
+    GET  /pair/status   | /api/pair/status
+    POST /pair/cancel   | /api/pair/cancel   {}
 
 Every request must be addressed to 127.0.0.1/localhost (Host header) and, when
 it carries an Origin, come from an allowed web origin (see ALLOWED_ORIGINS).
+Every route except /health also needs the per-session token in X-Bridge-Token.
 """
 
 from __future__ import annotations
 
+import hmac
 import json
 import os
 import re
+import secrets
 import shutil
 import signal
 import subprocess
@@ -82,10 +88,23 @@ _LOOPBACK = r"(?:127\.0\.0\.1|localhost)(?::[0-9]{1,5})?"
 HOST_RE = re.compile(_LOOPBACK, re.IGNORECASE)
 ALLOWED_ORIGINS: set[str] = {"https://debloater.rovoxia.com"}
 
+# Per-session token, on top of the Origin check: a local process or page that is not
+# the web app this bridge was started for cannot drive the phone. start_bridge
+# replaces this import-time value, so a handler is never left without a token.
+TOKEN_ENV = "AIPD_BRIDGE_TOKEN"
+TOKEN_HEADER = "X-Bridge-Token"
+TOKEN_RE = re.compile(r"[A-Za-z0-9._~-]{16,}")  # survives a header and a URL fragment unescaped
+BRIDGE_TOKEN = secrets.token_urlsafe(16)
+
 MAX_BODY_BYTES = 1024 * 1024
 
 # Serialises device mutations (snapshot + pm calls) across request threads.
 _APPLY_LOCK = threading.Lock()
+
+# The one Wi-Fi QR pairing session. "manager" is set only while its thread waits for the phone.
+PAIR_TIMEOUT = 120.0  # seconds to scan the code, as in the CLI's --qr-pair
+_PAIR_LOCK = threading.Lock()
+_PAIR: dict[str, Any] = {"state": "idle", "id": None, "serial": None, "error": None, "manager": None}
 
 # ---------------------------------------------------------------------------
 # Small helpers
@@ -126,6 +145,16 @@ def is_critical(pkg: str) -> bool:
     return pkg in CRITICAL_PACKAGES
 
 
+def session_token() -> str:
+    """Token from AIPD_BRIDGE_TOKEN (set by a launcher that also hands it to the browser), else random."""
+    token = os.environ.get(TOKEN_ENV, "").strip()
+    if not token:
+        return secrets.token_urlsafe(16)
+    if not TOKEN_RE.fullmatch(token):
+        sys.exit(f"[bridge] refusing to start: {TOKEN_ENV} must be at least 16 characters from A-Z a-z 0-9 . _ ~ -")
+    return token
+
+
 def safe_filename(text: str) -> str:
     return re.sub(r"[^A-Za-z0-9._-]+", "_", text or "unknown")
 
@@ -150,7 +179,9 @@ def discover_adb(explicit: str | None = None) -> str:
     # PATH, one directory at a time. A bare "adb" is never used: on Windows both
     # shutil.which and CreateProcess look in the current working directory
     # first, so a planted adb.exe there would win.
-    candidates.extend(os.path.join(d, "adb") for d in os.get_exec_path())
+    # Windows names adb.exe outright: before Python 3.12, shutil.which skips PATHEXT for a path with a directory.
+    adb_name = "adb.exe" if os.name == "nt" else "adb"
+    candidates.extend(os.path.join(d, adb_name) for d in os.get_exec_path())
     candidates.extend(
         [
             r"C:\platform-tools\adb.exe",
@@ -363,6 +394,69 @@ def write_snapshot(model: str, packages_meta: list[dict[str, Any]], adb_path: st
 
 
 # ---------------------------------------------------------------------------
+# Wi-Fi QR pairing (Android 11+), driven by the CLI's connection package
+# ---------------------------------------------------------------------------
+
+def new_pairing_manager(adb_path: str) -> Any:
+    """Return the CLI's QrPairingManager, bound to the adb this bridge resolved.
+
+    The connection package is imported here, not at the top, so the rest of the
+    bridge keeps working without it.
+    """
+    from connection.adb_client import AdbClient
+    from connection.exceptions import AdbNotFoundError
+    from connection.qr_pairing import QrPairingManager
+
+    try:
+        client = AdbClient(adb_path=adb_path)
+    except AdbNotFoundError:
+        client = None
+    # AdbClient searches on its own when the path is unusable, and that search
+    # tries a bare "adb" (the current directory, on Windows). Never run that one.
+    if client is None or client.adb_path != adb_path:
+        raise RuntimeError(f"adb executable not found: {adb_path}")
+    return QrPairingManager(client)
+
+
+def pair_status() -> dict[str, Any]:
+    with _PAIR_LOCK:
+        return {key: _PAIR[key] for key in ("state", "id", "serial", "error")}
+
+
+def cancel_pairing() -> None:
+    """Stop the waiting session, if any. Its thread ends within a poll or one adb call."""
+    with _PAIR_LOCK:
+        if _PAIR["manager"] is not None:
+            _PAIR["manager"].cancel()
+            _PAIR.update(state="idle", id=None, serial=None, error=None, manager=None)
+
+
+def _pair_worker(manager: Any, session: Any) -> None:
+    """Thread body: wait for the scan, pair, connect, then record the outcome."""
+    from connection.exceptions import ConnectionError as AdbConnectionError
+    from connection.exceptions import OperationCancelledError, PairingTimeoutError
+
+    outcome: dict[str, Any] = {"state": "failed", "error": "pairing stopped unexpectedly"}
+    try:
+        info = manager.execute_qr_pairing_flow(session=session, timeout=PAIR_TIMEOUT)
+        outcome = {"state": "paired", "serial": info.serial}
+    except PairingTimeoutError as exc:
+        outcome = {"state": "expired", "error": str(exc)}
+    except OperationCancelledError:
+        outcome = {"state": "idle", "id": None}
+    except (AdbConnectionError, OSError, RuntimeError, ValueError) as exc:
+        outcome = {"state": "failed", "error": str(exc)}
+    finally:  # whatever happened, the session must leave "waiting"
+        with _PAIR_LOCK:
+            current = _PAIR["manager"] is manager  # else cancelled meanwhile: that state stands
+            if current:
+                _PAIR.update(outcome, manager=None)
+        if current:
+            # The outcome holds no secret: adb never echoes the pairing password.
+            _log(f"QR pairing {outcome['state']}: {outcome.get('serial') or outcome.get('error') or ''}")
+
+
+# ---------------------------------------------------------------------------
 # HTTP handler
 # ---------------------------------------------------------------------------
 
@@ -394,6 +488,16 @@ class BridgeHandler(BaseHTTPRequestHandler):
             return False
         return True
 
+    def _token_ok(self) -> bool:
+        """Reject (and answer) a request that does not carry the session token. Call after _gate."""
+        supplied = self.headers.get(TOKEN_HEADER) or ""
+        # Bytes: compare_digest raises on a non-ASCII str, and a header may hold one.
+        if hmac.compare_digest(supplied.encode("utf-8"), BRIDGE_TOKEN.encode("utf-8")):
+            return True
+        self._send_json(401, {"success": False,
+                              "error": f"missing or wrong {TOKEN_HEADER} header (open the URL the bridge printed)"})
+        return False
+
     def _send_cors(self) -> None:
         if self._origin:
             self.send_header("Access-Control-Allow-Origin", self._origin)
@@ -408,13 +512,23 @@ class BridgeHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def _parse_body(self) -> dict[str, Any] | None:
-        """Return the JSON object body, or None if it is missing, oversized or not an object."""
+    def _read_body(self) -> bytes | None:
+        """Read the request body, or None if it is missing or oversized.
+
+        Called before any rejection: closing a socket that still holds unread data
+        can reset the connection, and the client would then never see the status.
+        """
         try:
             length = int(self.headers.get("Content-Length") or 0)
-            if not 0 < length <= MAX_BODY_BYTES:
-                return None
-            body = json.loads(self.rfile.read(length))
+        except ValueError:
+            return None
+        return self.rfile.read(length) if 0 < length <= MAX_BODY_BYTES else None
+
+    @staticmethod
+    def _parse_body(raw: bytes | None) -> dict[str, Any] | None:
+        """Return the JSON object in raw, or None if it is missing or not an object."""
+        try:
+            body = json.loads(raw) if raw else None
         except (ValueError, RecursionError):
             return None
         return body if isinstance(body, dict) else None
@@ -427,7 +541,7 @@ class BridgeHandler(BaseHTTPRequestHandler):
         self.send_response(204)
         self._send_cors()
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+        self.send_header("Access-Control-Allow-Headers", f"Content-Type, Authorization, X-Requested-With, {TOKEN_HEADER}")
         self.send_header("Access-Control-Allow-Private-Network", "true")
         self.send_header("Access-Control-Max-Age", "86400")
         self.end_headers()
@@ -442,15 +556,20 @@ class BridgeHandler(BaseHTTPRequestHandler):
             return
         path = url.path.rstrip("/")
         params = dict(parse_qsl(url.query))
+        is_health = path in ("/health", "/api/health")
+        # /health stays open so the web app can tell "not running" from "token needed".
+        if not is_health and not self._token_ok():
+            return
 
         adb_path = discover_adb()
 
-        if path in ("/health", "/api/health"):
+        if is_health:
             self._send_json(200, {
                 "status": "ok",
                 "version": VERSION,
                 "adb_available": adb_available(adb_path),
                 "adb_path": adb_path,
+                "token_required": True,
             })
         elif path in ("/devices", "/api/devices"):
             try:
@@ -475,6 +594,8 @@ class BridgeHandler(BaseHTTPRequestHandler):
                     self._send_json(200, {"view": "all", "packages": pkgs})
             except RuntimeError as exc:
                 self._send_json(502, {"success": False, "error": str(exc)})
+        elif path in ("/pair/status", "/api/pair/status"):
+            self._send_json(200, pair_status())
         elif path in ("/device", "/api/device"):
             serial = params.get("serial", "")
             if not serial:
@@ -489,10 +610,13 @@ class BridgeHandler(BaseHTTPRequestHandler):
             self._send_json(404, {"success": False, "error": "not found"})
 
     def do_POST(self) -> None:
+        raw = self._read_body()  # before _gate and _token_ok can answer; parsed only after both pass
         if not self._gate():
             return
         path = self.path.split("?", 1)[0].rstrip("/")
-        body = self._parse_body()
+        if not self._token_ok():
+            return
+        body = self._parse_body(raw)
         if body is None:
             self._send_json(400, {"success": False, "error": "body must be a JSON object"})
             return
@@ -506,6 +630,11 @@ class BridgeHandler(BaseHTTPRequestHandler):
         elif path in ("/restore", "/api/restore"):
             with _APPLY_LOCK:
                 self._handle_restore(body)
+        elif path in ("/pair/qr", "/api/pair/qr"):
+            self._handle_pair_start()
+        elif path in ("/pair/cancel", "/api/pair/cancel"):
+            cancel_pairing()
+            self._send_json(200, {"success": True, **pair_status()})
         else:
             self._send_json(404, {"success": False, "error": "not found"})
 
@@ -642,6 +771,36 @@ class BridgeHandler(BaseHTTPRequestHandler):
                 results.append({"package": pkg, "status": "failed", "output": str(exc)})
         self._send_json(200, {"success": True, "results": results})
 
+    def _handle_pair_start(self) -> None:
+        """Start the one QR pairing session in a daemon thread and answer with its QR matrix.
+
+        The matrix encodes the pairing password: it goes only into this response, never a log.
+        """
+        with _PAIR_LOCK:
+            running = _PAIR["manager"] is not None
+            error = ""
+            if not running:
+                try:
+                    from connection.qr_generator import generate_qr_matrix
+
+                    manager = new_pairing_manager(discover_adb())
+                    session = manager.create_pairing_session(ttl_seconds=PAIR_TIMEOUT)
+                    matrix = [[int(cell) for cell in row] for row in generate_qr_matrix(session.qr_payload)]
+                except (ImportError, OSError, RuntimeError, ValueError) as exc:  # no connection package, no adb
+                    error = str(exc) or type(exc).__name__
+                else:
+                    _PAIR.update(state="waiting", id=session.session_id, serial=None, error=None, manager=manager)
+                    threading.Thread(target=_pair_worker, args=(manager, session), daemon=True).start()
+        if running:
+            self._send_json(409, {"success": False, "error": "a pairing session is already running; cancel it first"})
+        elif error:
+            _log(f"QR pairing could not start: {error}")
+            self._send_json(502, {"success": False, "error": f"QR pairing could not start: {error}"})
+        else:
+            _log("QR pairing started: waiting for the phone to scan the code")
+            self._send_json(200, {"success": True, "state": "waiting", "id": session.session_id,
+                                  "matrix": matrix, "timeout": int(PAIR_TIMEOUT)})
+
 
 # ---------------------------------------------------------------------------
 # Server & Lifecycle
@@ -660,12 +819,18 @@ def start_bridge(port: int = DEFAULT_PORT, allow_origins: tuple[str, ...] | list
     if not CRITICAL_PACKAGES:
         sys.exit(f"[bridge] refusing to start: no critical packages loaded from {CRITICAL_FILE}")
     ALLOWED_ORIGINS.update(o.rstrip("/") for o in allow_origins)
+    global BRIDGE_TOKEN
+    BRIDGE_TOKEN = session_token()
     try:
         httpd = ReusableThreadingHTTPServer(("127.0.0.1", port), BridgeHandler)
     except (OSError, OverflowError) as err:
         sys.exit(f"[bridge] port {port} in use — is the bridge already running? ({err})")
 
     _log(f"AI-Phone-Debloater Local ADB Bridge running at http://127.0.0.1:{port} (v{VERSION})")
+    # The token rides in the fragment, which browsers never send to a server or a proxy log.
+    _log("Open this URL to connect (it carries this session's token, so do not share it):")
+    for origin in sorted(ALLOWED_ORIGINS):
+        _log(f"  {origin}/app?bridge=1#token={BRIDGE_TOKEN}")
 
     stop_event = threading.Event()
 
