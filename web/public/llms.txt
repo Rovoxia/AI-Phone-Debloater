@@ -19,7 +19,7 @@ AI-Phone-Debloater is an open-source, rootless Android bloatware removal engine 
 - Windows (PowerShell):
   `irm https://debloater.rovoxia.com/run.ps1 | iex`
 - macOS / Linux (Bash):
-  `curl -sSL https://debloater.rovoxia.com/run.sh | bash`
+  `curl -fsSL https://debloater.rovoxia.com/run.sh | bash`
 
 ## Core Safety Architecture & Guarantees
 1. 100% Reversible & Safe User 0 Execution:

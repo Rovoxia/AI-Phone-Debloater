@@ -19,7 +19,7 @@
 [![Dependencies: Zero](https://img.shields.io/badge/Dependencies-Zero%20(Stdlib%20Only)-teal.svg?style=flat-square)](cli/src/debloat_engine.py)
 [![Root: No Root Required](https://img.shields.io/badge/Root-100%25%20No%20Root-purple.svg?style=flat-square)](#technical-safety-architecture)
 [![Knox: 0x0 Warranty Safe](https://img.shields.io/badge/Samsung%20Knox-0x0%20(Warranty%20Safe)-success.svg?style=flat-square)](#frequently-asked-questions)
-[![CI Status](https://img.shields.io/badge/CI-Passing-brightgreen.svg?style=flat-square)](https://github.com/Rovoxia/AI-Phone-Debloater/actions)
+[![CI Status](https://github.com/Rovoxia/AI-Phone-Debloater/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Rovoxia/AI-Phone-Debloater/actions/workflows/ci.yml)
 [![Curated Rules](https://img.shields.io/badge/Curated%20Rules-352%20Packages-orange.svg?style=flat-square)](cli/rules/)
 [![Safety Verified](https://img.shields.io/badge/Safety-Verified-blueviolet.svg?style=flat-square)](#quick-facts--technical-summary)
 
@@ -119,7 +119,7 @@ irm https://debloater.rovoxia.com/run.ps1 | iex
 
 #### macOS / Linux (Bash / Zsh)
 ```bash
-curl -sSL https://debloater.rovoxia.com/run.sh | bash
+curl -fsSL https://debloater.rovoxia.com/run.sh | bash
 ```
 
 *What this does:* Downloads the lightweight engine into `$HOME/.ai-phone-debloater`, verifies Python 3.11+, checks ADB connectivity, and launches the interactive terminal menu.
@@ -163,7 +163,7 @@ Audit and debloat your phone visually directly inside your browser at **[debloat
     ```
   - **macOS / Linux (Bash / Zsh):**
     ```bash
-    curl -sSL https://debloater.rovoxia.com/bridge.sh | bash
+    curl -fsSL https://debloater.rovoxia.com/bridge.sh | bash
     ```
 - **Interactive Features:** Real-time package explorer, 4-tier filtering, dry-run simulation, 1-click batch freezing (`pm disable-user --user 0`), a confirmation dialog that lists each package with its app name, "Export CSV" of the currently filtered package list, live execution terminal drawer, and pre-mutation JSON snapshots with instant rollback.
 
@@ -378,7 +378,7 @@ adb shell cmd package install-existing --user 0 <package_name>
 
 <details>
 <summary><strong>Will debloating affect OTA system software updates?</strong></summary>
-<p><strong>No.</strong> Because debloating operates at the User 0 level without altering read-only system partitions (dm-verity remains intact), official manufacturer OTA updates continue to download and install normally.</p>
+<p><strong>No, with one exception.</strong> Because debloating operates at the User 0 level without altering read-only system partitions (dm-verity remains intact), official manufacturer OTA updates continue to download and install normally. The exception is the single Tier 3 rule, the Transsion OTA updater (<code>com.transsion.otaupdate</code>): disabling it stops system updates until you enable it again. An update can also turn some disabled packages back on; run the tool again afterwards.</p>
 </details>
 
 <details>
@@ -398,7 +398,7 @@ adb shell cmd package install-existing --user 0 <package_name>
 
 <details>
 <summary><strong>How do I undo all changes if I sell or service my phone?</strong></summary>
-<p>Run <code>python cli/src/debloat_engine.py --restore &lt;snapshot&gt;</code> to revert all packages to their exact previous state. Alternatively, a factory reset returns the device to factory stock condition since read-only system partitions (<code>/system</code>) are never altered.</p>
+<p>Run <code>python cli/src/debloat_engine.py --restore</code> (newest snapshot of the connected phone; <code>--list-snapshots</code> shows the others) to revert all packages to their exact previous state. Alternatively, a factory reset returns the device to factory stock condition since read-only system partitions (<code>/system</code>) are never altered.</p>
 </details>
 
 <details>
@@ -420,7 +420,7 @@ Contributions are welcomed! We actively accept pull requests for new OEM rule da
    python -m unittest discover -s cli/tests
    python cli/sync_version.py --check
    ```
-3. Open a Pull Request referencing the OEM model and Android version tested.
+3. Open a Pull Request against the `QA` branch, referencing the OEM model and Android version tested.
 
 ---
 

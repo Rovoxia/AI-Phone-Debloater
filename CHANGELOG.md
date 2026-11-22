@@ -59,6 +59,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Engine refuses to plan or apply changes when the critical list cannot be loaded
 - Web app: the batch run button is no longer hidden behind the collapsed terminal drawer on `/app`, and the drawer now expands
 - Mobile menu backdrop covers the screen, so tapping outside the menu closes it
+- README and home page FAQ no longer say debloating never affects OTA updates: the Tier 3 Transsion updater rule stops them. The README CI badge now shows the real workflow status, and the documented one-liners use `curl -fsSL`
 - Reconnecting to a remembered phone, or switching from USB to Wi-Fi, no longer saves a different phone found at the same address to `known_devices.json` or leaves it active; the wrong phone is disconnected
 - The legacy snapshot folder resolves beside `src/` in both the repository and the installed layout (was `~/cli/backups` when installed)
 - Bridge finds `adb.exe` on `PATH` on Windows with Python 3.11

@@ -144,7 +144,7 @@ Web app (`/app`): the confirmation dialog lists each package with its app name, 
 No git clone required. The zero-git runner endpoints compare installed `VERSION` against the remote version and purge `tools/` only when the version bumps to trigger fresh ADB platform-tools bootstrap.
 
 - Windows (PowerShell): `irm https://debloater.rovoxia.com/run.ps1 | iex`
-- macOS / Linux (Bash): `curl -sSL https://debloater.rovoxia.com/run.sh | bash`
+- macOS / Linux (Bash): `curl -fsSL https://debloater.rovoxia.com/run.sh | bash`
 
 Routes: `web/src/pages/prompt.md.ts`, `web/src/pages/run.ps1.ts`, `web/src/pages/run.sh.ts`.
 
