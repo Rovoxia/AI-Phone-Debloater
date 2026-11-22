@@ -53,7 +53,7 @@ This is why debloating via `pm uninstall -k --user 0` is safe, rootless, and ful
 - Hides the app from the launcher, app drawer, and settings UI.
 - The package stays **installed**; its APK and data remain on disk.
 - The app cannot run (components are disabled), but it is fully registered.
-- **Most reversible.** Restore with `cmd package install-existing <package>`.
+- **Most reversible.** Restore with `adb shell pm enable --user 0 <package>`.
 - **Use this by default** for bloatware you're unsure about.
 
 ### `pm uninstall -k --user 0 <package>`
@@ -69,7 +69,7 @@ On modern Android, pre-installed apps live in `/system` or `/product` (read-only
 
 ### Restoration: `cmd package install-existing`
 
-To bring a disabled/uninstalled-for-user app back:
+To bring an uninstalled-for-user app back (a disabled app is re-enabled with `adb shell pm enable --user 0 <package>` instead):
 ```bash
 adb shell cmd package install-existing <package>
 ```
@@ -113,22 +113,20 @@ Some packages manage fundamental subsystems (status bar, telephony, radio, setti
 | `com.android.systemui` | Status bar, notification shade, quick settings, recents | Removes the entire UI shell; notifications and settings become inaccessible |
 | `com.android.server.telecom` | Telecom service: calls, SMS routing, Bluetooth headset | Breaks calling, SMS, MTP over Bluetooth headset |
 | `com.android.providers.telephony` | Cellular provider, SIM card management | Cellular connectivity, calling, carrier profile |
-| `android.security.keystore` | Keystore backend, secure storage | Fingerprint unlock breaks, encryption metadata corrupts |
-| `com.android.server.telephony.Radio` | RIL: cellular radio backend | Network, carrier settings, signal bars |
+| `com.android.keychain` | Keystore backend, secure storage | Fingerprint unlock breaks, encryption metadata corrupts |
+| `com.android.phone` / `com.android.server.telephony` | RIL: cellular radio backend | Network, carrier settings, signal bars |
 | `com.android.providers.settings` | Settings provider DB | Persistent settings corruption, boot loop |
-| `com.android.bluetooth.*` / `android.hardware.bluetooth.*` | Bluetooth daemon | BT pairing/audio fails, module init failure |
-| `com.android.wifi.*` / `android.hardware.wifi.*` | Wi-Fi daemon | Wi-Fi, hotspot, peer discovery fail |
-| `android.hardware.usb.*` | USB composite USB service | MTP/PTP broken, USB host devices die |
+| `com.android.bluetooth` / `com.android.server.bluetooth` | Bluetooth daemon | BT pairing/audio fails, module init failure |
+| `com.android.wifi` / `com.android.wifi.service` / `com.android.server.wifi` | Wi-Fi daemon | Wi-Fi, hotspot, peer discovery fail |
 
 ### How code-level checks work
 
 The debloat engine loads `cli/rules/critical-do-not-touch.json` before executing anything. Every package in a user's plan is compared against the blacklist:
 
 - If a package **matches** the blacklist, the engine **refuses** the action and logs a hard error, even if an AI agent recommended it.
-- Tier-4 packages in any AI-generated plan must be marked `dangerous: true`; the engine treats these as read-only.
 - The engine never executes `pm uninstall --force` under any circumstances.
 
-If a user insists on a blacklisted package, the only acceptable action is `pm disable-user` (hides UI, keeps binary), never full removal — and only with explicit acknowledgment that it is recoverable.
+If a user insists on a blacklisted package, the answer is still no: critical packages are never disabled, uninstalled, or modified, and the engine has no override.
 
 ---
 
@@ -136,16 +134,19 @@ If a user insists on a blacklisted package, the only acceptable action is `pm di
 
 | Scenario | What happened | Recovery |
 |---|---|---|
-| You disabled an app and want it back | `pm disable-user --user 0 <pkg>` | `adb shell cmd package install-existing <pkg>` (or engine `--restore`) |
+| You disabled an app and want it back | `pm disable-user --user 0 <pkg>` | `adb shell pm enable --user 0 <pkg>` (or engine `--restore`) |
 | You uninstalled with `-k` and want data back | `pm uninstall -k --user 0 <pkg>` | Reinstall for user 0; `/data/user/0/<pkg>` is preserved so the app resumes with accounts/settings |
 | You disabled something and the UI broke | A system UI component was disabled | Boot into safe mode or use `adb shell cmd package enable <pkg>` / `install-existing` |
 | The phone won't boot | Should not happen — `/system` is never touched | If it does, it is unrelated to this tool; use your OEM's recovery / factory image |
-| You want to undo everything | Multiple packages debloated | Restore each package individually via `--restore <pkg>`, or re-apply a saved plan in reverse |
+| You want to undo everything | Multiple packages debloated | Restore from a snapshot via `--restore <SNAPSHOT>` (single packages: interactive menu option `9`, Restore single package), or re-apply a saved plan in reverse |
 
 ### Emergency rollback commands
 
 ```bash
-# Restore a single disabled/uninstalled app
+# Re-enable a single disabled app
+adb shell pm enable --user 0 <package>
+
+# Restore a single uninstalled app
 adb shell cmd package install-existing <package>
 
 # Reinstall a package for user 0 (keeps -k preserved data)
@@ -155,7 +156,7 @@ adb shell cmd package install-existing --user 0 <package>
 adb shell pm list packages -d
 
 # List all packages for user 0
-adb shell pm list packages -U 0
+adb shell pm list packages --user 0
 
 # Full engine snapshot rollback
 python cli/src/debloat_engine.py --restore <SNAPSHOT_FILENAME>
@@ -173,4 +174,4 @@ The engine provides `python cli/src/debloat_engine.py --restore <SNAPSHOT_FILENA
 2. **Dry-run first.** Every debloat command is verified with `--dry-run` before executing. If anything looks risky, ask for confirmation instead of proceeding.
 3. **Rollback is always possible.** A rollback can restore any package on demand. No factory reset is ever required.
 4. **User data is sacred.** Data lives under `/data/user/0`; system state lives under `/system`, `/vendor`. You only touch the user partition where specified (`--user 0`).
-5. **Blacklist is absolute.** Critical packages are protected by code-level checks and are never removed, disabled, or modified without explicit, informed user acknowledgment (disable-only, never uninstall).
+5. **Blacklist is absolute.** Critical packages are protected by code-level checks and are never removed, disabled, or modified; the engine has no override.

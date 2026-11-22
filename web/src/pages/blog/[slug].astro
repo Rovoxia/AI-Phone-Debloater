@@ -18,8 +18,8 @@ interface BlogPost {
   content: string;
 }
 
-// Full post content database
-const posts: Record<string, BlogPost> = {
+// Full post content database (exported so getStaticPaths, which Astro hoists out of the frontmatter, can see it)
+export const posts: Record<string, BlogPost> = {
   'samsung-galaxy-debloat-guide-one-ui-6': {
     slug: 'samsung-galaxy-debloat-guide-one-ui-6',
     title: 'Samsung Galaxy Debloat Guide (One UI 6.1+)',
@@ -737,18 +737,7 @@ Same User 0 ADB model applies over Wi-Fi:
 };
 
 export function getStaticPaths() {
-  return [
-    { params: { slug: 'samsung-galaxy-debloat-guide-one-ui-6' } },
-    { params: { slug: 'xiaomi-hyperos-debloat-guide' } },
-    { params: { slug: 'pixel-debloat-guide-stock-android' } },
-    { params: { slug: 'oneplus-oppo-realme-debloat-guide-coloros' } },
-    { params: { slug: 'vivo-iqoo-debloat-guide-funtouchos' } },
-    { params: { slug: 'motorola-debloat-guide-myux' } },
-    { params: { slug: 'transsion-debloat-guide-hios-xos' } },
-    { params: { slug: 'debloat-vs-factory-reset' } },
-    { params: { slug: 'adb-debloat-safety-tiers-explained' } },
-    { params: { slug: 'wireless-adb-debloat-setup-android-11' } },
-  ];
+  return Object.keys(posts).map((slug) => ({ params: { slug } }));
 }
 
 // Get slug from route

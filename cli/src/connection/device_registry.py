@@ -18,8 +18,7 @@ from .models import DeviceInfo, RememberedDevice
 
 logger = logging.getLogger("rovoxia.connection.device_registry")
 
-DEFAULT_REGISTRY_DIR = Path.home() / ".ai-phone-debloater"
-FALLBACK_REGISTRY_DIR = Path.home() / "AiPhoneDebloater"
+DEFAULT_REGISTRY_DIR = Path.home() / "AiPhoneDebloater"
 REGISTRY_FILENAME = "known_devices.json"
 
 
@@ -46,13 +45,7 @@ class DeviceRegistry:
         try:
             self.registry_dir.mkdir(parents=True, exist_ok=True)
         except OSError as exc:
-            logger.debug(f"Could not create primary registry dir {self.registry_dir}: {exc}")
-            self.registry_dir = FALLBACK_REGISTRY_DIR
-            self.file_path = self.registry_dir / REGISTRY_FILENAME
-            try:
-                self.registry_dir.mkdir(parents=True, exist_ok=True)
-            except OSError:
-                pass
+            logger.debug(f"Could not create registry dir {self.registry_dir}: {exc}")
 
     def load_all(self) -> list[RememberedDevice]:
         """Load all remembered devices from disk."""

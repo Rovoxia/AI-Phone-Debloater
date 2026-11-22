@@ -6,11 +6,11 @@ AI-Phone-Debloater is an open-source Android debloating utility. Security update
 
 | Version | Supported |
 |---------|-----------|
-| 1.0.0   | :white_check_mark: |
+| 1.1.x   | :white_check_mark: |
 
 ## Reporting a Vulnerability
 
-AI-Phone-Debloater does not expose network services, process untrusted user input, or run as a server. It operates locally on your machine via ADB commands issued to your own Android device.
+AI-Phone-Debloater does not expose network services by default. The optional local WebApp bridge (`python cli/src/bridge_server.py` or `debloat_engine.py --bridge`) listens only on 127.0.0.1 (port 53123 by default) and only accepts browser requests from https://debloater.rovoxia.com or origins you pass with `--allow-origin` (localhost origins are not trusted by default). It operates locally on your machine via ADB commands issued to your own Android device.
 
 If you believe you've found a security issue (for example, a rules-file injection risk, unsafe package-removal bypass, or hard-coded credential exposure), please:
 
@@ -23,8 +23,8 @@ We will acknowledge receipt within 3 business days and provide an initial assess
 ## Safety Architecture (Defense in Depth)
 
 - **Rootless execution only** — operates on Android User 0 via `pm disable-user` / `pm uninstall -k`. Never modifies `/system`, never requires root or an unlocked bootloader.
-- **Hard-coded critical blacklist** — 61 core system packages (SystemUI, Telephony, Keystore, package installer, etc.) are permanently blocked in code and cannot be removed by any flag, argument, or AI prompt.
-- **Automatic JSON snapshots** — timestamped backup of package state before any mutation; 1-click rollback via `--restore`.
+- **Critical blacklist** — 89 core system packages (SystemUI, Telephony, Keystore, package installer, etc.), loaded from `cli/rules/critical-do-not-touch.json`, are permanently blocked in code and cannot be removed by any flag, argument, or AI prompt.
+- **Automatic JSON snapshots** — timestamped backup of package state before any mutation (unless `--no-backup` is passed); 1-click rollback via `--restore`.
 - **Tiered rules** — 4 safety tiers (Tier 1 safe → Tier 4 critical), never exceeded without explicit user confirmation.
 - **No pip dependencies** — Python standard library only, reducing supply-chain surface.
 

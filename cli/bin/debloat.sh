@@ -5,22 +5,22 @@ BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLI_DIR="$(cd "$BIN_DIR/.." && pwd)"
 ROOT_DIR="$(cd "$BIN_DIR/../.." && pwd)"
 
-if [ -f "$ROOT_DIR/VERSION" ]; then
+# Installed flat layout (VERSION beside bin/) first, then the repo root.
+if [ -f "$CLI_DIR/VERSION" ]; then
+    APP_VERSION=$(tr -d '\r\n' < "$CLI_DIR/VERSION")
+    cd "$CLI_DIR"
+elif [ -f "$ROOT_DIR/VERSION" ]; then
     APP_VERSION=$(tr -d '\r\n' < "$ROOT_DIR/VERSION")
     cd "$ROOT_DIR"
-elif [ -f "$CLI_DIR/VERSION" ]; then
-    APP_VERSION=$(tr -d '\r\n' < "$CLI_DIR/VERSION")
-    ROOT_DIR="$CLI_DIR"
-    cd "$CLI_DIR"
 else
-    echo "[ERROR] VERSION file not found at $ROOT_DIR/VERSION or $CLI_DIR/VERSION" >&2
+    echo "[ERROR] VERSION file not found at $CLI_DIR/VERSION or $ROOT_DIR/VERSION" >&2
     exit 1
 fi
 
 PY=""
 for cmd in python3 python; do
     if command -v "$cmd" >/dev/null 2>&1; then
-        if "$cmd" -c 'import sys; exit(0 if sys.version_info[0] >= 3 else 1)' >/dev/null 2>&1; then
+        if "$cmd" -c 'import sys; sys.exit(sys.version_info < (3, 11))' >/dev/null 2>&1; then
             PY="$cmd"
             break
         fi
@@ -28,7 +28,7 @@ for cmd in python3 python; do
 done
 
 if [ -z "$PY" ]; then
-    echo "[INFO] Python 3 not found. Attempting auto-install via system package manager..."
+    echo "[INFO] Python 3.11+ not found. Attempting auto-install via system package manager..."
     OS="$(uname -s)"
     case "$OS" in
         Linux)
@@ -37,7 +37,7 @@ if [ -z "$PY" ]; then
             elif command -v apk >/dev/null 2>&1; then
                 sudo apk add python3 || true
             elif command -v pacman >/dev/null 2>&1; then
-                sudo pacman -Sy --noconfirm python || true
+                sudo pacman -S --needed --noconfirm python || true
             elif command -v dnf >/dev/null 2>&1; then
                 sudo dnf install -y python3 || true
             elif command -v yum >/dev/null 2>&1; then
@@ -52,7 +52,7 @@ if [ -z "$PY" ]; then
     esac
     for cmd in python3 python; do
         if command -v "$cmd" >/dev/null 2>&1; then
-            if "$cmd" -c 'import sys; exit(0 if sys.version_info[0] >= 3 else 1)' >/dev/null 2>&1; then
+            if "$cmd" -c 'import sys; sys.exit(sys.version_info < (3, 11))' >/dev/null 2>&1; then
                 PY="$cmd"
                 break
             fi
@@ -61,7 +61,7 @@ if [ -z "$PY" ]; then
 fi
 
 if [ -z "$PY" ]; then
-    echo "[ERROR] Python 3 not found on system. Install Python 3 manually from https://www.python.org/downloads/"
+    echo "[ERROR] Python 3.11 or newer is required but was not found. Install it from https://www.python.org/downloads/" >&2
     exit 1
 fi
 echo "Using Python: $PY"
@@ -85,7 +85,7 @@ import urllib.request, zipfile, io, sys
 url = sys.argv[1]; out_dir = sys.argv[2]
 print('[INFO] Fetching platform-tools...')
 req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-with urllib.request.urlopen(req) as resp: data = resp.read()
+with urllib.request.urlopen(req, timeout=60) as resp: data = resp.read()
 print('[INFO] Extracting...')
 with zipfile.ZipFile(io.BytesIO(data)) as z: z.extractall(out_dir)
 print('[OK] Download complete.')
@@ -95,54 +95,11 @@ print('[OK] Download complete.')
         export PATH="$CLI_DIR/tools/platform-tools:$PATH"
         echo "[OK] ADB platform-tools installed."
     else
-        echo "[WARNING] ADB download failed. Install ADB manually or put it on PATH."
+        echo "[WARNING] ADB download failed. Install Android platform-tools and put adb on PATH, or pass --adb-path." >&2
     fi
 fi
 
 echo "AI-Phone-Debloater v$APP_VERSION"
-
-MODE="${1:-}"
-if [ "$MODE" = "dump-rules" ]; then
-    mkdir -p scans
-    read -rp "Enter device model (e.g. pixel7a, xiaomi_note10): " MODEL
-    if [ -z "$MODEL" ]; then echo "ERROR: Model required."; exit 1; fi
-    read -rp "Enter manufacturer (Xiaomi, Samsung, OnePlus, etc.): " MFR
-    if [ -z "$MFR" ]; then echo "ERROR: Manufacturer required."; exit 1; fi
-    DUMP_FILE="scans/${MODEL}.txt"
-    echo "Dumping User 0 packages to $DUMP_FILE ..."
-    adb shell pm list packages -U --user 0 > "$DUMP_FILE"
-    echo "Dump saved: $DUMP_FILE"
-    echo "Generating draft rules for $MFR ..."
-    "$PY" cli/tools/scan_to_rules.py --input "$DUMP_FILE" --manufacturer "$MFR" --output "cli/rules/${MODEL}.json" --drop-uncategorized
-    echo "Draft rule file: cli/rules/${MODEL}.json"
-    echo "Running validation ..."
-    "$PY" cli/tests/validate_rules.py
-    echo "Validation passed: Zero collisions."
-    echo "Syncing web dataset ..."
-    "$PY" cli/generate_rules_dataset.py
-    echo "Creating upload package ..."
-    if command -v zip >/dev/null 2>&1; then
-        zip -r "scans/${MODEL}-rules.zip" "scans/${MODEL}.txt" "cli/rules/${MODEL}.json"
-    else
-        "$PY" -c "import zipfile,sys; z=zipfile.ZipFile(sys.argv[1],'w'); [z.write(f) for f in sys.argv[2:]]" "scans/${MODEL}-rules.zip" "scans/${MODEL}.txt" "cli/rules/${MODEL}.json"
-    fi
-    echo "Upload package: scans/${MODEL}-rules.zip"
-    echo "Upload this zip to GitHub for review and dataset build."
-    exit 0
-elif [ "$MODE" = "apply-rules" ]; then
-    MANIFEST="${2:-}"
-    if [ -z "$MANIFEST" ]; then echo "ERROR: Usage: debloat.sh apply-rules <manifest.json> [output.json]"; exit 1; fi
-    if [ ! -f "$MANIFEST" ]; then echo "ERROR: Manifest not found: $MANIFEST"; exit 1; fi
-    OUTFILE="${3:-cli/rules/${MANIFEST}.json}"
-    echo "Applying manifest $MANIFEST ..."
-    "$PY" cli/tools/scan_to_rules.py --input "$MANIFEST" --manufacturer "auto" --apply-manifest "$MANIFEST" --output "$OUTFILE"
-    echo "Running validation ..."
-    "$PY" cli/tests/validate_rules.py
-    echo "Syncing web dataset ..."
-    "$PY" cli/generate_rules_dataset.py
-    echo "SUCCESS."
-    exit 0
-fi
 
 echo "Launching AI-Phone-Debloater v$APP_VERSION..."
 if [ "$#" -eq 0 ] && [ ! -t 0 ]; then

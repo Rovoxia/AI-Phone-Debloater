@@ -31,7 +31,7 @@ cleanup() {
 trap cleanup EXIT
 
 echo "[INFO] Fetching latest repository files..."
-curl -sSL "$ARCHIVE_URL" -o "$ZIP_FILE"
+curl -fsSL "$ARCHIVE_URL" -o "$ZIP_FILE"
 
 echo "[INFO] Extracting archive..."
 if command -v unzip &> /dev/null; then
@@ -51,12 +51,12 @@ fi
 INSTALLED_VERSION_FILE="$INSTALL_DIR/VERSION"
 INSTALLED_VERSION=""
 if [ -f "$INSTALLED_VERSION_FILE" ]; then
-    INSTALLED_VERSION=\$(tr -d '\r\n' < "$INSTALLED_VERSION_FILE")
+    INSTALLED_VERSION=\$(tr -d '\\r\\n' < "$INSTALLED_VERSION_FILE")
 fi
 
 NEW_VERSION_FILE="\${EXTRACTED_ROOT}/VERSION"
 if [ -f "$NEW_VERSION_FILE" ]; then
-    NEW_VERSION=\$(tr -d '\r\n' < "$NEW_VERSION_FILE")
+    NEW_VERSION=\$(tr -d '\\r\\n' < "$NEW_VERSION_FILE")
 else
     echo "[ERROR] VERSION file not found in repository archive." >&2
     exit 1
@@ -91,6 +91,7 @@ fi
 
 if [ -f "$LAUNCHER" ]; then
     echo "[INFO] Launching debloater interactive engine..."
+    cleanup
     if [ -r /dev/tty ] && [ -w /dev/tty ]; then
         exec bash "$LAUNCHER" </dev/tty
     else

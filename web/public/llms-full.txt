@@ -88,7 +88,7 @@ Critical packages cannot be disabled or uninstalled under any flag or prompt.
 
 ## 5. All 10 OEM Rule Bases
 
-`cli/rules/*.json` — 10 safety-tier rule databases (324 unique non-critical packages + 89 critical = 352 total rules):
+`cli/rules/*.json` — 10 safety-tier rule databases (263 removable packages + 89 critical = 352 total rules):
 
 1. `universal-safe-to-remove.json` — Universal (All OEMs): Facebook AppManager/Installer, Microsoft OneDrive/Link, Netflix Activation, Google Partner Setup.
 2. `samsung-oneui.json` — Samsung One UI: Bixby Voice, AR Zone, Game Optimizing Service (GOS), Knox Analytics, Link to Windows, Quick Share telemetry.
@@ -107,7 +107,7 @@ OEM breakdown (from `web/src/data/rules-dataset.json`): BBK 21, Core System 89, 
 
 ## 6. CLI Commands Reference (`cli/src/debloat_engine.py`)
 
-Python 3.8+, standard library only, no `requirements.txt`.
+Python 3.11+, standard library only, no `requirements.txt`.
 
 - Interactive dashboard: `python cli/src/debloat_engine.py --interactive`
 - Scan device packages: `python cli/src/debloat_engine.py --scan`
@@ -133,7 +133,7 @@ No git clone required. The zero-git runner endpoints compare installed `VERSION`
 - Windows (PowerShell): `irm https://debloater.rovoxia.com/run.ps1 | iex`
 - macOS / Linux (Bash): `curl -sSL https://debloater.rovoxia.com/run.sh | bash`
 
-Routes: `web/src/pages/api/adb.ts`, `web/src/pages/prompt.md.ts`, `web/src/pages/run.ps1.ts`, `web/src/pages/run.sh.ts`.
+Routes: `web/src/pages/prompt.md.ts`, `web/src/pages/run.ps1.ts`, `web/src/pages/run.sh.ts`.
 
 ---
 
@@ -175,7 +175,7 @@ The prompt emphasizes: rootless, user 0 only, `-k` data preservation, critical b
 - `web/src/pages/index.astro` — landing page
 - `web/src/pages/oems.astro` — OEM directory + interactive rules explorer
 - `web/src/pages/404.astro` — production 404
-- `web/src/pages/api/adb.ts`, `prompt.md.ts`, `run.ps1.ts`, `run.sh.ts` — zero-git runner + prompt API routes
+- `web/src/pages/prompt.md.ts`, `run.ps1.ts`, `run.sh.ts` — zero-git runner + prompt API routes
 - `web/src/data/rules-dataset.json` — precomputed snapshot of 352 rules (352 total, 89 critical)
 - `web/public/og-image.svg` / `og-image.png` — 1200x630 social poster
 - `web/public/robots.txt`, `llms.txt`, `llms-full.txt`, `pricing.md` — AI/machine-readable files

@@ -3,7 +3,9 @@
 import '../styles/global.css';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
+import rulesData from '../data/rules-dataset.json';
 
+const CRITICAL_COUNT = rulesData.rules.filter((rule) => rule.tier === 4).length;
 const SITE_URL = 'https://debloater.rovoxia.com';
 const CANONICAL_URL = `${SITE_URL}/app`;
 const TITLE = 'WebApp Workspace — AI-Phone-Debloater';
@@ -129,7 +131,7 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
     <main class="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       <header class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Rootless · User 0 · 89 packages locked</p>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Rootless · User 0 · {CRITICAL_COUNT} packages locked</p>
           <h1 class="mt-1 text-2xl font-semibold tracking-tight text-slate-900 dark:text-white sm:text-3xl">WebApp Workspace</h1>
           <p class="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
             Audit installed packages against the curated rule set, simulate removals, then freeze or uninstall only what is safe. Tier 4 core OS packages stay locked.
@@ -245,6 +247,7 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
                 <option value="all">All</option>
                 <option value="installed">Installed</option>
                 <option value="disabled">Disabled</option>
+                <option value="uninstalled">Uninstalled</option>
               </select>
             </label>
           </div>
@@ -254,7 +257,7 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
             <button type="button" data-tier="1" class="tier-tab shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold">Tier 1 · Safe</button>
             <button type="button" data-tier="2" class="tier-tab shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold">Tier 2 · Caution</button>
             <button type="button" data-tier="3" class="tier-tab shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold">Tier 3 · Advanced</button>
-            <button type="button" data-tier="4" class="tier-tab shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold">Tier 4 · Locked (89)</button>
+            <button type="button" data-tier="4" class="tier-tab shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold">Tier 4 · Locked ({CRITICAL_COUNT})</button>
             <button type="button" data-tier="0" class="tier-tab shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold">Unclassified</button>
           </div>
 
@@ -322,21 +325,22 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
         <button type="button" id="term-copy" class="ml-auto text-[11px] font-medium text-slate-400 hover:text-white">Copy</button>
         <button type="button" id="term-clear" class="text-[11px] font-medium text-slate-400 hover:text-white">Clear</button>
       </div>
-      <pre id="term-log" class="min-h-0 flex-1 overflow-auto whitespace-pre-wrap break-all p-3 font-mono text-[11px] leading-relaxed"></pre>
+      <pre id="term-log" role="log" aria-live="polite" class="min-h-0 flex-1 overflow-auto whitespace-pre-wrap break-all p-3 font-mono text-[11px] leading-relaxed"></pre>
     </aside>
 
     <!-- Confirm modal -->
-    <div id="modal-confirm" hidden class="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
-      <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-800 dark:bg-[#181c24]">
+    <dialog id="modal-confirm" class="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border border-slate-200 bg-white text-inherit shadow-xl backdrop:bg-black/50 dark:border-slate-800 dark:bg-[#181c24]" aria-labelledby="confirm-title">
+      <!-- method="dialog": either button closes the dialog and its value becomes returnValue. -->
+      <form method="dialog" class="p-5">
         <h2 id="confirm-title" class="text-base font-semibold text-slate-900 dark:text-white">Apply live changes?</h2>
-        <p id="confirm-body" class="mt-2 text-sm text-slate-600 dark:text-slate-300"></p>
+        <p id="confirm-body" class="mt-2 break-words text-sm text-slate-600 dark:text-slate-300"></p>
         <p class="mt-2 text-xs text-slate-500">A snapshot is saved to this browser before anything runs. Uninstall keeps app data (<span class="font-mono">-k</span>). Tier 4 packages are rejected even if they were selected.</p>
         <div class="mt-4 flex justify-end gap-2">
-          <button type="button" id="confirm-cancel" class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium dark:border-slate-700">Cancel</button>
-          <button type="button" id="confirm-ok" class="rounded-lg bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-700">Apply live</button>
+          <button value="cancel" class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium dark:border-slate-700">Cancel</button>
+          <button value="ok" class="rounded-lg bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-700">Apply live</button>
         </div>
-      </div>
-    </div>
+      </form>
+    </dialog>
 
     <!-- Snapshots modal -->
     <div id="modal-snaps" hidden class="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="snaps-title">
@@ -350,7 +354,7 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
             Import JSON
             <input id="snap-import" type="file" accept="application/json,.json" class="sr-only" />
           </label>
-          <p class="text-xs text-slate-500">Restore reinstalls listed packages for user 0, then re-enables them. Critical packages are skipped.</p>
+          <p class="text-xs text-slate-500">Restore reinstalls listed packages for user 0, then re-enables them. Packages that were already disabled before the snapshot are left alone.</p>
         </div>
         <ul id="snap-list" class="min-h-0 flex-1 space-y-2 overflow-auto px-5 py-3"></ul>
       </div>
@@ -392,6 +396,7 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
         category: string;
         description: string;
         disabled: boolean;
+        uninstalled: boolean;
         locked: boolean;
       }
 
@@ -414,9 +419,12 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
       let page = 0;
       let mode: Mode = 'dry-run';
       let busy = false;
+      // The one live run awaiting confirmation. Set when the dialog opens, cleared whenever it closes.
+      let pending: { packages: string[]; action: Action } | null = null;
       const logs: string[] = [];
 
       const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+      const confirmDialog = $<HTMLDialogElement>('modal-confirm');
 
       function log(level: LogLevel, message: string) {
         const stamp = new Date().toISOString().slice(11, 19);
@@ -456,6 +464,10 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
         return `pm enable --user 0 ${pkg}`;
       }
 
+      function statusOf(row: Row): 'installed' | 'disabled' | 'uninstalled' {
+        return row.uninstalled ? 'uninstalled' : row.disabled ? 'disabled' : 'installed';
+      }
+
       function filtered(): Row[] {
         const q = ($('search') as HTMLInputElement).value.trim().toLowerCase();
         const oem = ($('filter-oem') as HTMLSelectElement).value;
@@ -463,8 +475,7 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
         return rows.filter((row) => {
           if (tierFilter !== 'all' && String(row.tier) !== tierFilter) return false;
           if (oem !== 'all' && row.brand !== oem) return false;
-          if (status === 'disabled' && !row.disabled) return false;
-          if (status === 'installed' && row.disabled) return false;
+          if (status !== 'all' && statusOf(row) !== status) return false;
           if (!q) return true;
           return (
             row.pkg.toLowerCase().includes(q) ||
@@ -580,10 +591,13 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
           const tdStatus = document.createElement('td');
           tdStatus.className = 'px-3 py-2';
           const status = document.createElement('span');
-          status.className = row.disabled
+          const state = statusOf(row);
+          status.className = state === 'uninstalled'
+            ? 'rounded-full bg-slate-500/15 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:text-slate-300'
+            : state === 'disabled'
             ? 'rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-300'
             : 'rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300';
-          status.textContent = row.disabled ? 'Disabled' : 'Installed';
+          status.textContent = state === 'uninstalled' ? 'Uninstalled' : state === 'disabled' ? 'Disabled' : 'Installed';
           tdStatus.appendChild(status);
 
           const tdAct = document.createElement('td');
@@ -598,7 +612,7 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
             const destructive = action !== 'enable';
             btn.disabled = row.locked && destructive;
             btn.title = btn.disabled ? 'Locked critical package' : commandFor(action, row.pkg);
-            btn.addEventListener('click', () => runPackages([row.pkg], action, mode));
+            btn.addEventListener('click', () => requestRun([row.pkg], action));
             wrap.appendChild(btn);
           }
           tdAct.appendChild(wrap);
@@ -608,6 +622,7 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
       }
 
       function showWorkspace() {
+        setError('');
         $('connect-panel').hidden = true;
         $('device-card').hidden = false;
         $('workspace').hidden = false;
@@ -628,6 +643,7 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
         device = null;
         rows = [];
         selected.clear();
+        confirmDialog.close('cancel');
         $('connect-panel').hidden = false;
         $('device-card').hidden = true;
         $('workspace').hidden = true;
@@ -635,8 +651,11 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
         $('btn-disconnect').hidden = true;
       }
 
-      function buildRows(packages: string[], disabled: string[]): Row[] {
+      // `packages` is `pm list packages -u`, which still lists packages uninstalled for user 0.
+      // `installed` is the same list without -u; when it is empty the transport could not tell.
+      function buildRows(packages: string[], disabled: string[], installed: string[]): Row[] {
         const disabledSet = new Set(disabled);
+        const installedSet = new Set(installed);
         const seen = new Set<string>();
         const built: Row[] = [];
         for (const pkg of packages) {
@@ -652,6 +671,7 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
             category: rule?.category ?? '',
             description: rule?.description ?? '',
             disabled: disabledSet.has(pkg),
+            uninstalled: installedSet.size > 0 && !installedSet.has(pkg),
             locked: isLocked(pkg, tier),
           });
         }
@@ -670,24 +690,37 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
           device = await webadb.connect();
           transport = 'webusb';
           log('INFO', `Authenticated ${device.model} (${device.serial}).`);
-          const [packages, disabled] = await Promise.all([
+          const [packages, disabled, installed] = await Promise.all([
             webadb.listPackages(),
             webadb.listDisabledPackages(),
+            webadb.listInstalledPackages(),
           ]);
-          rows = buildRows(packages, disabled);
+          rows = buildRows(packages, disabled, installed);
           log('INFO', `Loaded ${rows.length} packages, ${disabled.length} disabled.`);
           showWorkspace();
         } catch (err) {
+          // Let go of the USB interface, or the next attempt finds it still claimed.
+          await webadb.disconnect();
+          resetWorkspace();
           const message = err instanceof Error ? err.message : String(err);
           setError(message);
           log('ERROR', message);
         }
       }
 
-      async function connectBridge() {
+      // `waitMs`: how long to keep asking for /health. The launcher opens /app?bridge=1
+      // before the bridge is listening, so that path waits instead of failing at once.
+      async function connectBridge(waitMs = 0) {
         setError('');
         log('INFO', 'Checking local bridge at http://127.0.0.1:53123/health');
-        const health = await bridge.checkHealth();
+        let health = await bridge.checkHealth();
+        const deadline = Date.now() + waitMs;
+        while (!health.ok && Date.now() < deadline) {
+          $('bridge-badge').textContent = `Waiting for bridge… ${Math.ceil((deadline - Date.now()) / 1000)}s`;
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          health = await bridge.checkHealth();
+        }
+        $('bridge-badge').textContent = '127.0.0.1:53123';
         if (!health.ok) {
           const message = 'Local bridge is not running. Paste the one-click command for your OS, then try again.';
           setError(message);
@@ -715,7 +748,19 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
           log('ERROR', message);
           return;
         }
-        const picked = online[0];
+        let picked = online[0];
+        if (online.length > 1) {
+          const serials = online.map((d) => d.serial).join(', ');
+          const answer = window.prompt(`Several devices are connected (${serials}). Type the serial of the one to debloat:`, '');
+          const match = online.find((d) => d.serial === answer?.trim());
+          if (!match) {
+            const message = `Several devices are connected (${serials}) and none was chosen. Connect again and enter one of those serials, or unplug the others.`;
+            setError(message);
+            log('ERROR', message);
+            return;
+          }
+          picked = match;
+        }
         const props = await bridge.getDeviceProps(picked.serial);
         device = {
           serial: picked.serial,
@@ -728,11 +773,12 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
         transport = 'bridge';
         log('INFO', `Bridge connected to ${device.model} (${device.serial}).`);
         try {
-          const [packages, disabled] = await Promise.all([
+          const [packages, disabled, installed] = await Promise.all([
             bridge.listPackages(device.serial),
             bridge.listDisabledPackages(device.serial),
+            bridge.listInstalledPackages(device.serial),
           ]);
-          rows = buildRows(packages, disabled);
+          rows = buildRows(packages, disabled, installed);
           log('INFO', `Loaded ${rows.length} packages, ${disabled.length} reported disabled.`);
           showWorkspace();
         } catch (err) {
@@ -764,7 +810,8 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
         for (const row of rows) {
           if (!ok.has(row.pkg)) continue;
           if (action === 'disable') row.disabled = true;
-          else if (action === 'enable') row.disabled = false;
+          else if (action === 'uninstall') row.uninstalled = true;
+          else row.disabled = row.uninstalled = false;
         }
         $('stat-disabled').textContent = String(rows.filter((r) => r.disabled).length);
       }
@@ -779,7 +826,15 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
           }
           return results;
         }
-        return bridge.execute(device.serial, runMode, action, packages);
+        if (action !== 'enable' || runMode !== 'apply') {
+          return bridge.execute(device.serial, runMode, action, packages);
+        }
+        // A full restore needs both bridge calls: /restore puts back packages uninstalled for
+        // user 0 and /execute enable un-freezes them. A package counts only if both succeeded.
+        const serial = device.serial;
+        const reinstalled = await bridge.restore(serial, packages);
+        const enabled = await bridge.execute(serial, 'apply', 'enable', packages);
+        return enabled.map((r) => reinstalled.find((x) => x.package === r.package && x.status !== 'success') ?? r);
       }
 
       async function runPackages(packages: string[], action: Action, runMode: Mode) {
@@ -798,9 +853,15 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
           return;
         }
 
+        let snapshot: DebloatSnapshot | null = null;
         if (runMode === 'apply') {
-          const snapshot = makeSnapshot(action, runMode, actionable);
-          saveLocalSnapshot(snapshot);
+          snapshot = makeSnapshot(action, runMode, actionable);
+          if (!saveLocalSnapshot(snapshot)) {
+            const message = 'Nothing was changed. The restore snapshot could not be saved in this browser (storage is full or blocked). Delete old snapshots or allow site storage, then try again.';
+            log('ERROR', message);
+            window.alert(message);
+            return;
+          }
           log('INFO', `Snapshot ${snapshot.id} saved locally before live ${action} of ${actionable.length} package(s).`);
           if (transport === 'bridge') {
             log('INFO', 'The local bridge also writes its own pre-mutation snapshot before apply.');
@@ -818,13 +879,11 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
             else if (result.status === 'failed') log('ERROR', `${result.package}: ${result.output || 'failed'}`);
             else log(level, `${result.package}: ${result.output || 'ok'}`);
           }
-          if (runMode === 'apply') {
+          if (snapshot) {
             applyLocalStatus(results, action);
-            const snaps = getLocalSnapshots();
-            if (snaps[0]) {
-              snaps[0].results = results;
-              saveLocalSnapshot(snaps[0]);
-            }
+            // saveLocalSnapshot replaces the stored entry that has this snapshot's id.
+            snapshot.results = results;
+            if (!saveLocalSnapshot(snapshot)) log('ERROR', `Could not record the results in snapshot ${snapshot.id}.`);
             for (const pkg of actionable) {
               if (results.some((r) => r.package === pkg && r.status === 'success')) selected.delete(pkg);
             }
@@ -838,23 +897,19 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
         }
       }
 
-      function askConfirm(packages: string[], action: Action) {
-        const label = action === 'disable' ? 'freeze' : action === 'uninstall' ? 'uninstall (data kept)' : 'restore';
-        $('confirm-body').textContent = `This will ${label} ${packages.length} package${packages.length === 1 ? '' : 's'} on ${device?.model || 'the device'} for user 0.`;
-        $('modal-confirm').hidden = false;
-        const ok = $('confirm-ok');
-        const onOk = () => {
-          cleanup();
-          void runPackages(packages, action, 'apply');
-        };
-        const onCancel = () => cleanup();
-        function cleanup() {
-          $('modal-confirm').hidden = true;
-          ok.removeEventListener('click', onOk);
-          $('confirm-cancel').removeEventListener('click', onCancel);
+      // Single entry point for the batch button and the per-row buttons. Dry-run starts at once;
+      // a live run only starts from the confirm dialog's `close` listener in wire().
+      function requestRun(packages: string[], action: Action) {
+        if (busy || !device || packages.length === 0) return;
+        if (mode === 'dry-run') {
+          void runPackages(packages, action, 'dry-run');
+          return;
         }
-        ok.addEventListener('click', onOk);
-        $('confirm-cancel').addEventListener('click', onCancel);
+        const label = action === 'disable' ? 'freeze' : action === 'uninstall' ? 'uninstall (data kept)' : 'restore';
+        const what = packages.length === 1 ? packages[0] : `${packages.length} packages`;
+        $('confirm-body').textContent = `This will ${label} ${what} on ${device.model || 'the device'} for user 0.`;
+        pending = { packages, action };
+        confirmDialog.showModal();
       }
 
       function renderSnapshots() {
@@ -910,20 +965,20 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
 
       async function restoreSnapshot(snap: DebloatSnapshot) {
         if (!device || busy) return;
-        const packages = snap.packages.filter((pkg) => /^[a-zA-Z0-9._]+$/.test(pkg) && !CRITICAL_PACKAGES.has(pkg));
+        if (
+          snap.serial && snap.serial !== device.serial &&
+          !window.confirm(`This snapshot was taken on ${snap.model} (serial ${snap.serial}), not on the connected ${device.model} (serial ${device.serial}). Restore it on this device anyway?`)
+        ) return;
+        // Restoring is always allowed, Tier 4 included: only freeze and uninstall are blocked.
+        const before = new Set(Array.isArray(snap.disabledPackagesBefore) ? snap.disabledPackagesBefore : []);
+        const packages = snap.packages.filter((pkg) => /^[a-zA-Z0-9._]+$/.test(pkg) && !before.has(pkg));
         const skipped = snap.packages.length - packages.length;
-        if (skipped > 0) log('BLOCKED', `Restore skipped ${skipped} critical or invalid package name(s).`);
+        if (skipped > 0) log('INFO', `Restore left ${skipped} package(s) alone: already disabled before the snapshot, or not a valid package name.`);
         if (packages.length === 0) return;
         busy = true;
         log('EXEC', `Restoring ${packages.length} package(s) from snapshot ${snap.id}.`);
         try {
-          let results: ExecutionResult[];
-          if (transport === 'bridge') {
-            results = await bridge.restore(device.serial, packages);
-          } else {
-            results = [];
-            for (const pkg of packages) results.push(await webadb.execute('enable', pkg, 'apply'));
-          }
+          const results = await executeOnDevice('enable', 'apply', packages);
           for (const result of results) {
             const level: LogLevel = result.status === 'skipped_protected' ? 'BLOCKED' : result.status === 'failed' ? 'ERROR' : 'EXEC';
             log(level, `${result.package}: ${result.output || result.status}`);
@@ -959,8 +1014,28 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
         $('webusb-badge').textContent = WebAdbClient.isSupported() ? 'Supported' : 'Unavailable';
         ($('btn-webusb') as HTMLButtonElement).disabled = !WebAdbClient.isSupported();
 
-        $('btn-webusb').addEventListener('click', () => void connectWebUsb());
-        $('btn-bridge').addEventListener('click', () => void connectBridge());
+        // One connection attempt at a time, whichever transport started it.
+        let connecting = false;
+        const connectOnce = async (connect: () => Promise<void>) => {
+          if (connecting) {
+            setError('A connection attempt is still in progress. If the phone shows an "Allow USB debugging" prompt, accept it; otherwise reload this page to start over.');
+            return;
+          }
+          connecting = true;
+          try {
+            await connect();
+          } finally {
+            connecting = false;
+          }
+        };
+        $('btn-webusb').addEventListener('click', () => void connectOnce(connectWebUsb));
+        $('btn-bridge').addEventListener('click', () => void connectOnce(connectBridge));
+        webadb.onDisconnect = () => {
+          const message = 'The phone disconnected. Replug the cable, then connect again.';
+          log('ERROR', message);
+          resetWorkspace();
+          setError(message);
+        };
         $('btn-disconnect').addEventListener('click', async () => {
           if (transport === 'webusb') await webadb.disconnect();
           log('INFO', 'Disconnected.');
@@ -1020,14 +1095,19 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
         });
 
         $('btn-execute').addEventListener('click', () => {
-          const action = ($('batch-action') as HTMLSelectElement).value as Action;
-          const packages = [...selected];
-          if (mode === 'apply') askConfirm(packages, action);
-          else void runPackages(packages, action, 'dry-run');
+          requestRun([...selected], ($('batch-action') as HTMLSelectElement).value as Action);
         });
 
-        $('modal-confirm').addEventListener('click', (event) => {
-          if (event.target === $('modal-confirm')) $('modal-confirm').hidden = true;
+        // Every way out of the dialog (either button, Esc, backdrop, a lost connection) ends here,
+        // and only the "Apply live" button sets returnValue to 'ok'.
+        confirmDialog.addEventListener('close', () => {
+          const run = confirmDialog.returnValue === 'ok' ? pending : null;
+          pending = null;
+          confirmDialog.returnValue = '';
+          if (run) void runPackages(run.packages, run.action, 'apply');
+        });
+        confirmDialog.addEventListener('click', (event) => {
+          if (event.target === confirmDialog) confirmDialog.close('cancel');
         });
 
         const openSnaps = () => { renderSnapshots(); $('modal-snaps').hidden = false; };
@@ -1058,7 +1138,7 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
               packages: parsed.packages.filter((pkg) => typeof pkg === 'string'),
               disabledPackagesBefore: Array.isArray(parsed.disabledPackagesBefore) ? parsed.disabledPackagesBefore : [],
             };
-            saveLocalSnapshot(imported);
+            if (!saveLocalSnapshot(imported)) throw new Error('Could not store the imported snapshot: browser storage is full or blocked.');
             log('INFO', `Imported snapshot with ${imported.packages.length} package(s).`);
             renderSnapshots();
           } catch (err) {
@@ -1089,12 +1169,9 @@ const KEYWORDS = 'Android web debloater, WebADB debloat, visual ADB package mana
         paintTabs();
         paintMode();
         log('INFO', `Rule catalog ready: ${rulesData.stats.totalRules} rules, ${CRITICAL_PACKAGES.size} Tier 4 packages locked.`);
-        if (CRITICAL_PACKAGES.size !== 89) {
-          log('ERROR', `Expected 89 critical packages, found ${CRITICAL_PACKAGES.size}. Mutations stay blocked for every name in the set.`);
-        }
 
         const params = new URLSearchParams(window.location.search);
-        if (params.get('bridge') === '1') void connectBridge();
+        if (params.get('bridge') === '1') void connectOnce(() => connectBridge(20000));
       }
 
       wire();

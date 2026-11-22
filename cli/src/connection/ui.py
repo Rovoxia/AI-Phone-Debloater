@@ -353,7 +353,7 @@ class ConnectionUI:
         sel = ask("\nSelect device number to reconnect (or Enter for most recent): ").strip()
         target = None
         if not sel:
-            target = devices[0]
+            target = max(devices, key=lambda d: d.last_connected)
         elif sel.isdigit() and 1 <= int(sel) <= len(devices):
             target = devices[int(sel) - 1]
 

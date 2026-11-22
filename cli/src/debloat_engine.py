@@ -37,13 +37,18 @@ PROJECT_ROOT = SCRIPT_DIR.parent.parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
+if sys.version_info < (3, 11):  # noqa: UP036 - runtime guard for users on older Python, not dead code
+    sys.exit(f"[ERR] AI-Phone-Debloater needs Python 3.11 or newer (found {sys.version.split()[0]}).")
+
 try:
+    # This ConnectionError is the connection layer's base exception; it shadows the builtin in this module.
     from connection import ConnectionError, ConnectionManager, ConnectionUI
 except ImportError:
     from .connection import ConnectionError, ConnectionManager, ConnectionUI
 
 def load_version() -> str:
-    for cand in (PROJECT_ROOT / "VERSION", SCRIPT_DIR.parent / "VERSION", Path.cwd() / "VERSION"):
+    # Installed flat layout (VERSION beside src/) first, then the repo root.
+    for cand in (SCRIPT_DIR.parent / "VERSION", PROJECT_ROOT / "VERSION"):
         if cand.is_file():
             try:
                 val = cand.read_text(encoding="utf-8").strip()
@@ -55,13 +60,8 @@ def load_version() -> str:
 
 __version__ = load_version()
 
-RULES_DIR_CANDIDATES = [
-    PROJECT_ROOT / "cli" / "rules",
-    PROJECT_ROOT / "rules",
-    Path.cwd() / "rules",
-    Path("rules"),
-    SCRIPT_DIR.parent / "rules",
-]
+# rules/ sits beside src/ in both the repo (cli/) and the installed flat layout.
+RULES_DIR_CANDIDATES = [SCRIPT_DIR.parent / "rules"]
 BACKUPS_DIR = Path.home() / "AiPhoneDebloater" / "backups"
 LOCAL_BACKUPS_DIR = PROJECT_ROOT / "cli" / "backups"
 
@@ -199,7 +199,7 @@ class AdbError(DebloatError): pass
 PACKAGE_RE = re.compile(r"^[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)*$")
 
 def is_valid_package(pkg) -> bool:
-    return isinstance(pkg, str) and bool(PACKAGE_RE.match(pkg))
+    return isinstance(pkg, str) and bool(PACKAGE_RE.fullmatch(pkg))
 
 def validate_package(pkg) -> str:
     if not is_valid_package(pkg):
@@ -310,7 +310,7 @@ class Adb:
         return self._run([self.adb_path, "pair", address, code])
 
     def getprop(self, prop: str, timeout=None):
-        if not re.match(r"^[A-Za-z0-9._-]+$", prop): raise DebloatError(f"Invalid property name: {prop!r}")
+        if not re.fullmatch(r"[A-Za-z0-9._-]+", prop): raise DebloatError(f"Invalid property name: {prop!r}")
         try:
             rc, out, _ = self.shell(f"getprop {prop}", timeout=timeout)
         except AdbError as exc:
@@ -450,7 +450,7 @@ class RuleSet:
                 pkg = entry.get("package")
                 if isinstance(pkg, str) and pkg: self._add_critical(pkg, entry.get("description", "critical"))
         else:
-            self.logger.error(f"Critical blacklist missing or invalid: {crit_path}. Disable/uninstall will be refused.")
+            raise DebloatError(f"Critical blacklist missing or invalid: {crit_path}. Refusing to scan or debloat without it.")
         univ_path = rules_dir / "universal-safe-to-remove.json"
         data = self._load_json(univ_path)
         if data:
@@ -609,7 +609,7 @@ class SnapshotManager:
                     with path.open("r", encoding="utf-8") as fh: data = json.load(fh)
                     if not isinstance(data, dict): raise TypeError("not a JSON object")
                     results.append({"path": str(path), "name": path.name, "created_at": data.get("created_at"), "device": data.get("device") or {}, "package_count": data.get("package_count")})
-                except (OSError, ValueError) as exc:
+                except (OSError, ValueError, TypeError) as exc:
                     self.logger.warning(f"Skipping unreadable snapshot {path.name}: {exc}")
         results.sort(key=lambda r: r.get("created_at") or "", reverse=True)
         return results
@@ -699,7 +699,7 @@ class DebloatEngine:
 
     def connect_wireless(self, address):
         address = (address or "").strip()
-        if not re.match(r"^[A-Za-z0-9._\-\[\]:]+$", address):
+        if not re.fullmatch(r"[A-Za-z0-9._\-\[\]:]+", address):
             self.logger.error(f"Invalid wireless address: {address!r} (expected IP:Port)")
             return False
         if ":" not in address: address += ":5555"
@@ -714,7 +714,7 @@ class DebloatEngine:
         return True
 
     def pair_wireless(self, address, code):
-        if not re.match(r"^[A-Za-z0-9._\-\[\]:]+$", address or "") or not re.match(r"^\d{6}$", (code or "").strip()):
+        if not re.fullmatch(r"[A-Za-z0-9._\-\[\]:]+", address or "") or not re.fullmatch(r"\d{6}", (code or "").strip()):
             self.logger.error("Pairing needs IP:Port and the 6-digit pairing code.")
             return False
         ok, msg = self.connection_mgr.pair_wireless_code(address, code.strip(), timeout=20.0)
@@ -1079,7 +1079,7 @@ class DebloatEngine:
         self.logger.header(f"AI-Phone-Debloater v{__version__} — Interactive Mode")
         try:
             self.ensure_ready()
-        except DebloatError as exc:
+        except (DebloatError, ConnectionError, OSError) as exc:
             self.logger.warning(f"Initial connection: {exc}")
             self.logger.info("Tip: Select 'w' to connect wirelessly.")
 
@@ -1170,7 +1170,7 @@ class DebloatEngine:
                         self.ensure_ready()
                 elif choice == "0": break
                 elif choice: self.logger.warning(f"Unknown option '{choice}'")
-            except (DebloatError, OSError) as exc: self.logger.error(str(exc))
+            except (DebloatError, ConnectionError, OSError) as exc: self.logger.error(str(exc))
             except KeyboardInterrupt: print(); break
 
 def build_parser():
@@ -1249,7 +1249,7 @@ def main(argv=None):
             return 0
         engine.interactive()
         return 0
-    except DebloatError as exc:
+    except (DebloatError, ConnectionError, OSError) as exc:
         logger.error(str(exc))
         return 1
     except KeyboardInterrupt:

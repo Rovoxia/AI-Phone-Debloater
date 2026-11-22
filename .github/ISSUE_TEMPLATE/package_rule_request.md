@@ -14,8 +14,8 @@ assignees: ""
 
 ### Classification
 - [ ] Tier 1: Safe Bloatware / Adware / Telemetry (zero impact on core functions)
-- [ ] Tier 2: Advanced (replaces stock app like browser/notes, safe if alternative installed)
-- [ ] Tier 3: Extreme (removes features like AOD or voice assistants)
+- [ ] Tier 2: Advanced (removes optional features like AOD, OEM cloud sync or voice assistants)
+- [ ] Tier 3: Extreme (replaces stock app like dialer/keyboard, safe only if alternative installed)
 
 ### Recommended Action
 - [ ] Disable (`pm disable-user --user 0`)

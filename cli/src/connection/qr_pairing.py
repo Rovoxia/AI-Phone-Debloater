@@ -115,17 +115,6 @@ class QrPairingManager:
         start_time = time.time()
         logger.info(f"Initiated QR pairing session {session.session_id} (timeout={timeout:g}s)")
 
-        # Record pre-existing pairing and connect services to distinguish new ones
-        initial_pairing_services = {
-            s.endpoint for s in self.mdns.get_pairing_services()
-        }
-        initial_connect_services = {
-            s.endpoint for s in self.mdns.get_connect_services()
-        }
-        initial_attached_serials = {
-            d.get("serial", "") for d in self.adb.list_devices()
-        }
-
         pairing_service: DiscoveredService | None = None
 
         # -------------------------------------------------------------------
@@ -153,17 +142,6 @@ class QrPairingManager:
                 ):
                     pairing_service = s
                     break
-
-            # 2. Match newly appeared pairing service on LAN if name was generic
-            if not pairing_service:
-                for s in current_pairing:
-                    if s.endpoint not in initial_pairing_services:
-                        pairing_service = s
-                        break
-
-            # 3. Fallback: if only one pairing service exists on the local network, select it
-            if not pairing_service and len(current_pairing) == 1:
-                pairing_service = current_pairing[0]
 
             if pairing_service:
                 logger.info(
@@ -217,10 +195,7 @@ class QrPairingManager:
             for d in self.adb.list_devices():
                 ser = d.get("serial", "")
                 st = d.get("state", "")
-                if st == "device" and (
-                    pairing_service.address in ser
-                    or (":" in ser and ser not in initial_attached_serials)
-                ):
+                if st == "device" and ser.rpartition(":")[0] == pairing_service.address:
                     logger.info(f"Device already connected via ADB daemon: {ser}")
                     connect_endpoint = ser
                     break
@@ -238,15 +213,6 @@ class QrPairingManager:
                 if s.address == pairing_service.address:
                     connect_endpoint = s.endpoint
                     break
-
-            if not connect_endpoint:
-                for s in current_connect:
-                    if s.endpoint not in initial_connect_services:
-                        connect_endpoint = s.endpoint
-                        break
-
-            if not connect_endpoint and len(current_connect) == 1:
-                connect_endpoint = current_connect[0].endpoint
 
             if connect_endpoint:
                 break

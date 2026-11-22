@@ -23,7 +23,7 @@ def read_version() -> str:
     if not VERSION_FILE.is_file():
         raise FileNotFoundError(f"Missing root VERSION file at {VERSION_FILE}")
     v = VERSION_FILE.read_text(encoding="utf-8").strip()
-    if not re.match(r"^\d+\.\d+\.\d+", v):
+    if not re.fullmatch(r"\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?", v):
         raise ValueError(f"Invalid SemVer in {VERSION_FILE}: '{v}'")
     return v
 

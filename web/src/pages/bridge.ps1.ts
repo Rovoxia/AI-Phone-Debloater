@@ -10,8 +10,6 @@ $Subfolder = "cli"
 $InstallDir  = "$HOME\\.ai-phone-debloater"
 $BridgePort  = "53123"
 $AppUrl      = "https://debloater.rovoxia.com/app?bridge=1"
-$BridgeScript = Join-Path $InstallDir "src\\bridge_server.py"
-$EngineScript = Join-Path $InstallDir "debloat_engine.py"
 
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "  AI-Phone-Debloater WebApp Local ADB Bridge (Windows)" -ForegroundColor Green
@@ -79,20 +77,7 @@ try {
         Copy-Item -Force $NewVersionFile $InstallDir
     }
 
-    # Ensure required subdirectory exists for bridge script
-    if (-not (Test-Path (Join-Path $InstallDir "src"))) {
-        New-Item -ItemType Directory -Force -Path (Join-Path $InstallDir "src") | Out-Null
-    }
-
     Write-Host "[SUCCESS] Ready!" -ForegroundColor Green
-
-    # --- Launch bridge server ---
-    $Launcher = ""
-    if (Test-Path $BridgeScript) {
-        $Launcher = $BridgeScript
-    } else {
-        $Launcher = $EngineScript
-    }
 
     Write-Host "[INFO] Opening WebApp workspace in default browser..." -ForegroundColor Green
     Start-Process $AppUrl
@@ -100,12 +85,8 @@ try {
     Write-Host "[INFO] Starting Python bridge server on port $BridgePort ..." -ForegroundColor Green
     Write-Host "[INFO] Bridge server active on http://127.0.0.1:$BridgePort" -ForegroundColor DarkGray
 
-    $BridgeProc = Start-Process -FilePath "python" -ArgumentList @("$Launcher", "--port", $BridgePort) -NoNewWindow -PassThru -RedirectStandardOutput (Join-Path $env:TEMP "bridge_out.log") -RedirectStandardError (Join-Path $env:TEMP "bridge_err.log")
-
     Write-Host "[INFO] Press Ctrl+C in this terminal to stop the bridge when done." -ForegroundColor DarkGray
-    while (-not $BridgeProc.HasExited) {
-        Start-Sleep -Seconds 1
-    }
+    & (Join-Path $InstallDir "bin\\debloat.bat") --bridge --port $BridgePort
 }
 catch {
     Write-Host "[ERROR] $_" -ForegroundColor Red
@@ -115,7 +96,6 @@ finally {
     if (Test-Path $TempDir) {
         Remove-Item -Recurse -Force $TempDir -ErrorAction SilentlyContinue
     }
-    Remove-Item -Force $BridgeProc.LogFileName -ErrorAction SilentlyContinue
 }
 `;
 

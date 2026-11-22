@@ -14,7 +14,7 @@
 </p>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg?style=flat-square)](LICENSE)
-[![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue.svg?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue.svg?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Android 8.0 - 15+](https://img.shields.io/badge/Android-8.0%20--%2015%2B-green.svg?style=flat-square&logo=android&logoColor=white)](https://developer.android.com)
 [![Dependencies: Zero](https://img.shields.io/badge/Dependencies-Zero%20(Stdlib%20Only)-teal.svg?style=flat-square)](cli/src/debloat_engine.py)
 [![Root: No Root Required](https://img.shields.io/badge/Root-100%25%20No%20Root-purple.svg?style=flat-square)](#technical-safety-architecture)
@@ -48,8 +48,8 @@ Key technical facts and specifications:
 | **Is root required?** | **No root required.** Operates strictly via Android user-space (`User 0`) permissions (`pm disable-user`, `pm uninstall -k`). |
 | **Does it trip Samsung Knox or void warranty?** | **No.** Knox Warranty Void remains `0x0`. Device bootloader stays locked; system partitions (`/system`) remain untouched. |
 | **Do banking apps and Google Pay continue working?** | **Yes.** Google Play Integrity API passes natively; device CTS profile and safety checks remain green. |
-| **Are package removals reversible?** | **100% reversible.** Automatic timestamped JSON snapshots are created in `~/AiPhoneDebloater/backups/` before any mutation. |
-| **Can critical system packages be removed accidentally?** | **No.** Hard-coded sentinel blacklist permanently protects **89 unique Tier 4 packages** (all 89 in `critical-do-not-touch.json`, loaded into `HARDCRITICAL_PACKAGES`; union 89) — SystemUI, Telephony, Keystore, framework, and modem HALs are never touched. |
+| **Are package removals reversible?** | **100% reversible.** Automatic timestamped JSON snapshots are created in `~/AiPhoneDebloater/backups/` before any mutation (unless `--no-backup` is passed). |
+| **Can critical system packages be removed accidentally?** | **No.** Sentinel blacklist permanently protects **89 unique Tier 4 packages** (all 89 in `critical-do-not-touch.json`, loaded into `HARDCRITICAL_PACKAGES`; union 89) — SystemUI, Telephony, Keystore, framework, and modem HALs are never touched. |
 | **What platforms are supported?** | Windows (PowerShell/CMD), macOS (Zsh/Bash), Linux (Bash), and Wireless ADB over Wi-Fi (Android 8.0 to 15+). |
 
 ---
@@ -58,7 +58,7 @@ Key technical facts and specifications:
 
 **AI-Phone-Debloater** is an open-source, rootless Android optimization engine designed to safely freeze, disable, and uninstall preloaded carrier bloatware, aggressive OEM surveillance daemons, and background telemetry services without voiding your warranty or tripping tamper fuses.
 
-Unlike legacy debloating scripts that execute unvetted package removal commands blindly, AI-Phone-Debloater introduces a **4-Tier Safety Model**, a **hard-coded sentinel blacklist of 89 unique Tier 4 critical OS packages**, and an **automatic JSON rollback snapshot manager**. It operates strictly in Android user-space (`User 0`) with zero external pip dependencies — running entirely on Python's standard library and the official Android Debug Bridge (`adb`).
+Unlike legacy debloating scripts that execute unvetted package removal commands blindly, AI-Phone-Debloater introduces a **4-Tier Safety Model**, a **sentinel blacklist of 89 unique Tier 4 critical OS packages**, and an **automatic JSON rollback snapshot manager**. It operates strictly in Android user-space (`User 0`) with zero external pip dependencies — running entirely on Python's standard library and the official Android Debug Bridge (`adb`).
 
 ### 🚀 Key Performance & Privacy Benchmarks
 - **⚡ 1.5GB to 3GB+ RAM Reclaimed:** Terminates background autostart services and resident bloatware daemons.
@@ -122,7 +122,7 @@ irm https://debloater.rovoxia.com/run.ps1 | iex
 curl -sSL https://debloater.rovoxia.com/run.sh | bash
 ```
 
-*What this does:* Downloads the lightweight engine into `$HOME/.ai-phone-debloater`, verifies Python 3, checks ADB connectivity, and launches the interactive terminal menu.
+*What this does:* Downloads the lightweight engine into `$HOME/.ai-phone-debloater`, verifies Python 3.11+, checks ADB connectivity, and launches the interactive terminal menu.
 
 ---
 
@@ -148,7 +148,7 @@ Connect your phone and PC to the same Wi-Fi network, enable **Wireless Debugging
 ```bash
 python cli/src/debloat_engine.py --wireless 192.168.1.50:5555
 ```
-*(The engine also supports automatic zero-configuration pairing via mDNS discovery on Android 11+).*
+*(On Android 11+ the engine can also discover wireless debugging endpoints via mDNS and list them for you to choose; pairing still requires the pairing code or a QR code via `--qr-pair`).*
 
 ---
 
@@ -177,9 +177,9 @@ Every Android package evaluated by AI-Phone-Debloater is classified strictly int
 | Tier | Category | Description | Typical Packages | Risk Level |
 | :---: | :--- | :--- | :--- | :---: |
 | **Tier 1** | **Safe Bloat** *(Default)* | Carrier junk, third-party partner apps, aggressive ad daemons, diagnostic telemetry loggers. | `com.miui.msa.global`<br>`com.facebook.katana`<br>`com.amazon.appmanager`<br>`com.netflix.partner.activation` | 🟢 **Zero Risk**<br>(Safe for all users) |
-| **Tier 2** | **Advanced Debloat** | Secondary voice assistants, OEM cloud synchronization, AR stickers, wellbeing trackers. | `com.samsung.android.bixby.agent`<br>`com.miui.cloudservice`<br>`com.samsung.android.arzone`<br>`com.google.android.apps.wellbeing` | 🟡 **Low Risk**<br>(Review feature usage) |
-| **Tier 3** | **Extreme Debloat** | Replaceable stock apps (keyboards, stock dialers, default SMS, OEM gallery apps, updaters). | `com.samsung.android.honeyboard`<br>`com.miui.gallery`<br>`com.google.android.dialer`<br>`com.sec.android.app.myfiles` | 🟠 **Moderate Risk**<br>(Install replacement first) |
-| **Tier 4** | **Critical Core** *(Sentinel)* | Android framework, telephony call routing, modem HALs, keystore encryption, package installer. | `android`<br>`com.android.systemui`<br>`com.android.phone`<br>`android.security.keystore` | 🔴 **HARD-BLOCKED**<br>(Never touched) |
+| **Tier 2** | **Advanced Debloat** | Secondary voice assistants, OEM cloud synchronization, AR stickers, wellbeing trackers. | `com.samsung.android.app.routines`<br>`com.heytap.cloud`<br>`com.miui.notes`<br>`com.google.android.apps.wellbeing` | 🟡 **Low Risk**<br>(Review feature usage) |
+| **Tier 3** | **Extreme Debloat** | Replaceable stock apps (keyboards, stock dialers, default SMS, OEM gallery apps, updaters). | `com.transsion.otaupdate`<br>*(Tier 3 currently has a single rule)* | 🟠 **Moderate Risk**<br>(Install replacement first) |
+| **Tier 4** | **Critical Core** *(Sentinel)* | Android framework, telephony call routing, modem HALs, keystore encryption, package installer. | `android`<br>`com.android.systemui`<br>`com.android.phone`<br>`com.android.packageinstaller` | 🔴 **HARD-BLOCKED**<br>(Never touched) |
 
 > [!WARNING]
 > ### ⚠️ Safety & Best Practices Notice • `No Root Required`
@@ -202,7 +202,7 @@ Every Android package evaluated by AI-Phone-Debloater is classified strictly int
    Run `python cli/src/debloat_engine.py --tier 1 --dry-run` to inspect a full table of proposed changes, package descriptions, and reasons before modifying your device.
 
 5. **Automated Rollback Snapshot & Reversible State**  
-   Before any package state is changed, an automated timestamped JSON snapshot (`~/AiPhoneDebloater/backups/snapshot_<model>_<timestamp>.json`) is saved safely in your user home directory. Debloat commands use `disable-user` or `uninstall -k` (which preserves user application data in `/data/user/0/`), enabling instant 1-click restore via `--restore <SNAPSHOT>`.
+   Before any package state is changed (unless `--no-backup` is passed), an automated timestamped JSON snapshot (`~/AiPhoneDebloater/backups/snapshot_<model>_<timestamp>.json`) is saved safely in your user home directory. Debloat commands use `disable-user` or `uninstall -k` (which preserves user application data in `/data/user/0/`), enabling instant 1-click restore via `--restore <SNAPSHOT>`.
 
 ---
 
@@ -216,7 +216,7 @@ How AI-Phone-Debloater compares against traditional Android debloating solutions
 | **AI Agent Native Integration** (Claude, Cursor, GPT) | ✅ **First-Class** | ❌ No | ❌ No | ❌ No | ❌ No |
 | **Zero-Git Single-Command Runners** (`run.ps1`/`run.sh`) | ✅ **Yes** | ❌ No | ❌ No | ❌ No | ❌ No |
 | **Python Standard Library Only** (0 pip install) | ✅ **Yes** | ❌ Rust binary | ❌ .NET binary | ❌ Android APK | ⚠️ Shell syntax |
-| **Hard-Coded Protected Core Blacklist** (89 unique Tier 4) | ✅ **Inviolable** | ⚠️ Community list | ⚠️ Basic | ⚠️ None | ❌ None |
+| **Protected Core Blacklist** (89 unique Tier 4) | ✅ **Inviolable** | ⚠️ Community list | ⚠️ Basic | ⚠️ None | ❌ None |
 | **Automated JSON Rollback Snapshots** | ✅ **Automatic** | ⚠️ Partial | ⚠️ Paid edition | ❌ No | ❌ Manual |
 | **Root Required?** | ❌ **No Root** | ❌ No Root | ❌ No Root | ❌ No Root | ❌ No Root |
 | **Warranty & Samsung Knox Preservation** | ✅ **0x0 Safe** | ✅ 0x0 Safe | ✅ 0x0 Safe | ✅ 0x0 Safe | ✅ 0x0 Safe |
@@ -265,7 +265,7 @@ Modern Android devices store system APKs inside read-only partitions (`/system`,
 When executing uninstalls, the `-k` parameter instructs Android's Package Manager to preserve the app's private data directory located in `/data/user/0/<package_name>/`. If an application is re-installed or re-enabled later, accounts, local preferences, and session tokens are preserved.
 
 ### 4. Code-Level Sentinel Blacklist
-The core engine enforces a hard-coded set of 89 fundamental operating system packages in `cli/src/debloat_engine.py` and `cli/rules/critical-do-not-touch.json`. Even if an AI agent, custom rule, or user argument commands the removal of packages such as `com.android.systemui` or `com.android.phone`, the engine **intercepts and aborts** the action immediately before execution.
+The core engine enforces a set of 89 fundamental operating system packages loaded from `cli/rules/critical-do-not-touch.json`. Even if an AI agent, custom rule, or user argument commands the removal of packages such as `com.android.systemui` or `com.android.phone`, the engine **intercepts and aborts** the action immediately before execution.
 
 ---
 
@@ -279,7 +279,7 @@ The core engine is located at `cli/src/debloat_engine.py` and supports full non-
 python cli/src/debloat_engine.py --scan
 
 # Export scan results to JSON for AI analysis
-python cli/src/debloat_engine.py --scan --export-json --output device_profile.json
+python cli/src/debloat_engine.py --scan --export-json device_profile.json
 
 # Run dry-run simulation for Tier 1 bloat (read-only, no modifications)
 python cli/src/debloat_engine.py --tier 1 --dry-run
@@ -364,7 +364,7 @@ adb shell cmd package install-existing --user 0 <package_name>
 
 <details>
 <summary><strong>Which Android versions are supported?</strong></summary>
-<p>AI-Phone-Debloater supports <strong>Android 8.0 (Oreo) through Android 15+</strong>. On Android 11+, zero-cable Wireless ADB debugging with automated mDNS pairing is natively supported.</p>
+<p>AI-Phone-Debloater supports <strong>Android 8.0 (Oreo) through Android 15+</strong>. On Android 11+, zero-cable Wireless ADB debugging with mDNS endpoint discovery and code/QR pairing is natively supported.</p>
 </details>
 
 ---

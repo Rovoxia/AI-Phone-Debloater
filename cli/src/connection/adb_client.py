@@ -209,17 +209,11 @@ class AdbClient:
         if env_path:
             candidates.append(env_path)
 
-        # 3. Bundled platform-tools, relative to project root or CWD.
+        # 3. Bundled platform-tools beside src/ (repo cli/ or installed flat layout).
         project_root = Path(__file__).resolve().parent.parent.parent
         bundled = [
-            str(project_root / "cli" / "tools" / "platform-tools" / "adb.exe"),
-            str(project_root / "cli" / "tools" / "platform-tools" / "adb"),
-            str(Path.cwd() / "cli" / "tools" / "platform-tools" / "adb.exe"),
-            str(Path.cwd() / "cli" / "tools" / "platform-tools" / "adb"),
-            str(Path.cwd() / "tools" / "platform-tools" / "adb.exe"),
-            str(Path.cwd() / "tools" / "platform-tools" / "adb"),
-            str(Path.cwd() / "platform-tools" / "adb.exe"),
-            str(Path.cwd() / "platform-tools" / "adb"),
+            str(project_root / "tools" / "platform-tools" / "adb.exe"),
+            str(project_root / "tools" / "platform-tools" / "adb"),
         ]
         candidates.extend(bundled)
 
@@ -233,8 +227,9 @@ class AdbClient:
             if not cand:
                 continue
             if self._is_valid_adb(cand):
-                self._logger.info("Using adb: %s", cand)
-                return cand
+                resolved = cand if Path(cand).is_file() else (shutil.which(cand) or cand)
+                self._logger.info("Using adb: %s", resolved)
+                return resolved
 
         raise AdbNotFoundError(
             "adb executable not found. Set AI_PHONE_DEBLOATER_ADB_PATH or "
@@ -304,25 +299,14 @@ class AdbClient:
                 check=False,
             )
         except subprocess.TimeoutExpired as exc:
-            try:
-                if exc.process is not None:
-                    exc.process.terminate()
-                    try:
-                        exc.process.wait(timeout=5)
-                    except subprocess.TimeoutExpired:
-                        exc.process.kill()
-            except (TimeoutError, OSError) as exc:
-                self._logger.error(f"Timeout handling failed: {exc}")
             raise AdbServerError(
                 f"command timed out after {timeout}s: {_redact_command(cmd)}"
             ) from exc
         except FileNotFoundError:
-            self._logger.exception(f"executable not found: {cmd[0] if cmd else '<empty>'}")
             raise AdbNotFoundError(
                 f"executable not found: {cmd[0] if cmd else '<empty>'}"
             ) from None
         except OSError as exc:
-            self._logger.exception(f"failed to execute {cmd[0] if cmd else '<empty>'}")
             raise AdbServerError(
                 f"failed to execute {cmd[0] if cmd else '<empty>'}: {exc}"
             ) from None

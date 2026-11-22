@@ -59,7 +59,7 @@ class TransportType(Enum):
             return cls.EMULATOR
         if s.startswith("usb:"):
             return cls.USB
-        if ":" in s or s.count(".") == 3:
+        if ":" in s or s.count(".") == 3 or "._adb" in s:  # IP or mDNS name
             return cls.WIRELESS
         return cls.USB
 

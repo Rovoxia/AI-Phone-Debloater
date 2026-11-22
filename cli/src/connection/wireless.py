@@ -17,7 +17,6 @@ from .device_identity import DeviceIdentityManager
 from .discovery import validate_endpoint
 from .exceptions import (
     ConnectionError,
-    DeviceNotFoundError,
     DeviceUnauthorizedError,
     SecurityValidationError,
 )
@@ -123,9 +122,7 @@ class WirelessConnectionHandler:
         host, port = validate_endpoint(endpoint)
         target = f"{host}:{port}"
 
-        state = self.adb.get_device_state(target)
-        if state == "disconnected":
-            raise DeviceNotFoundError(f"Device at {target} is not connected to ADB.")
+        state = self.adb.get_device_state(target)  # raises DeviceNotFoundError
         if state == "unauthorized":
             raise DeviceUnauthorizedError(
                 f"Device at {target} is connected but unauthorized. Please check screen."

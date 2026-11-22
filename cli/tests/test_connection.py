@@ -104,6 +104,10 @@ class TestConnectionModels(unittest.TestCase):
         self.assertEqual(TransportType.from_serial("[fe80::1]:5555"), TransportType.WIRELESS)
         self.assertEqual(TransportType.from_serial("emulator-5554"), TransportType.EMULATOR)
         self.assertEqual(TransportType.from_serial("usb:1-2.3"), TransportType.USB)
+        self.assertEqual(
+            TransportType.from_serial("adb-R5CR10ABCDE-AbCdEf._adb-tls-connect._tcp"),
+            TransportType.WIRELESS,
+        )
 
     def test_device_info_methods(self):
         dev = DeviceInfo(
@@ -269,6 +273,35 @@ class TestAdbClient(unittest.TestCase):
         finally:
             os.remove(temp_adb)
 
+    def test_discover_adb_on_path_returns_resolved_path(self):
+        resolved = str(Path(tempfile.gettempdir()) / "fake-platform-tools" / "adb")
+        env = {k: v for k, v in os.environ.items() if k != "AI_PHONE_DEBLOATER_ADB_PATH"}
+        with patch.dict(os.environ, env, clear=True),                 patch.object(AdbClient, "_is_valid_adb", staticmethod(lambda p: p == "adb")),                 patch("shutil.which", return_value=resolved):
+            client = AdbClient()
+        self.assertEqual(client.adb_path, resolved)
+
+    def _temp_client(self):
+        with tempfile.NamedTemporaryFile(suffix=".exe" if os.name == "nt" else "", delete=False) as f:
+            temp_adb = f.name
+        self.addCleanup(os.remove, temp_adb)
+        os.chmod(temp_adb, 0o755)  # POSIX: adb candidates must be executable
+        return AdbClient(adb_path=temp_adb)
+
+    @patch("subprocess.run", side_effect=subprocess.TimeoutExpired(["adb"], 1))
+    def test_run_cmd_timeout_raises_server_error(self, _mock_run):
+        with self.assertRaises(AdbServerError):
+            self._temp_client().run_adb(["devices"])
+
+    @patch("subprocess.run", side_effect=FileNotFoundError("adb"))
+    def test_run_cmd_missing_binary_raises_not_found(self, _mock_run):
+        with self.assertRaises(AdbNotFoundError):
+            self._temp_client().run_adb(["devices"])
+
+    @patch("subprocess.run", side_effect=PermissionError("denied"))
+    def test_run_cmd_oserror_raises_server_error(self, _mock_run):
+        with self.assertRaises(AdbServerError):
+            self._temp_client().run_adb(["devices"])
+
     @patch("subprocess.run")
     def test_run_adb_shell_false(self, mock_run):
         mock_proc = MagicMock()
@@ -358,6 +391,19 @@ class TestDeviceIdentity(unittest.TestCase):
         self.assertTrue(mgr.is_same_physical_device(dev_usb, dev_wifi))
         self.assertFalse(mgr.is_same_physical_device(dev_usb, dev_different))
 
+        # Two units of the same model with different known ids are different phones.
+        dev_twin = DeviceInfo(
+            serial="R5CR10ZZZZZ",
+            state="device",
+            transport_type="usb",
+            physical_id="R5CR10ZZZZZ",
+            manufacturer="Samsung",
+            model="SM-S921B",
+            architecture="arm64-v8a",
+        )
+        dev_usb.architecture = "arm64-v8a"
+        self.assertFalse(mgr.is_same_physical_device(dev_usb, dev_twin))
+
     def test_verify_consistency_authorized(self):
         mock_client = MagicMock()
         mock_client.get_device_state.return_value = "device"
@@ -377,7 +423,7 @@ class TestDeviceIdentity(unittest.TestCase):
 
     def test_verify_consistency_disconnected_or_unauthorized(self):
         mock_client = MagicMock()
-        mock_client.get_device_state.return_value = "disconnected"
+        mock_client.get_device_state.side_effect = DeviceNotFoundError("device not found")
 
         mgr = DeviceIdentityManager(mock_client)
         dev = DeviceInfo(serial="R5CR10ABCDE", state="device")
@@ -527,6 +573,31 @@ class TestQrPairingManager(unittest.TestCase):
         self.assertFalse(s2.is_connect)
 
 
+    def test_auto_connect_requires_exact_address(self):
+        """192.168.1.5 must not match an already-attached 192.168.1.50:5555."""
+        mock_client = MagicMock()
+        mock_client.list_devices.return_value = [{"serial": "192.168.1.50:5555", "state": "device"}]
+        mdns = MagicMock()
+        wireless = MagicMock()
+        wireless.pair_with_code.return_value = (True, "Successfully paired")
+        mgr = QrPairingManager(mock_client, wireless_handler=wireless, mdns_discovery=mdns)
+        session = mgr.create_pairing_session(ttl_seconds=60.0)
+        mdns.get_pairing_services.return_value = [
+            DiscoveredService(
+                name=session.service_name,
+                service_type="_adb-tls-pairing._tcp",
+                address="192.168.1.5",
+                port=41235,
+            )
+        ]
+        mdns.get_connect_services.return_value = []
+        fake_time = MagicMock()
+        fake_time.time.side_effect = [float(t) for t in range(0, 1000, 5)]
+        with patch("connection.qr_pairing.time", fake_time), self.assertRaises(PairingError):
+            mgr.execute_qr_pairing_flow(session=session, timeout=60.0)
+        wireless.verify_and_get_info.assert_not_called()
+
+
 class TestDiscoveredServiceFlags(unittest.TestCase):
     """Regression: pairing port must never be used as connect port."""
 
@@ -616,6 +687,23 @@ class TestConnectionManager(unittest.TestCase):
         mgr.disconnect_device("R5CR10ABCDE")
         self.assertEqual(mgr.state, ConnectionState.DISCONNECTED)
         self.assertIsNone(mgr.active_device)
+
+    @patch("connection.manager.AdbClient")
+    def test_reconnect_picks_most_recent_device(self, mock_client_cls):
+        from connection.models import RememberedDevice
+
+        mock_client_cls.return_value = MagicMock()
+        registry = MagicMock()
+        old = RememberedDevice("OLD123", "Old", "Google", "Pixel 6", "usb", "", "2024-01-01T00:00:00")
+        new = RememberedDevice("NEW456", "New", "Google", "Pixel 9", "usb", "", "2026-01-01T00:00:00")
+        registry.load_all.return_value = [old, new]
+        mgr = ConnectionManager(adb_path="dummy_adb", registry=registry)
+        mgr.mdns = MagicMock()
+        mgr.mdns.get_connect_services.return_value = []
+        attached = DeviceInfo(serial="NEW456", state="device", physical_id="NEW456", model="Pixel 9")
+        with patch.object(mgr, "get_attached_devices", return_value=[attached]):
+            dev = mgr.reconnect_remembered(timeout=1.0)
+        self.assertIs(dev, attached)
 
 
 if __name__ == "__main__":
