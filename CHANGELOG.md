@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-22
+
 ### Added
 
 - CLI: `--package NAME` (repeatable) limits the plan to named packages; critical packages are refused with a non-zero exit
@@ -77,6 +79,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - A GitHub release is created only when `VERSION` changes on `main` (or by manual dispatch), with generated notes. The workflow no longer appends commit lists to this file; add entries under `[Unreleased]` by hand
 - Master prompt (`prompt/master-prompt.md`, served at `/prompt.md`) rewritten for AI agents: classification comes from the engine's JSON scan, the new `--package`, `--restore` and `--list-snapshots` flags are used, approval must come from the user in chat, stop conditions and exit codes are stated, and the plan report no longer asks for invented RAM or battery figures
 - CI pins ruff to 0.17.6
+- `sync_version.py` also writes and checks the root version in `web/package-lock.json`
 - Removed unused helpers from the connection layer (ADB client, device registry, connection manager, wireless handler, `DeviceState`)
 - Contributors target the `QA` branch (CONTRIBUTING)
 

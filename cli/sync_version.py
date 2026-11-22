@@ -15,6 +15,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 VERSION_FILE = REPO_ROOT / "VERSION"
 PKG_FILE = REPO_ROOT / "web" / "package.json"
+LOCK_FILE = REPO_ROOT / "web" / "package-lock.json"
 VERSION_JSON_FILE = REPO_ROOT / "web" / "src" / "data" / "version.json"
 LLMS_FILE = REPO_ROOT / "web" / "public" / "llms-full.txt"
 
@@ -40,6 +41,29 @@ def sync_package_json(version: str) -> bool:
             return True
     except (OSError, json.JSONDecodeError):
         print(f"[sync] Error updating {PKG_FILE}", file=sys.stderr)
+    return False
+
+
+def _lock_versions(data: dict) -> list[dict]:
+    """The two places npm records the root package version in a lockfile."""
+    root = data.get("packages", {}).get("")
+    return [data, root] if isinstance(root, dict) else [data]
+
+
+def sync_package_lock(version: str) -> bool:
+    if not LOCK_FILE.is_file():
+        return False
+    try:
+        data = json.loads(LOCK_FILE.read_text(encoding="utf-8"))
+        targets = _lock_versions(data)
+        if any(t.get("version") != version for t in targets):
+            for t in targets:
+                t["version"] = version
+            LOCK_FILE.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+            print(f"[sync] Updated {LOCK_FILE.relative_to(REPO_ROOT)} -> {version}")
+            return True
+    except (OSError, json.JSONDecodeError):
+        print(f"[sync] Error updating {LOCK_FILE}", file=sys.stderr)
     return False
 
 
@@ -78,6 +102,7 @@ def sync_llms_full(version: str) -> bool:
 def sync_all() -> str:
     version = read_version()
     sync_package_json(version)
+    sync_package_lock(version)
     sync_version_json(version)
     sync_llms_full(version)
     return version
@@ -97,6 +122,14 @@ def check_all(version: str | None = None) -> list[str]:
                 errors.append(f"{PKG_FILE.relative_to(REPO_ROOT)} has version '{pkg_data.get('version')}', expected '{version}'")
         except (OSError, json.JSONDecodeError) as e:
             errors.append(f"Failed to read {PKG_FILE.relative_to(REPO_ROOT)}: {e}")
+
+    if LOCK_FILE.is_file():
+        try:
+            lock_versions = [t.get("version") for t in _lock_versions(json.loads(LOCK_FILE.read_text(encoding="utf-8")))]
+            if any(v != version for v in lock_versions):
+                errors.append(f"{LOCK_FILE.relative_to(REPO_ROOT)} has version {lock_versions}, expected '{version}'")
+        except (OSError, json.JSONDecodeError) as e:
+            errors.append(f"Failed to read {LOCK_FILE.relative_to(REPO_ROOT)}: {e}")
 
     if VERSION_JSON_FILE.is_file():
         try:
