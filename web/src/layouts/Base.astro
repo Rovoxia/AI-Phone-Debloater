@@ -1,0 +1,61 @@
+---
+// The page shell: <html>, <head> (SeoHead), skip link, header, <main id="main">, footer.
+// Every page is `<Base ...seo props>page content</Base>`. See SeoHead.astro for the props.
+//
+// Slots:
+//   default  the content of <main>
+//   head     extra <head> tags for one page (rarely needed)
+//
+// <body id="top"> is the target of the footer's "Back to top" link.
+import '../styles/global.css';
+import SeoHead, { type Props as SeoProps } from '../components/SeoHead.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import { SITE_LANG } from '../lib/seo';
+
+interface Props extends SeoProps {
+  /** Extra classes on <main>. */
+  mainClass?: string;
+}
+
+const { mainClass, ...seo } = Astro.props;
+---
+
+<!doctype html>
+<html lang={SITE_LANG}>
+  <head>
+    <SeoHead {...seo} />
+    <slot name="head" />
+  </head>
+  <body id="top" class="flex min-h-dvh flex-col">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <Navbar />
+    <main id="main" tabindex="-1" class:list={['w-full flex-1', mainClass]}>
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>
+
+<script>
+  // Rendered Markdown has no attributes on <pre> and <table>. Inside .prose both scroll sideways
+  // within themselves (global.css), so make them reachable by keyboard while they overflow, on
+  // any page. Hand-written blocks carry tabindex="0" in the markup and are left alone.
+  const scrollers = Array.from(
+    document.querySelectorAll<HTMLElement>('.prose pre:not([tabindex]), .prose table:not([tabindex])'),
+  );
+
+  function update(): void {
+    for (const element of scrollers) {
+      if (element.scrollWidth > element.clientWidth) element.tabIndex = 0;
+      else element.removeAttribute('tabindex');
+    }
+  }
+
+  if (scrollers.length > 0) {
+    update();
+    window.addEventListener('resize', update, { passive: true });
+    // Web fonts change the width of code once they load.
+    document.fonts?.ready.then(update).catch(() => {});
+  }
+</script>

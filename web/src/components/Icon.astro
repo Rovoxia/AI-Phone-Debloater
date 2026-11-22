@@ -1,0 +1,32 @@
+---
+// Inline SVG icon. Shapes live in src/lib/icons.ts.
+// Decorative by default (aria-hidden); pass `label` when the icon is the only content of a control
+// that has no other accessible name. Size follows the font size (1.25em); set another size with
+// Tailwind size utilities, e.g. class="size-4".
+import { ICONS, type IconName } from '../lib/icons';
+
+interface Props {
+  name: IconName;
+  class?: string;
+  label?: string;
+}
+
+// `rest` carries the caller's scoped-style attribute, so a class passed in can be styled from the
+// caller's <style> block.
+const { name, class: className, label, ...rest } = Astro.props;
+---
+
+<svg
+  class:list={['icon', className]}
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  role={label ? 'img' : undefined}
+  aria-label={label}
+  aria-hidden={label ? undefined : 'true'}
+  {...rest}
+  set:html={ICONS[name]}
+/>

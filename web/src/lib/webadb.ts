@@ -201,26 +201,13 @@ export class WebAdbClient {
 
   public async execute(
     action: 'disable' | 'uninstall' | 'enable',
-    pkg: string,
-    mode: 'dry-run' | 'apply'
+    pkg: string
   ): Promise<ExecutionResult> {
     if ((action === 'disable' || action === 'uninstall') && CRITICAL_PACKAGES.has(pkg)) {
       return {
         package: pkg,
         status: 'skipped_protected',
         output: `BLOCKED: Inviolable Tier 4 critical package (${pkg}). Protection invariant enforced.`,
-      };
-    }
-
-    if (mode === 'dry-run') {
-      let cmd = '';
-      if (action === 'disable') cmd = `pm disable-user --user 0 ${pkg}`;
-      else if (action === 'uninstall') cmd = `pm uninstall -k --user 0 ${pkg}`;
-      else cmd = `cmd package install-existing --user 0 ${pkg}; pm enable --user 0 ${pkg}`;
-      return {
-        package: pkg,
-        status: 'success',
-        output: `[dry-run] would execute: ${cmd}`,
       };
     }
 
@@ -372,16 +359,16 @@ export class LocalBridgeClient {
     }
   }
 
+  /** Changes the phone. The bridge's dry-run mode is not used by the web app. */
   public async execute(
     serial: string,
-    mode: 'dry-run' | 'apply',
     action: 'disable' | 'uninstall' | 'enable',
     packages: string[]
   ): Promise<ExecutionResult[]> {
     const res = await this.request('/execute', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ serial, mode, action, packages }),
+      body: JSON.stringify({ serial, mode: 'apply', action, packages }),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
@@ -465,6 +452,7 @@ export interface DebloatSnapshot {
   manufacturer: string;
   serial: string;
   action: 'disable' | 'uninstall' | 'enable';
+  // Always 'apply' now. 'dry-run' is only found in snapshots stored by older versions.
   mode: 'dry-run' | 'apply';
   packages: string[];
   disabledPackagesBefore: string[];

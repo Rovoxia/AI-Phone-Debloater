@@ -1,607 +1,570 @@
 ---
-// src/pages/oems.astro
-// Complete OEM rule directory and search browser for AI-Phone-Debloater
-import '../styles/global.css';
-import Navbar from '../components/Navbar.astro';
-import Footer from '../components/Footer.astro';
-import rulesData from '../data/rules-dataset.json';
+// /oems: the index of every rule in the rule set.
+//
+// Brand cards, counts, the table rows, the filter options and the JSON-LD are all computed from
+// src/data/rules-dataset.json (through src/data/brands.ts and src/data/tiers.ts). No count, brand
+// or package name is typed here.
+//
+// The rule table is the shared stacked table (.table-stack in src/styles/global.css) and its tier
+// badges reference one icon sprite (<TierSprite />), so a row carries no styling of its own.
+//
+// The table is complete in the HTML and readable without JavaScript. The script at the end only
+// hides rows, keeps the filter state in the URL (?q=&brand=&tier=) and maps the old /oems#<brand>
+// anchors to the brand filter. Without JavaScript those anchors land on the brand's card.
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import Icon from '../components/Icon.astro';
+import TierBadge from '../components/TierBadge.astro';
+import TierSprite from '../components/TierSprite.astro';
+import { TIERS, RULE_STATS, tierFor } from '../data/tiers';
+import {
+  BRANDS,
+  BRAND_BY_ID,
+  ALL_RULES,
+  ANCHOR_TO_BRAND,
+  actionLabel,
+  exampleNames,
+  joinList,
+  plural,
+} from '../data/brands';
+import { SITE_VERSION } from '../lib/version';
+import { GITHUB_REPO, SITE_NAME, abs, datasetNode, itemListNode, type Crumb } from '../lib/seo';
 
-const SITE_URL = 'https://debloater.rovoxia.com';
-const CANONICAL_URL = `${SITE_URL}/oems`;
-const TITLE = 'Supported Android OEMs & Bloatware Rules | AI Phone Debloater';
-const DESCRIPTION = 'Explore 352 verified debloat rules across Xiaomi HyperOS, Samsung One UI, OnePlus, Oppo, Vivo, Google Pixel, Motorola, and Transsion. 100% rootless and reversible.';
-const KEYWORDS = 'OEM debloat rules, Xiaomi HyperOS debloat, Samsung One UI bloatware list, ColorOS debloat, FuntouchOS, Pixel telemetry, ADB debloat rules';
-
-const oemProfiles = [
-  {
-    id: 'xiaomi',
-    name: 'Xiaomi, Redmi & Poco',
-    skin: 'HyperOS / MIUI',
-    badge: 'HyperOS',
-    tagline: 'Strip aggressive ad daemons (MSA), telemetry collectors, and preinstalled recommendation engines.',
-    anchor: 'xiaomi-miui-hyperos',
-    ruleCount: rulesData.stats.oemBreakdown['Xiaomi'] || 28,
-    color: 'emerald',
-    features: ['MSA Ad Daemons', 'Mi Video / Mi Music', 'Mi Browser', 'Joyose Analytics', 'Xiaomi Cloud Sync']
-  },
-  {
-    id: 'samsung',
-    name: 'Samsung Galaxy',
-    skin: 'One UI',
-    badge: 'One UI',
-    tagline: 'Remove Bixby voice triggers, Samsung Pay bloatware, Galaxy Store trackers, and duplicate apps without tripping Knox (0x0).',
-    anchor: 'samsung-oneui',
-    ruleCount: rulesData.stats.oemBreakdown['Samsung'] || 45,
-    color: 'blue',
-    features: ['Bixby Agent & Routines', 'Samsung Pass / Pay', 'Game Optimizing Service (GOS)', 'AR Emoji & Stickers', 'Knox 0x0 Safe']
-  },
-  {
-    id: 'bbk',
-    name: 'OnePlus, Oppo & Realme',
-    skin: 'ColorOS & OxygenOS',
-    badge: 'ColorOS',
-    tagline: 'Disable HeyTap services, aggressive App Market notifications, background analytics, and carrier bloatware.',
-    anchor: 'coloros-oxygenos',
-    ruleCount: 13,
-    color: 'amber',
-    features: ['HeyTap Market & Cloud', 'Oppo Roaming', 'OnePlus Membership', 'Theme Store Push Ads', 'Quick Device Connect']
-  },
-  {
-    id: 'vivo',
-    name: 'Vivo & iQOO',
-    skin: 'FuntouchOS & OriginOS',
-    badge: 'Funtouch',
-    tagline: 'Clean Jovi voice assistant, V-Appstore auto-installers, lockscreen poster services, and background telemetry.',
-    anchor: 'vivo-funtouch',
-    ruleCount: 10,
-    color: 'indigo',
-    features: ['Jovi Assistant', 'V-Appstore & Game Center', 'iManager Background Tasks', 'Vivo Cloud Services', 'Lockscreen Glance']
-  },
-  {
-    id: 'pixel',
-    name: 'Google Pixel & Nothing OS',
-    skin: 'Pixel UI / Stock AOSP',
-    badge: 'Pixel / AOSP',
-    tagline: 'Clean carrier telemetry, unused Google ecosystem apps, Digital Wellbeing trackers, and setup daemons.',
-    anchor: 'google-pixel',
-    ruleCount: rulesData.stats.oemBreakdown['Google'] || 25,
-    color: 'teal',
-    features: ['Carrier Services', 'Digital Wellbeing', 'Google Feedback & Partner Setup', 'Pixel Ambient Services', 'Google Duo / Meet']
-  },
-  {
-    id: 'motorola',
-    name: 'Motorola',
-    skin: 'My UX / Hello UI',
-    badge: 'Moto',
-    tagline: 'Eliminate Moto notifications, carrier partner daemons, preinstalled games, and background analytics.',
-    anchor: 'motorola',
-    ruleCount: rulesData.stats.oemBreakdown['Motorola'] || 15,
-    color: 'sky',
-    features: ['Moto Suggestions', 'Ready For Daemons', 'Carrier Hub', 'Moto Face Unlock Logs', 'Mobile Services Manager']
-  },
-  {
-    id: 'transsion',
-    name: 'Tecno, Infinix & Itel',
-    skin: 'HiOS / XOS / itel OS',
-    badge: 'Transsion',
-    tagline: 'Purge aggressive Palm Store ads, Phoenix browser, Aha Games recommendations, and system push notification services.',
-    anchor: 'transsion',
-    ruleCount: rulesData.stats.oemBreakdown['Transsion'] || 29,
-    color: 'orange',
-    features: ['Palm Store & Game Center', 'Phoenix Browser Engine', 'Carlcare Background Sync', 'Scooper News Push', 'XShare Ad Service']
-  },
-  {
-    id: 'universal',
-    name: 'Universal Android & Carrier',
-    skin: 'AOSP / All OEMs',
-    badge: 'Universal',
-    tagline: 'Carrier bloatware (Facebook App Manager, Netflix partner daemons, MobileIron, DT Ignite) common to all Android devices.',
-    anchor: 'universal',
-    ruleCount: rulesData.stats.oemBreakdown['Universal'] || 81,
-    color: 'violet',
-    features: ['Facebook App Installer & Manager', 'Netflix Partner Activation', 'Carrier Hub / DT Ignite', 'Amazon Assistant Bloat', 'Android Diagnostics']
-  },
-  {
-    id: 'critical',
-    name: 'Core System Protection',
-    skin: 'Hard-Blocked Invariant',
-    badge: 'Tier 4',
-    tagline: '89 essential Android operating system packages permanently hard-blocked against removal to guarantee 100% bootloop prevention.',
-    anchor: 'critical',
-    ruleCount: rulesData.stats.tier4CriticalCount || 89,
-    color: 'rose',
-    features: ['Android System Framework', 'System UI & Navigation', 'Settings Provider', 'Telephony & Emergency Services', 'Keymaster & Biometrics']
-  }
+const crumbs: Crumb[] = [
+  { name: 'Home', path: '/' },
+  { name: 'Package list by OEM', path: '/oems' },
 ];
 
-// All rules serialized for fast client-side searching & filtering
-const allRules = rulesData.rules;
+const total = ALL_RULES.length;
+const sourceFiles = [...new Set(ALL_RULES.map((rule) => rule.sourceFile))];
+const brandNames = BRANDS.flatMap((brand) => brand.metaNames);
+const tiersGuide = BRANDS[0].allGuides[BRANDS[0].allGuides.length - 1];
+
+const title = 'Android Bloatware Package List by OEM';
+const description = `Searchable list of ${total} Android package rules for ${joinList(brandNames)}, with safety tier and action.`;
+
+const brandListName = (brand: (typeof BRANDS)[number]) =>
+  brand.critical ? brand.listName : `${brand.listName} bloatware list`;
+
+const dataset = {
+  ...datasetNode({
+    name: `${SITE_NAME} package rules`,
+    description:
+      `${total} Android package rules in ${sourceFiles.length} JSON rule files. Each rule has the package name, ` +
+      `the app name, a category, a description, a safety tier and a recommended action. ` +
+      `${RULE_STATS.removable} rules are in Tiers 1 to 3 and ${RULE_STATS.critical} are protected Tier 4 packages.`,
+    version: SITE_VERSION,
+    files: sourceFiles,
+    keywords: ['Android bloatware', 'Android package names', 'ADB debloat', ...brandNames],
+  }),
+  hasPart: BRANDS.map((brand) => ({ '@id': `${abs(brand.path)}#dataset` })),
+};
+
+const brandList = itemListNode(
+  `${abs('/oems')}#brands`,
+  'Bloatware lists by brand',
+  BRANDS.map((brand) => ({ name: brandListName(brand), path: brand.path })),
+);
+
+const stats = [
+  { value: total, label: 'package rules' },
+  { value: RULE_STATS.removable, label: 'in Tiers 1 to 3, which a plan can act on' },
+  { value: RULE_STATS.critical, label: 'in Tier 4, which is never changed' },
+  { value: sourceFiles.length, label: 'rule files' },
+];
 ---
 
-<!doctype html>
-<html lang="en" class="scroll-smooth" prefix="og: https://ogp.me/ns#">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#ffffff" />
-    <title>{TITLE}</title>
-    <meta name="description" content={DESCRIPTION} />
-    <meta name="keywords" content={KEYWORDS} />
-    <meta name="author" content="Rovoxia" />
-    <meta name="robots" content="index, follow" />
-    <link rel="canonical" href={CANONICAL_URL} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<Base
+  title={title}
+  description={description}
+  path="/oems"
+  pageType="CollectionPage"
+  breadcrumbs={crumbs}
+  jsonLd={[dataset, brandList]}
+>
+  <section class="section">
+    <div class="container-page">
+      <Breadcrumbs items={crumbs} />
+      <p class="eyebrow mt-stack-lg">Rule set</p>
+      <h1 class="h1 mt-3">Android bloatware package list by OEM</h1>
+      <p class="lead mt-stack">
+        The {SITE_NAME} rule set lists {total} Android packages, each with what it does, a safety tier and a
+        recommended action. Tier 1 is classed as safe on any phone, Tier 2 covers features you may use, Tier 3 is for
+        experts and Tier 4 is never changed. The <a class="link" href="/app">web app</a> and the
+        <a class="link" href="/#cli">CLI</a> apply these rules.
+      </p>
 
-    <!-- Open Graph -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content={CANONICAL_URL} />
-    <meta property="og:title" content={TITLE} />
-    <meta property="og:description" content={DESCRIPTION} />
-    <meta property="og:site_name" content="AI Phone Debloater" />
-    <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
-    <meta property="og:image:secure_url" content={`${SITE_URL}/og-image.png`} />
-    <meta property="og:image:type" content="image/png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="AI Phone Debloater Supported OEMs & 352 Bloatware Rules Matrix" />
-    <meta property="og:image" content={`${SITE_URL}/og-image.jpg`} />
-    <meta property="og:image:secure_url" content={`${SITE_URL}/og-image.jpg`} />
-    <meta property="og:image:type" content="image/jpeg" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="AI Phone Debloater Supported OEMs & 352 Bloatware Rules Matrix" />
+      <div class="mt-stack-lg flex flex-wrap gap-3">
+        <a href="#rules-explorer" class="btn btn-primary">
+          <Icon name="search" />
+          Search the list
+        </a>
+        <a href="/app" class="btn btn-secondary">
+          Open the web app
+          <Icon name="arrow-right" />
+        </a>
+      </div>
 
-    <!-- Twitter Card (X) -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta name="twitter:domain" content="debloater.rovoxia.com" />
-    <meta property="twitter:domain" content="debloater.rovoxia.com" />
-    <meta name="twitter:url" content={CANONICAL_URL} />
-    <meta property="twitter:url" content={CANONICAL_URL} />
-    <meta name="twitter:title" content={TITLE} />
-    <meta property="twitter:title" content={TITLE} />
-    <meta name="twitter:description" content={DESCRIPTION} />
-    <meta property="twitter:description" content={DESCRIPTION} />
-    <meta name="twitter:image" content={`${SITE_URL}/og-image.png`} />
-    <meta name="twitter:image:src" content={`${SITE_URL}/og-image.png`} />
-    <meta property="twitter:image" content={`${SITE_URL}/og-image.png`} />
-    <meta name="twitter:image:alt" content="AI Phone Debloater Supported OEMs & 352 Bloatware Rules Matrix" />
-    <meta property="twitter:image:alt" content="AI Phone Debloater Supported OEMs & 352 Bloatware Rules Matrix" />
-
-    <!-- Google Fonts (Optimized) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" media="print" data-async-css />
-    <noscript>
-      <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-    </noscript>
-
-    <!-- JSON-LD Structured Data (Dataset & Breadcrumb) -->
-    <script type="application/ld+json" set:html={JSON.stringify({
-      "@context": "https://schema.org",
-      "@graph": [
+      <dl class="grid-auto-sm mt-stack-lg">
         {
-          "@type": "BreadcrumbList",
-          "itemListElement": [
-            {
-              "@type": "ListItem",
-              "position": 1,
-              "name": "Home",
-              "item": "https://debloater.rovoxia.com/"
-            },
-            {
-              "@type": "ListItem",
-              "position": 2,
-              "name": "Supported OEMs & Rules",
-              "item": "https://debloater.rovoxia.com/oems"
-            }
-          ]
-        },
-        {
-          "@type": "Dataset",
-          "name": "AI Phone Debloater Curated OEM Rules Database",
-          "description": "352 classified package rules across Xiaomi, Samsung, OnePlus, Oppo, Vivo, Google Pixel, Motorola, and Transsion Android devices with safety tiers and rootless ADB actions.",
-          "url": "https://debloater.rovoxia.com/oems",
-          "keywords": ["Android debloat", "bloatware removal", "ADB packages", "Samsung One UI", "Xiaomi HyperOS", "Google Pixel debloat", "OnePlus debloat", "rootless debloat"],
-          "license": "https://opensource.org/licenses/MIT",
-          "creator": {
-            "@type": "Organization",
-            "name": "Rovoxia",
-            "url": "https://rovoxia.com"
-          }
+          stats.map((stat) => (
+            <div class="flex flex-col-reverse justify-end">
+              <dt class="stat-label">{stat.label}</dt>
+              <dd class="stat-value">{stat.value}</dd>
+            </div>
+          ))
         }
-      ]
-    })} />
-    <script is:inline>
-      (function() {
-        try {
-          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          const stored = localStorage.getItem('theme');
-          const theme = stored || (prefersDark ? 'dark' : 'light');
-          document.documentElement.setAttribute('data-theme', theme);
-          if (theme === 'dark') document.documentElement.classList.add('dark');
-        } catch (e) {}
-      })();
-    </script>
-  </head>
-  <body class="bg-[#f8f9fa] text-[#202124] dark:bg-[#090d14] dark:text-[#e8eaed] antialiased min-h-screen transition-colors duration-150">
-    <Navbar />
+      </dl>
+    </div>
+  </section>
 
-    <main class="py-12 md:py-16">
-      <!-- Breadcrumb + Hero Title -->
-      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
-        <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-4 font-mono">
-          <a href="/" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Home</a>
-          <span>/</span>
-          <span class="text-slate-800 dark:text-slate-200">Supported OEMs</span>
-        </nav>
+  <section class="section section-alt">
+    <div class="container-page">
+      <div class="section-head">
+        <p class="eyebrow">By brand</p>
+        <h2 class="h2">Bloatware lists by brand</h2>
+        <p class="lead">
+          Each group has its own page, with every rule grouped by tier. The counts below add up to the {total} rules
+          in the set.
+        </p>
+      </div>
 
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-slate-200 dark:border-slate-800">
-          <div>
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 mb-3">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Rootless ADB Compatibility Matrix</span>
-            </div>
-            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-              Supported OEMs &amp; Debloat Rules
-            </h1>
-            <p class="mt-3 text-base sm:text-lg text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
-              Curated databases across all major Android manufacturers. Every rule categorizes package purpose, safety tier, and recommended action.
-            </p>
-          </div>
+      <ul class="grid-auto">
+        {
+          BRANDS.map((brand) => (
+            <li id={brand.anchor} class="card card-hover oem-card">
+              <h3 class="h3">
+                <a class="oem-card-link" href={brand.path}>
+                  {brand.name}
+                </a>
+              </h3>
+              <p class="mt-1 text-sm text-muted">{brand.summary}</p>
+              <p class="mt-4 flex items-baseline gap-2">
+                <span class="stat-value">{brand.count}</span>
+                <span class="text-sm text-muted">{brand.count === 1 ? 'rule' : 'rules'}</span>
+              </p>
+              <ul class="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+                {brand.tiers.map((entry) => (
+                  <li class="inline-flex items-center gap-1.5 font-mono text-sm text-ink">
+                    <TierBadge tier={entry.tier.id} compact />
+                    {entry.count}
+                    <span class="sr-only">{entry.count === 1 ? 'rule' : 'rules'}</span>
+                  </li>
+                ))}
+              </ul>
+              <p class="mt-4 text-sm text-muted">Includes {joinList(exampleNames(brand))}.</p>
+              <p class="oem-card-foot">
+                <span class="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-accent" aria-hidden="true">
+                  View the list
+                  <Icon name="arrow-right" class="size-4" />
+                </span>
+                {brand.guides.map((guide) => (
+                  <a class="link oem-card-guide inline-flex min-h-11 items-center text-sm" href={guide.path}>
+                    {guide.title}
+                  </a>
+                ))}
+              </p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
 
-          <div class="flex flex-wrap items-center gap-3 shrink-0">
-            <div class="text-right hidden sm:block">
-              <div class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">352</div>
-              <div class="text-xs text-slate-500 dark:text-slate-400">Total Classified Packages</div>
-            </div>
-            <a
-              href="/#cli"
-              class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-colors shadow-sm shadow-emerald-600/20"
-            >
-              <span>Run Automated CLI</span>
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </a>
-          </div>
+  <section class="section" id="rules-explorer">
+    <div class="container-page">
+      <div class="section-head">
+        <p class="eyebrow">All rules</p>
+        <h2 class="h2">Search all {total} package rules</h2>
+        <p class="lead">
+          Search for a package or an app, or filter by brand and tier. A filtered view has its own address, so it can
+          be bookmarked or linked.
+        </p>
+      </div>
+
+      <form
+        id="rule-filters"
+        class="rules-filters"
+        role="search"
+        aria-label="Package rules"
+        action="/oems"
+        method="get"
+        autocomplete="off"
+        data-anchors={JSON.stringify(ANCHOR_TO_BRAND)}
+      >
+        <div class="field rules-filter-q">
+          <label class="label" for="rule-q">Search packages</label>
+          <input id="rule-q" name="q" class="input" type="search" spellcheck="false" autocapitalize="off" />
+        </div>
+        <div class="field">
+          <label class="label" for="rule-brand">Brand</label>
+          <select id="rule-brand" name="brand" class="input">
+            <option value="">All brands ({total})</option>
+            {BRANDS.map((brand) => <option value={brand.id}>{`${brand.name} (${brand.count})`}</option>)}
+          </select>
+        </div>
+        <div class="field">
+          <label class="label" for="rule-tier">Tier</label>
+          <select id="rule-tier" name="tier" class="input">
+            <option value="">All tiers ({total})</option>
+            {TIERS.map((tier) => <option value={tier.id}>{`${tier.label}: ${tier.name} (${tier.count})`}</option>)}
+          </select>
+        </div>
+        <button type="button" class="btn btn-secondary rules-filter-reset" id="rule-reset">
+          <Icon name="rotate-ccw" />
+          Reset
+        </button>
+      </form>
+
+      <noscript>
+        <p class="text-sm text-muted">
+          Search and filters need JavaScript. The complete list is below, and each brand above has its own page.
+        </p>
+      </noscript>
+
+      <p id="rule-status" class="rules-status mt-stack text-sm text-muted" role="status" aria-live="polite">
+        Showing all {total} rules.
+      </p>
+
+      <div id="rule-empty" class="callout mt-stack" hidden>
+        <Icon name="info" />
+        <div>
+          <p class="callout-title">No rule matches these filters</p>
+          <p>
+            A package with no rule is left alone by the tiers.
+            <button type="button" class="link" id="rule-empty-reset">Reset the filters</button>
+          </p>
         </div>
       </div>
 
-      <!-- OEM Grid Cards -->
-      <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">
-        <h2 class="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center justify-between">
-          <span>OEM Rulebases &amp; Coverage</span>
-          <span class="text-xs font-normal text-slate-500 dark:text-slate-400 font-mono">Click card to jump to rules</span>
-        </h2>
+      <TierSprite />
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {oemProfiles.map((oem) => (
-            <a
-              href={`#${oem.anchor}`}
-              class="group relative rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#10141e] p-5 shadow-xs hover:shadow-md hover:border-emerald-500/50 dark:hover:border-emerald-500/40 transition-all duration-200 flex flex-col justify-between"
-            >
-              <div>
-                <div class="flex items-center justify-between mb-3">
-                  <span class="text-xs font-mono font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                    {oem.badge}
-                  </span>
-                  <span class="text-xs font-mono font-semibold text-emerald-600 dark:text-emerald-400">
-                    {oem.ruleCount} rules
-                  </span>
-                </div>
-
-                <h3 class="text-base font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                  {oem.name}
-                </h3>
-                <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2.5">
-                  {oem.skin}
-                </div>
-                <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-3 mb-4">
-                  {oem.tagline}
-                </p>
-              </div>
-
-              <div class="pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                <div class="flex flex-wrap gap-1.5 mb-3">
-                  {oem.features.slice(0, 3).map((f) => (
-                    <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-800">
-                      {f}
-                    </span>
-                  ))}
-                </div>
-                <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                  Browse rules &rarr;
-                </span>
-              </div>
-            </a>
-          ))}
-        </div>
-      </section>
-
-      <!-- Interactive Rules Explorer (Search + Filter) -->
-      <section id="rules-explorer" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">
-        <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#10141e] p-6 shadow-sm">
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <div>
-              <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-                <span>Interactive Rules Explorer</span>
-                <span class="text-xs font-mono font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">Live Search</span>
-              </h2>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Filter by OEM, search by package name, or filter by safety tier.
-              </p>
-            </div>
-
-            <!-- Search input -->
-            <div class="relative w-full md:w-80">
-              <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <circle cx="11" cy="11" r="8" stroke-width="2" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" stroke-width="2" stroke-linecap="round" />
-              </svg>
-              <input
-                id="search-input"
-                type="text"
-                placeholder="Search package (e.g. msa, bixby, heytap)..."
-                class="w-full pl-9 pr-4 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
-              />
-            </div>
-          </div>
-
-          <!-- Filter Pills -->
-          <div class="flex flex-wrap items-center gap-2 mb-6 text-xs" id="filter-container">
-            <span class="text-slate-400 text-xs font-medium mr-1">Brand:</span>
-            <button type="button" class="oem-filter active px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-medium transition-colors cursor-pointer" data-brand="all">
-              All ({allRules.length})
-            </button>
-            <button type="button" class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer" data-brand="Xiaomi">
-              Xiaomi ({rulesData.stats.oemBreakdown['Xiaomi'] || 28})
-            </button>
-            <button type="button" class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer" data-brand="Samsung">
-              Samsung ({rulesData.stats.oemBreakdown['Samsung'] || 45})
-            </button>
-            <button type="button" class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer" data-brand="BBK">
-              Oppo / Realme (13)
-            </button>
-            <button type="button" class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer" data-brand="OnePlus">
-              OnePlus ({rulesData.stats.oemBreakdown['OnePlus'] || 20})
-            </button>
-            <button type="button" class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer" data-brand="Vivo">
-              Vivo / iQOO (10)
-            </button>
-            <button type="button" class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer" data-brand="Google">
-              Google Pixel ({rulesData.stats.oemBreakdown['Google'] || 25})
-            </button>
-            <button type="button" class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer" data-brand="Motorola">
-              Motorola ({rulesData.stats.oemBreakdown['Motorola'] || 15})
-            </button>
-            <button type="button" class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer" data-brand="Transsion">
-              Tecno / Infinix ({rulesData.stats.oemBreakdown['Transsion'] || 29})
-            </button>
-            <button type="button" class="oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer" data-brand="Universal">
-              Universal ({rulesData.stats.oemBreakdown['Universal'] || 81})
-            </button>
-            <button type="button" class="oem-filter px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 hover:border-rose-300 transition-colors cursor-pointer" data-brand="Core System">
-              Critical (89)
-            </button>
-          </div>
-
-          <!-- Table Container -->
-          <div class="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
-            <div class="overflow-x-auto max-h-[640px] overflow-y-auto">
-              <table class="w-full text-left text-xs" id="rules-table">
-                <thead class="sticky top-0 bg-slate-50 dark:bg-slate-900/90 backdrop-blur-xs border-b border-slate-200 dark:border-slate-800 text-slate-500 font-semibold z-10">
-                  <tr>
-                    <th class="py-2.5 px-3 sm:px-4">Tier</th>
-                    <th class="py-2.5 px-3 sm:px-4">Package</th>
-                    <th class="py-2.5 px-3 sm:px-4 hidden sm:table-cell">Name &amp; Category</th>
-                    <th class="py-2.5 px-3 sm:px-4 hidden md:table-cell">Brand</th>
-                    <th class="py-2.5 px-3 sm:px-4">Action</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80 font-mono" id="rules-body">
-                  {allRules.map((rule) => {
-                    const isCrit = rule.tier === 4 || rule.brand === 'Core System';
-                    const tierLabel = isCrit ? 'Tier 4' : `Tier ${rule.tier}`;
-                    const tierClass = isCrit
-                      ? 'bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-300'
-                      : rule.tier === 1
-                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300'
-                      : rule.tier === 2
-                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300'
-                      : 'bg-orange-100 text-orange-800 dark:bg-orange-500/20 dark:text-orange-300';
-                    const actionLabel = isCrit ? '⛔ Hard-Blocked' : rule.recommended_action === 'uninstall' ? 'Uninstall' : 'Disable';
-                    const actionClass = isCrit ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300';
-                    const isVivoPkg = rule.brand === 'BBK' && (rule.package.toLowerCase().includes('vivo') || (rule.name || '').toLowerCase().includes('vivo'));
-                    const displayBrand = isVivoPkg ? 'Vivo' : rule.brand === 'BBK' ? 'Oppo/Realme' : rule.brand;
-
-                    return (
-                      <tr
-                        class="rule-row hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
-                        data-package={rule.package.toLowerCase()}
-                        data-name={(rule.name || '').toLowerCase()}
-                        data-brand={rule.brand}
-                        data-tier={rule.tier}
-                      >
-                        <td class="py-2.5 px-3 sm:px-4 whitespace-nowrap">
-                          <span class={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${tierClass}`}>
-                            {tierLabel}
-                          </span>
-                        </td>
-                        <td class="py-2.5 px-3 sm:px-4 font-mono font-medium text-slate-800 dark:text-slate-200 text-[11px] sm:text-xs">
-                          <div class="truncate max-w-[200px] sm:max-w-[280px]" title={rule.package}>
-                            {rule.package}
-                          </div>
-                          <div class="sm:hidden font-sans text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                            {rule.name}
-                          </div>
-                        </td>
-                        <td class="py-2.5 px-3 sm:px-4 font-sans text-slate-600 dark:text-slate-400 hidden sm:table-cell">
-                          <div class="font-medium text-slate-800 dark:text-slate-200 truncate max-w-[220px]">
-                            {rule.name || rule.package}
-                          </div>
-                          <div class="text-[10px] text-slate-400 font-mono">
-                            {rule.category || 'bloatware'}
-                          </div>
-                        </td>
-                        <td class="py-2.5 px-3 sm:px-4 font-sans text-slate-500 dark:text-slate-400 hidden md:table-cell whitespace-nowrap">
-                          <span class="text-[11px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                            {displayBrand}
-                          </span>
-                        </td>
-                        <td class="py-2.5 px-3 sm:px-4 whitespace-nowrap">
-                          <span class={`text-[11px] font-medium font-mono ${actionClass}`}>
-                            {actionLabel}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="mt-4 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-mono">
-            <span id="results-count">Showing {allRules.length} packages</span>
-            <a href="/#cli" class="text-emerald-600 dark:text-emerald-400 hover:underline">
-              Debloat via CLI &rarr;
-            </a>
-          </div>
-        </div>
-      </section>
-
-      <!-- Anchor Targets for direct navigation from existing links -->
-      <div id="hyperos-debloat" class="scroll-mt-24"></div>
-      <div id="hyperos-miui" class="scroll-mt-24"></div>
-      <div id="xiaomi-miui-hyperos" class="scroll-mt-24"></div>
-      <div id="samsung-oneui" class="scroll-mt-24"></div>
-      <div id="coloros-oxygenos" class="scroll-mt-24"></div>
-      <div id="vivo-funtouch" class="scroll-mt-24"></div>
-      <div id="vivo-pixel-stock" class="scroll-mt-24"></div>
-      <div id="pixel-nothing" class="scroll-mt-24"></div>
-      <div id="google-pixel" class="scroll-mt-24"></div>
-      <div id="motorola" class="scroll-mt-24"></div>
-      <div id="transsion" class="scroll-mt-24"></div>
-      <div id="universal" class="scroll-mt-24"></div>
-      <div id="critical" class="scroll-mt-24"></div>
-      <div id="analyzer" class="scroll-mt-24"></div>
-      <div id="rules" class="scroll-mt-24"></div>
-
-    </main>
-
-    <Footer />
-
-    <!-- Client-side filter & search script. Processed by Astro (not is:inline) so the build adds its hash to the CSP. -->
-    <script>
-      (function() {
-        const searchInput = document.getElementById('search-input');
-        const filterBtns = document.querySelectorAll('.oem-filter');
-        const rows = document.querySelectorAll('.rule-row');
-        const countDisplay = document.getElementById('results-count');
-
-        let currentBrand = 'all';
-        let currentQuery = '';
-
-        // Read URL hash on load (e.g. /oems#samsung-oneui or /oems?brand=Samsung)
-        function checkInitialHash() {
-          const hash = window.location.hash.replace('#', '');
-          const hashToBrand = {
-            'hyperos-debloat': 'Xiaomi',
-            'hyperos-miui': 'Xiaomi',
-            'xiaomi-miui-hyperos': 'Xiaomi',
-            'xiaomi': 'Xiaomi',
-            'samsung-oneui': 'Samsung',
-            'samsung': 'Samsung',
-            'coloros-oxygenos': 'BBK',
-            'oneplus': 'OnePlus',
-            'oppo': 'BBK',
-            'realme': 'BBK',
-            'vivo-funtouch': 'Vivo',
-            'vivo': 'Vivo',
-            'iqoo': 'Vivo',
-            'pixel-nothing': 'Google',
-            'google-pixel': 'Google',
-            'google': 'Google',
-            'pixel': 'Google',
-            'motorola': 'Motorola',
-            'moto': 'Motorola',
-            'transsion': 'Transsion',
-            'tecno': 'Transsion',
-            'infinix': 'Transsion',
-            'universal': 'Universal',
-            'critical': 'Core System'
-          };
-          if (hash && hashToBrand[hash]) {
-            setBrandFilter(hashToBrand[hash]);
-            // Scroll to explorer
-            const explorer = document.getElementById('rules-explorer');
-            if (explorer) {
-              setTimeout(() => explorer.scrollIntoView({ behavior: 'smooth' }), 100);
+      <div class="table-wrap mt-stack" id="rules">
+        <table class="table table-compact table-stack" id="rules-table">
+          <caption class="sr-only">
+            All {total} package rules, by brand and then by tier
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col" class="min-[75rem]:w-[28%]">Package</th>
+              <th scope="col" class="min-[75rem]:w-[15%]">App</th>
+              <th scope="col" class="min-[75rem]:w-[10%]">Brand</th>
+              <th scope="col" class="min-[75rem]:w-[6.25rem]">Tier</th>
+              <th scope="col" class="min-[75rem]:w-[6.5rem]">Action</th>
+              <th scope="col">What it does</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              ALL_RULES.map((rule) => (
+                <tr data-b={rule.oemId} data-t={tierFor(rule.tier).id}>
+                  <th scope="row">{rule.package}</th>
+                  <td>{rule.name}</td>
+                  <td>{BRAND_BY_ID[rule.oemId].shortName}</td>
+                  <td><TierBadge tier={rule.tier} compact sprite /></td>
+                  <td data-label="Action">{actionLabel(rule)}</td>
+                  <td>{rule.description}</td>
+                </tr>
+              ))
             }
-          }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-alt">
+    <div class="container-page">
+      <div class="section-head">
+        <p class="eyebrow">Safety</p>
+        <h2 class="h2">What the four tiers mean</h2>
+        <p class="lead">
+          Every rule has one tier. The tier says how much thought a package needs before it is disabled or uninstalled.
+        </p>
+      </div>
+
+      <ul class="grid-auto">
+        {
+          TIERS.map((tier) => (
+            <li class="card">
+              <TierBadge tier={tier.id} />
+              <p class="stat-value mt-4">{tier.count}</p>
+              <p class="stat-label">{tier.count === 1 ? 'rule' : 'rules'}</p>
+              <h3 class="h4 mt-4">{tier.audience}</h3>
+              <p class="mt-2 text-sm text-muted">{tier.description}</p>
+            </li>
+          ))
         }
+      </ul>
 
-        function setBrandFilter(brand) {
-          currentBrand = brand;
-          filterBtns.forEach(btn => {
-            const btnBrand = btn.getAttribute('data-brand');
-            if (btnBrand === brand) {
-              btn.className = 'oem-filter active px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-medium transition-colors cursor-pointer';
-            } else {
-              btn.className = 'oem-filter px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer';
-            }
-          });
-          applyFilters();
+      <p class="mt-stack-lg">
+        <a class="link inline-flex min-h-11 items-center gap-1.5" href={tiersGuide.path}>
+          {tiersGuide.title}
+          <Icon name="arrow-right" class="size-4" />
+        </a>
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container-page">
+      <div class="section-head">
+        <p class="eyebrow">Use it</p>
+        <h2 class="h2">How the list is used</h2>
+        <p class="lead">
+          Both tools read the same {plural(sourceFiles.length, 'rule file')}, save a snapshot before every change and
+          refuse the {RULE_STATS.critical} critical packages.
+        </p>
+      </div>
+
+      <ul class="grid-auto">
+        <li>
+          <a href="/app" class="card h-full">
+            <Icon name="monitor" class="size-6 text-accent" />
+            <span class="h4 mt-4 block">Web app</span>
+            <span class="mt-1 block text-sm text-muted">
+              Connect a phone over WebUSB or the local ADB bridge. The app looks up every installed package in this
+              list.
+            </span>
+          </a>
+        </li>
+        <li>
+          <a href="/#cli" class="card h-full">
+            <Icon name="terminal" class="size-6 text-accent" />
+            <span class="h4 mt-4 block">Command line</span>
+            <span class="mt-1 block text-sm text-muted">
+              Scan a phone, preview one tier with a dry run, then apply it. The rule file of the phone's brand is
+              loaded for you.
+            </span>
+          </a>
+        </li>
+        <li>
+          <a
+            href={`${GITHUB_REPO}/tree/main/cli/rules`}
+            class="card h-full"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Icon name="github" class="size-6 text-accent" />
+            <span class="h4 mt-4 flex items-center gap-1.5">
+              Rule files on GitHub
+              <Icon name="arrow-up-right" class="size-4" />
+              <span class="sr-only">(opens in a new tab)</span>
+            </span>
+            <span class="mt-1 block text-sm text-muted">
+              The JSON files this page is built from, in {SITE_NAME} v{SITE_VERSION}, under the MIT license.
+            </span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </section>
+</Base>
+
+<style is:global>
+  /* Global on purpose: a scoped block would add a scope attribute to every cell of every row. */
+
+  /* ---- Brand cards ------------------------------------------------------- */
+
+  .oem-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* The heading link covers the whole card; the guide link sits above it. */
+  .oem-card-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-box);
+  }
+
+  .oem-card-foot {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: auto;
+    padding-top: 1rem;
+  }
+
+  .oem-card:hover .oem-card-foot > span {
+    color: var(--color-accent-hover);
+  }
+
+  .oem-card-guide {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ---- Filters ----------------------------------------------------------- */
+
+  .rules-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+    align-items: end;
+    gap: var(--spacing-stack-sm) var(--spacing-stack);
+  }
+
+  .rules-filter-q {
+    grid-column: 1 / -1;
+  }
+
+  .rules-filter-reset {
+    justify-self: start;
+  }
+
+  @media (min-width: 64rem) {
+    .rules-filters {
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr) minmax(0, 1.2fr) auto;
+    }
+
+    .rules-filter-q {
+      grid-column: auto;
+    }
+  }
+
+  /* Without JavaScript the controls cannot do anything: show the plain table only. */
+  @media (scripting: none) {
+    .rules-filters,
+    .rules-status {
+      display: none;
+    }
+  }
+
+  /* The rule table is the shared .table-stack (src/styles/global.css). */
+</style>
+
+<script>
+  // Filter the rule table in place. The rows are in the HTML; this only hides the ones that do not
+  // match, reports the count in the live region and mirrors the state in the URL.
+  const form = document.querySelector<HTMLFormElement>('#rule-filters');
+  const table = document.querySelector<HTMLTableElement>('#rules-table');
+  const wrap = document.querySelector<HTMLElement>('#rules');
+  const status = document.querySelector<HTMLElement>('#rule-status');
+  const empty = document.querySelector<HTMLElement>('#rule-empty');
+  const explorer = document.querySelector<HTMLElement>('#rules-explorer');
+
+  if (form && table && wrap && status && empty && explorer) {
+    const query = form.elements.namedItem('q') as HTMLInputElement;
+    const brand = form.elements.namedItem('brand') as HTMLSelectElement;
+    const tier = form.elements.namedItem('tier') as HTMLSelectElement;
+
+    // Old /oems#<anchor> links, mapped to a brand id at build time.
+    const anchors: Record<string, string> = JSON.parse(form.dataset.anchors ?? '{}');
+
+    const rows = Array.from(table.tBodies[0].rows);
+    const haystack = rows.map((row) =>
+      Array.from(row.cells, (cell) => cell.textContent ?? '')
+        .join(' ')
+        .toLowerCase(),
+    );
+    const total = rows.length;
+    let timer = 0;
+
+    const hasOption = (select: HTMLSelectElement, value: string) =>
+      Array.from(select.options).some((option) => option.value === value);
+
+    const filter = () => {
+      const terms = query.value.toLowerCase().split(/\s+/).filter(Boolean);
+      let shown = 0;
+      let last: HTMLTableRowElement | null = null;
+
+      rows.forEach((row, index) => {
+        const match =
+          (!brand.value || row.dataset.b === brand.value) &&
+          (!tier.value || row.dataset.t === tier.value) &&
+          terms.every((term) => haystack[index].includes(term));
+        row.hidden = !match;
+        row.classList.remove('is-last');
+        if (match) {
+          shown += 1;
+          last = row;
         }
+      });
 
-        function applyFilters() {
-          let visible = 0;
-          const query = currentQuery.trim().toLowerCase();
+      (last as HTMLTableRowElement | null)?.classList.add('is-last');
+      wrap.hidden = shown === 0;
+      empty.hidden = shown !== 0;
+      return shown === total ? `Showing all ${total} rules.` : `Showing ${shown} of ${total} rules.`;
+    };
 
-          rows.forEach(row => {
-            const pkg = row.getAttribute('data-package') || '';
-            const name = row.getAttribute('data-name') || '';
-            const brand = row.getAttribute('data-brand') || '';
+    const writeUrl = () => {
+      const params = new URLSearchParams();
+      if (query.value.trim()) params.set('q', query.value.trim());
+      if (brand.value) params.set('brand', brand.value);
+      if (tier.value) params.set('tier', tier.value);
+      const search = params.toString();
+      try {
+        history.replaceState(history.state, '', `${location.pathname}${search ? `?${search}` : ''}#${explorer.id}`);
+      } catch {
+        // Some browsers limit how often the URL may change. The filter itself still works.
+      }
+    };
 
-            const isVivoPkg = brand === 'BBK' && (pkg.includes('vivo') || name.includes('vivo'));
-            const matchBrand = (currentBrand === 'all')
-              || (currentBrand === 'Vivo' && isVivoPkg)
-              || (currentBrand === 'BBK' && brand === 'BBK' && !isVivoPkg)
-              || (brand === currentBrand);
-            const matchQuery = !query || pkg.includes(query) || name.includes(query);
+    // Rows change at once. The announcement and the URL wait until typing pauses, unless `now`.
+    const update = (updateUrl: boolean, now = false) => {
+      const text = filter();
+      const finish = () => {
+        if (status.textContent?.trim() !== text) status.textContent = text;
+        if (updateUrl) writeUrl();
+      };
+      window.clearTimeout(timer);
+      if (now) finish();
+      else timer = window.setTimeout(finish, 250);
+    };
 
-            if (matchBrand && matchQuery) {
-              row.style.display = '';
-              visible++;
-            } else {
-              row.style.display = 'none';
-            }
-          });
+    const readQuery = () => {
+      const params = new URLSearchParams(location.search);
+      const brandParam = params.get('brand') ?? '';
+      const tierParam = params.get('tier') ?? '';
+      query.value = params.get('q') ?? '';
+      brand.value = hasOption(brand, brandParam) ? brandParam : '';
+      tier.value = hasOption(tier, tierParam) ? tierParam : '';
+    };
 
-          if (countDisplay) {
-            countDisplay.textContent = `Showing ${visible} packages`;
-          }
-        }
+    const readAnchor = () => {
+      const anchor = location.hash.slice(1);
+      if (!anchor || !Object.hasOwn(anchors, anchor) || !hasOption(brand, anchors[anchor])) return false;
+      query.value = '';
+      tier.value = '';
+      brand.value = anchors[anchor];
+      return true;
+    };
 
-        if (searchInput) {
-          searchInput.addEventListener('input', (e) => {
-            currentQuery = e.target.value;
-            applyFilters();
-          });
-        }
+    // The URL is rewritten first, so the browser's own scroll-to-fragment (which can run after
+    // this script on a first load) also goes to the rule list, not to the brand card.
+    const openAnchor = () => {
+      if (!readAnchor()) return false;
+      update(true, true);
+      explorer.scrollIntoView({ behavior: 'instant' });
+      return true;
+    };
 
-        filterBtns.forEach(btn => {
-          btn.addEventListener('click', () => {
-            const brand = btn.getAttribute('data-brand');
-            setBrandFilter(brand);
-          });
-        });
+    const reset = () => {
+      query.value = '';
+      brand.value = '';
+      tier.value = '';
+      update(true);
+    };
 
-        // Hash change event support
-        window.addEventListener('hashchange', checkInitialHash);
-        checkInitialHash();
-      })();
-    </script>
-  </body>
-</html>
+    query.addEventListener('input', () => update(true));
+    brand.addEventListener('change', () => update(true));
+    tier.addEventListener('change', () => update(true));
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      update(true);
+    });
+    document.querySelector('#rule-reset')?.addEventListener('click', reset);
+    document.querySelector('#rule-empty-reset')?.addEventListener('click', () => {
+      reset();
+      query.focus();
+    });
+    window.addEventListener('hashchange', openAnchor);
+
+    if (!openAnchor()) {
+      readQuery();
+      update(false, true);
+    }
+  }
+</script>

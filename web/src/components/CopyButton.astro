@@ -1,0 +1,127 @@
+---
+// Copy-to-clipboard button, with one shared script for every instance on a page.
+//
+//   <CopyButton text={command} name="the install command" />
+//   <CopyButton from="master-prompt" label="Copy the prompt" class="btn btn-secondary" />
+//
+// `text` is copied as it is. `from` names a <script type="application/json" id="..."> data block
+// that holds the text as one JSON string: use it for long text that several buttons share, so the
+// page carries it once. The text is read synchronously inside the click handler, which keeps the
+// click as the user gesture the clipboard needs.
+//
+// After a click the label reads "Copied" (or "Copy failed") for two seconds and a visually hidden
+// live region announces the result. The script adds that region to the page once.
+import Icon from './Icon.astro';
+
+interface Props {
+  /** The text to copy. */
+  text?: string;
+  /** Or the id of a JSON data block whose content is the text, as one JSON string. */
+  from?: string;
+  /** Visible label. */
+  label?: string;
+  /** What is copied, read after the label by screen readers: "Copy" + " the install command". */
+  name?: string;
+  /** Sentence announced after a successful copy. */
+  announce?: string;
+  /** Button classes. Default: the small ghost button used in a code caption. */
+  class?: string;
+}
+
+const {
+  text,
+  from,
+  label = 'Copy',
+  name,
+  announce = 'Copied to the clipboard.',
+  class: className = 'btn btn-ghost btn-sm',
+} = Astro.props;
+
+if ((text === undefined) === (from === undefined)) {
+  throw new Error('CopyButton: pass exactly one of `text` and `from`.');
+}
+---
+
+<button type="button" class={className} data-copy-text={text} data-copy-from={from} data-copy-announce={announce}>
+  <Icon name="copy" class={className.includes('btn-sm') ? 'size-4' : undefined} />
+  <span data-copy-label>{label}</span>{name && <span class="sr-only">{` ${name}`}</span>}
+</button>
+
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>('button[data-copy-text], button[data-copy-from]');
+
+  // The live region must be in the page before its text changes, or the change is not announced.
+  const status = document.createElement('p');
+  status.className = 'sr-only';
+  status.setAttribute('role', 'status');
+  status.setAttribute('aria-live', 'polite');
+  if (buttons.length > 0) document.body.append(status);
+  let statusTimer = 0;
+
+  function textFor(button: HTMLButtonElement): string {
+    const source = button.dataset.copyFrom;
+    if (!source) return button.dataset.copyText ?? '';
+    try {
+      const value: unknown = JSON.parse(document.getElementById(source)?.textContent ?? '""');
+      return typeof value === 'string' ? value : '';
+    } catch {
+      return '';
+    }
+  }
+
+  async function writeClipboard(text: string, returnFocusTo: HTMLElement): Promise<boolean> {
+    try {
+      // Called with no await before it, so the click still counts as the user gesture.
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // No async clipboard (insecure context, old browser) or permission denied.
+      const area = document.createElement('textarea');
+      area.value = text;
+      area.readOnly = true;
+      area.className = 'sr-only';
+      document.body.append(area);
+      area.select();
+      let copied = false;
+      try {
+        copied = document.execCommand('copy');
+      } catch {
+        copied = false;
+      }
+      area.remove();
+      returnFocusTo.focus();
+      return copied;
+    }
+  }
+
+  for (const button of buttons) {
+    const label = button.querySelector<HTMLElement>('[data-copy-label]');
+    const idleLabel = label?.textContent ?? '';
+    let resetTimer = 0;
+
+    button.addEventListener('click', async () => {
+      const text = textFor(button);
+      const copied = text !== '' && (await writeClipboard(text, button));
+
+      // Keep the button's width while the shorter label shows, so its neighbours do not move.
+      button.style.setProperty('min-width', `${button.offsetWidth}px`);
+      if (label) label.textContent = copied ? 'Copied' : 'Copy failed';
+      status.textContent = copied
+        ? (button.dataset.copyAnnounce ?? 'Copied to the clipboard.')
+        : 'Copy failed. Select the text and copy it by hand.';
+
+      window.clearTimeout(resetTimer);
+      resetTimer = window.setTimeout(() => {
+        if (label) label.textContent = idleLabel;
+        button.style.removeProperty('min-width');
+      }, 2000);
+
+      // One timer for the shared status line, so an earlier button's reset cannot wipe the
+      // message of the button that was pressed after it.
+      window.clearTimeout(statusTimer);
+      statusTimer = window.setTimeout(() => {
+        status.textContent = '';
+      }, 2000);
+    });
+  }
+</script>

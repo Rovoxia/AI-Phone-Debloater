@@ -1,197 +1,254 @@
-# AI-Phone-Debloater — Full Technical Reference (llms-full)
+# AI Phone Debloater: full technical reference (llms-full)
 
 Source of truth: https://github.com/Rovoxia/AI-Phone-Debloater
 Hosted site: https://debloater.rovoxia.com
 License: MIT
 Version: 1.2.0 (tracked in root `VERSION` file)
 
-This document is the deep technical reference for AI engines (ChatGPT, Claude, Perplexity, Gemini, Cursor) answering questions about AI-Phone-Debloater. It covers the executive summary, 4-tier safety hierarchy, User 0 / `-k` architecture, the 89 core blacklist, all 10 OEM rule bases, CLI commands, zero-git bootstrap instructions, rollback guide, and forensic debloat prompt guidance.
+This is the deep technical reference for AI assistants and answer engines that answer questions about AI Phone Debloater. It covers what the tool is, the four safety tiers, how changes are made and undone, the critical package list, the rules per brand, CLI commands, the local bridge, the one-line installers, rollback, the master AI prompt, the repository layout and answers to common questions. Every count below comes from `web/src/data/rules-dataset.json`, which is generated from `cli/rules/*.json`.
+
+Short index: https://debloater.rovoxia.com/llms.txt
 
 ---
 
-## 1. Executive Summary
+## 1. Summary
 
-AI-Phone-Debloater is an open-source, rootless Android bloatware removal engine powered exclusively by the Python standard library (zero pip dependencies) and standard Android Debug Bridge (ADB). It removes OEM bloatware, aggressive ad-serving daemons, carrier telemetry, and tracking telemetry across Samsung One UI, Xiaomi HyperOS/MIUI, Google Pixel, OnePlus OxygenOS, BBK (Oppo/Vivo/Realme), Huawei EMUI, Motorola, and Transsion (Tecno/Infinix/itel).
+AI Phone Debloater is a free, open-source (MIT) tool by Rovoxia that removes preinstalled Android apps over ADB (Android Debug Bridge) without root. It has two front ends that share one rule set:
+
+- A Python 3.11+ CLI that uses only the standard library (no `requirements.txt`, nothing to pip-install).
+- A web app at https://debloater.rovoxia.com/app that reaches the phone over WebUSB (Chromium browsers) or through a local ADB bridge on `127.0.0.1:53123`.
 
 Key facts:
-- 352 curated rules across 4 safety tiers
-- 89 inviolable core system packages hard-blocked against removal (Tier 4 / Critical Sentinel)
-- Operates on Android user 0 (primary owner profile) by default; `--user N` selects another user such as a work profile
-- 100% reversible via timestamped JSON snapshots + 1-click restore
-- No root, no unlocked bootloader, Samsung Knox counter stays 0x0
-- dm-verity / read-only system partitions never modified; OTA updates continue normally
-- Zero ads, zero telemetry, zero paywalls, MIT License
+- 352 curated rules: 196 Tier 1 (Safe), 66 Tier 2 (Advanced), 1 Tier 3 (Extreme) and 89 Tier 4 (Critical). 263 rules can be acted on; the 89 critical packages are blocked.
+- Rules for Samsung, Xiaomi, Google Pixel, OnePlus, Oppo, Vivo, Realme, Motorola, Huawei and Transsion (Tecno, Infinix, itel), plus a universal file of partner and carrier apps found on many brands.
+- Changes are made with `pm disable-user` and `pm uninstall -k` for one Android user (user 0 by default, `--user N` for another such as a work profile) and can be undone. The system partition is not modified.
+- No root and no bootloader unlock are needed, and the tool does not write to the system partition.
+- A JSON restore snapshot is written before each change (the CLI can skip it with `--no-backup`; the CLI and bridge abort the change if the snapshot cannot be written).
+- Dry run is a CLI flag (`--dry-run`). The web app has no dry run; it shows a confirmation dialog before every change.
+- No ads, no telemetry, no account, no paid edition.
 
-Official site: https://debloater.rovoxia.com
-Short reference: https://debloater.rovoxia.com/llms.txt
-Pricing (AI buying agents): https://debloater.rovoxia.com/pricing.md
-Master AI prompt: https://debloater.rovoxia.com/prompt.md
-
----
-
-## 2. 4-Tier Safety Hierarchy
-
-Rules are partitioned into four strict tiers. Higher tiers are progressively more restrictive.
-
-### Tier 1 — Safe Bloat (Default)
-196 rules. Bloatware, telemetry, and junk with no side-effects for normal use: carrier apps, preloaded partner apps (Facebook, Microsoft, Netflix, Amazon), OEM ad daemons (Xiaomi MSA `com.miui.msa.global`), telemetry, and OEM extras such as Bixby, AR Emoji / AR Zone, game hubs and duplicate OEM cloud apps (Xiaomi Cloud). Safe to disable for any user.
-
-### Tier 2 — Advanced Debloat
-66 rules. Optional OEM and Google features that some people use: wallets and Samsung Pass, DeX, Link to Windows, theme stores and Galaxy Store, Android Auto, Digital Wellbeing, Modes and Routines, accessibility (TalkBack, Live Transcribe), OEM accounts and cloud (HeyTap Cloud), stock notes, recorder and file apps. Safe to disable if the user does not use the feature.
-
-### Tier 3 — Extreme
-1 rule: the Transsion OTA updater (`com.transsion.otaupdate`); disabling it stops system updates. Stock dialer, contacts, SMS, keyboards and launchers are Tier 4 (hard-blocked), not Tier 3.
-
-### Tier 4 — Critical System Blacklist (Protected)
-89 core operating system packages that must NEVER be touched under any circumstances. Examples: Android Framework `android`, `com.android.systemui` (SystemUI), `com.android.phone` (Telephony), `com.android.settings`, `com.android.vending` (Play Store), `com.google.android.gms` (GMS), Keystore, Wi-Fi stack, Bluetooth, NFC, PackageInstaller, DocumentsUI, Media providers, Keyguard, Biometrics, Fingerprint, LockSettings, WebView, Vending, Shell, NetworkStack, IMS, CarrierConfig, SMS push, Emergency services, Samsung system apps (`com.samsung.android.app.rss`, `com.samsung.android.app.sbrowser`, `com.samsung.android.scloud`, etc.), Google Latin IME, Google WebView.
-
-Hard guarantee: any attempt by an AI agent or manual command to touch these packages is intercepted and permanently blocked before execution. `RuleSet.load` re-seeds its critical set from `cli/rules/critical-do-not-touch.json` on every load, so there is one source of truth (not a union of two sets). `validate_rules.py` enforces zero collisions between other rule databases and `critical-do-not-touch.json`.
-
-Tier summary:
-| Tier | Name | Who can use | Protected? |
-|------|------|-------------|------------|
-| 1 | Safe Bloat | All users | No |
-| 2 | Advanced | Experienced users | No |
-| 3 | Extreme | Experts only | No |
-| 4 | Critical | Nobody (hard-blocked) | Yes — 89 packages |
+Other machine-readable files:
+- Pricing: https://debloater.rovoxia.com/pricing.md
+- Master AI prompt: https://debloater.rovoxia.com/prompt.md
 
 ---
 
-## 3. User 0 and the `-k` Flag Architecture
+## 2. Safety tiers
 
-All mutations target user 0 only:
+Every rule has a tier. The CLI acts on one tier at a time (`--tier 1|2|3`) or on named packages (`--package`).
 
-- `pm disable-user --user 0 <pkg>` — freeze package (app cannot execute or consume background memory; retained in place)
-- `pm uninstall -k --user 0 <pkg>` — uninstall while keeping app data directory via `-k` (retains `/data/user/0/<pkg>`: photos, contacts, messages, media, credentials)
-- `pm enable --user 0 <pkg>` — re-enable a frozen package
-- `cmd package install-existing --user 0 <pkg>` — restore an uninstalled package for user 0
+### Tier 1: Safe (default)
+196 rules. Preloaded partner apps (Facebook, Microsoft Office apps, Netflix, Amazon), carrier apps, OEM ad services such as Xiaomi's MIUI System Ads (MSA Global, `com.miui.msa.global`), telemetry, and OEM extras such as Bixby, AR Emoji and AR Zone, game hubs and duplicate OEM cloud apps such as Xiaomi Cloud Backup. Suitable for most users to disable.
 
-The `-k` flag is the key preservation mechanism: Android's Package Manager keeps the application private directories intact during uninstall-for-user-0. User data is never deleted. Apps live on the read-only system image and are only unregistered for user 0, so they can be re-registered instantly.
+### Tier 2: Advanced
+66 rules. Optional OEM and Google features that some people use: wallets and Samsung Pass, DeX, Link to Windows, theme stores and Galaxy Store, Android Auto, Digital Wellbeing, Modes and Routines, accessibility (TalkBack, Live Transcribe), OEM accounts and cloud (HeyTap Cloud), stock notes, recorder and file apps. Disable only if the feature is not used.
 
-Android versions supported: 8.0 (Oreo) through 15+. On Android 11+, zero-cable Wireless ADB debugging with automated mDNS pairing is natively supported.
+### Tier 3: Extreme
+1 rule: the Transsion OTA updater (`com.transsion.otaupdate`). Disabling it stops system updates until it is enabled again. Stock dialer, contacts, SMS, keyboards and launchers are Tier 4 (blocked), not Tier 3.
+
+### Tier 4: Critical (blocked)
+89 core packages listed in `cli/rules/critical-do-not-touch.json` (section 4). The engine and the bridge both check this list before any change and refuse these packages, whatever tier, flag or prompt is used.
+
+| Tier | Name | Rules | Who it is for | Can be changed |
+|------|------|-------|---------------|----------------|
+| 1 | Safe | 196 | Most users | Yes |
+| 2 | Advanced | 66 | Users who know they do not use the feature | Yes |
+| 3 | Extreme | 1 | Only on explicit request | Yes |
+| 4 | Critical | 89 | Nobody | No, refused by the engine and the bridge |
 
 ---
 
-## 4. The 89 Core Blacklist
+## 3. How changes are made and undone
 
-Sourced entirely from `cli/rules/critical-do-not-touch.json` (89 rules), populated at import time by `_load_hardcritical_packages()` with a minimal 8-package fallback only if the file cannot be loaded. `HARDCRITICAL_PACKAGES` is NOT a separate hardcoded list.
+All changes target one Android user (user 0 unless `--user N` is given):
 
-The blacklist spans:
-- Android Framework core: `android`, `com.android.server.*` (activitymanager, input, display, power, audio, pm, appops, backup, account, location, wifi), `com.android.wifi.service`, `com.android.bluetooth`, `com.android.server.bluetooth`, `com.android.nfc`, `com.android.server.nfc`, `com.android.telephony`, `com.android.server.telecom`, `com.android.phone`, `com.android.cellbroadcastreceiver`, `com.android.server.telephony`, `com.android.settings`, `com.android.providers.settings`, `com.android.providers.contacts`, `com.android.packageinstaller`, `com.android.documentsui`, `com.android.providers.media`, `com.android.externalstorage`, `com.android.keychain`, `com.android.biometrics`, `com.android.locksettings`, `com.android.fingerprint`, `com.android.keyguard`, `com.android.systemui`, `com.android.systemui.navbar`, `com.android.launcher3`
-- Google GMS: `com.google.android.gsf`, `com.google.android.gms`, `com.google.android.gms.auth`, `com.google.android.gms.account`, `com.google.android.ext.services`, `com.google.android.inputmethod.latin`, `com.google.android.webview`
-- Telephony / Carrier: `com.android.networkstack`, `com.android.ipsec`, `com.android.vpn`, `com.android.ims`, `com.android.ims.rcsservice`, `com.android.carrierconfig`, `com.android.stk`, `com.android.incallui`, `com.android.messaging`, `com.android.smspush`, `com.android.emergency`, `com.android.sharedstoragebackup`, `com.android.onetimeinitializer`, `com.android.partnercustomization`, `com.android.shell`, `com.android.webview`, `com.android.vending.licensing`, `com.android.inputdevices`, `com.android.bips`, `com.android.browser`, `com.android.calendar`, `com.android.contacts`, `com.android.desktopclock`, `com.android.dialer`, `com.android.keyboard`, `com.android.launcher`, `com.android.location`, `com.android.mediacaserver`, `com.android.printspooler`, `com.android.providers.calendar`, `com.android.providers.downloads`, `com.android.providers.telephony`, `com.android.providers.userdictionary`, `com.android.systemupdate`, `com.android.twilight`, `com.android.vending`, `com.android.wallpaper`, `com.android.wifi`
+- `pm disable-user --user 0 <pkg>`: disables the app. It stays installed but cannot run, so its background services stop.
+- `pm uninstall -k --user 0 <pkg>`: removes the app for that user only. `-k` keeps the app's data and cache directories. The APK stays on the system image.
+- `pm enable --user 0 <pkg>`: undoes a disable.
+- `cmd package install-existing --user 0 <pkg>` (or `pm install-existing` on older Android): undoes a per-user uninstall.
+
+Neither command touches shared storage (photos, downloads, documents) or the system partition. Because preinstalled apps stay on the system image, a factory reset also brings them back.
+
+Android versions: the code has no Android version check. Wireless debugging (QR or pairing code) needs Android 11 or newer. QR pairing is available in the CLI (`--qr-pair`) and in the web app when it is connected through the local bridge.
+
+---
+
+## 4. The critical list (Tier 4)
+
+Source: `cli/rules/critical-do-not-touch.json` (89 entries). At import time the engine loads `HARDCRITICAL_PACKAGES` from that file; an 8-package built-in fallback is used only if the file cannot be read. `RuleSet.load` reloads the critical set from the same file, so there is one source, not a union of two lists. `validate_rules.py` rejects any rule in another file whose package is on the critical list. The web app builds its blocked set from the Tier 4 entries in `rules-dataset.json`.
+
+All 89 packages:
+- Framework: `android`, `com.android.server`, `com.android.server.account`, `com.android.server.activitymanager`, `com.android.server.appops`, `com.android.server.audio`, `com.android.server.backup`, `com.android.server.bluetooth`, `com.android.server.display`, `com.android.server.input`, `com.android.server.location`, `com.android.server.nfc`, `com.android.server.pm`, `com.android.server.power`, `com.android.server.telecom`, `com.android.server.telephony`, `com.android.server.wifi`
+- System UI, settings, security and storage: `com.android.systemui`, `com.android.systemui.navbar`, `com.android.settings`, `com.android.providers.settings`, `com.android.keyguard`, `com.android.locksettings`, `com.android.biometrics`, `com.android.fingerprint`, `com.android.keychain`, `com.android.packageinstaller`, `com.android.shell`, `com.android.documentsui`, `com.android.externalstorage`, `com.android.providers.media`, `com.android.providers.downloads`, `com.android.sharedstoragebackup`, `com.android.mediacaserver`, `com.android.onetimeinitializer`, `com.android.partnercustomization`, `com.android.inputdevices`, `com.android.location`, `com.android.twilight`, `com.android.systemupdate`
+- Phone, messaging and network: `com.android.phone`, `com.android.telephony`, `com.android.providers.telephony`, `com.android.dialer`, `com.android.incallui`, `com.android.contacts`, `com.android.providers.contacts`, `com.android.messaging`, `com.android.smspush`, `com.android.cellbroadcastreceiver`, `com.android.emergency`, `com.android.stk`, `com.android.ims`, `com.android.ims.rcsservice`, `com.android.carrierconfig`, `com.android.networkstack`, `com.android.ipsec`, `com.android.vpn`, `com.android.wifi`, `com.android.wifi.service`, `com.android.bluetooth`, `com.android.nfc`
+- Stock apps and services: `com.android.launcher`, `com.android.launcher3`, `com.android.keyboard`, `com.android.providers.userdictionary`, `com.android.calendar`, `com.android.providers.calendar`, `com.android.desktopclock`, `com.android.browser`, `com.android.webview`, `com.android.wallpaper`, `com.android.printspooler`, `com.android.bips`, `com.android.vending`, `com.android.vending.licensing`
+- Google: `com.google.android.gms`, `com.google.android.gms.auth`, `com.google.android.gms.account`, `com.google.android.gsf`, `com.google.android.ext.services`, `com.google.android.inputmethod.latin`, `com.google.android.webview`
 - Samsung: `com.samsung.android.app.rss`, `com.samsung.android.app.samsungshare`, `com.samsung.android.app.sbrowser`, `com.samsung.android.mdxservice`, `com.samsung.android.oneconnect`, `com.samsung.android.scloud`
 
-Critical packages cannot be disabled or uninstalled under any flag or prompt.
+---
+
+## 5. Rules per brand
+
+`cli/rules/` has 10 files: 263 actionable rules plus 89 critical entries, 352 in total. The engine loads the critical file, then the universal file, then the files whose name or `manufacturer` field matches the connected phone (all brand files if the manufacturer is unknown).
+
+| File | Brand | Rules | Tier 1 / 2 / 3 |
+|------|-------|-------|----------------|
+| `universal-safe-to-remove.json` | Universal (all brands) | 81 | 80 / 1 / 0 |
+| `samsung-oneui.json` | Samsung | 44 | 25 / 19 / 0 |
+| `xiaomi-miui-hyperos.json` | Xiaomi, Redmi, POCO | 27 | 26 / 1 / 0 |
+| `google-pixel.json` | Google Pixel | 23 | 6 / 17 / 0 |
+| `oneplus-oxygenos.json` | OnePlus | 19 | 16 / 3 / 0 |
+| `bbk-oppo-vivo-realme.json` | Oppo, Vivo, Realme | 21 | 17 / 4 / 0 |
+| `huawei-emui.json` | Huawei | 4 | 0 / 4 / 0 |
+| `motorola.json` | Motorola | 15 | 11 / 4 / 0 |
+| `transsion-tecno-infinix.json` | Transsion (Tecno, Infinix, itel) | 29 | 15 / 13 / 1 |
+| `critical-do-not-touch.json` | Core system (Tier 4) | 89 | blocked |
+
+Examples by brand (rule names as they appear in the rule files):
+- Universal: Meta App Manager, Meta App Installer, Facebook, Microsoft OneDrive, Link to Windows Service, Netflix Partner Activation, Google Partner Setup, and carrier apps from AT&T, Verizon, T-Mobile, Sprint, Vodafone, Jio and Airtel.
+- Samsung: Bixby Voice Agent, AR Zone, Game Optimizing Service (GOS), Knox Analytics Uploader, Samsung Free / Samsung News, Link to Windows (Phone Link), Samsung Quick Share Media Server, Galaxy Store.
+- Xiaomi: MIUI System Ads (MSA Global), Joyose Performance Service, MIUI Analytics, Mi Pay, GetApps (Mi Picks), Mi Browser Global, Quick Apps, Xiaomi Cloud Backup.
+- Google Pixel: Pixel Tips, Pixel Ambient Services (Now Playing), Device Health Services, Google Wallet (Quick Access Wallet), Digital Wellbeing, Android Auto, Live Transcribe.
+- OnePlus: HeyTap Cloud, OPBugreport Lite, Red Cable Club (Membership), OnePlus LogKit, OnePlus Diagnostics, OnePlus Store, Zen Mode.
+- Oppo, Vivo, Realme: Smart Assistant (Breeno Feed), ColorOS Game Space, HeyTap Browser, Oppo / Realme App Market, Vivo V-Appstore, Jovi Voice Assistant, Vivo Lockscreen Poster, iTheme (Vivo Themes).
+- Huawei: Huawei System App Controller, Huawei AllShare, Huawei Push Service, Huawei AI Voice Assistant.
+- Motorola: Moto Display (Peek Display), Moto Actions (Gestures), Moto Care Telemetry, Moto Gametime, Hello You (Moto Discover), Moto Device Help.
+- Transsion: Palm Store (Transsion Phone Store), Carlcare, AHA Games, Phone Master / Security, Transsion Ads Framework, Transsion Telemetry, Transsion OTA Update (the only Tier 3 rule).
+
+The full searchable list is at https://debloater.rovoxia.com/oems.
 
 ---
 
-## 5. All 10 OEM Rule Bases
+## 6. CLI commands (`cli/src/debloat_engine.py`)
 
-`cli/rules/*.json` — 10 safety-tier rule databases (263 removable packages + 89 critical = 352 total rules):
+Python 3.11+, standard library only.
 
-1. `universal-safe-to-remove.json` — Universal (All OEMs): Facebook AppManager/Installer, Microsoft OneDrive/Link, Netflix Activation, Google Partner Setup.
-2. `samsung-oneui.json` — Samsung One UI: Bixby Voice, AR Zone, Game Optimizing Service (GOS), Knox Analytics, Link to Windows, Quick Share telemetry.
-3. `xiaomi-miui-hyperos.json` — Xiaomi/POCO/Redmi (HyperOS & MIUI): MSA Ad Service, Joyose daemon, Mi Pay, GetApps store, Analytics, Hybrid Accessory, Mi Browser.
-4. `google-pixel.json` — Google Pixel: Pixel Tips, Ambient Music Recognition, Device Personalization Services, ARCore, Feedback loggers.
-5. `oneplus-oxygenos.json` — OnePlus OxygenOS: HeyTap Cloud, OPBugreport, Membership services, LogKit, Dirac Sound, Red Cable Club promo daemons.
-6. `bbk-oppo-vivo-realme.json` — BBK (Oppo/Vivo/Realme): vendor system frameworks and promo daemons.
-7. `huawei-emui.json` — Huawei EMUI: HMS core services, Huawei Account, HiCare telemetry.
-8. `motorola.json` — Motorola: Moto Display, Moto Suggestions, Ready For analytics, Lenovo diagnostic telemetry.
-9. `transsion-tecno-infinix.json` — Transsion (Tecno/Infinix/itel): Palm Store, Carlcare telemetry, AHA Games, Phone Master optimization ads, HiOS launcher ads.
-10. `critical-do-not-touch.json` — 89 core blacklist (Tier 4, hard-blocked).
-
-OEM breakdown (from `web/src/data/rules-dataset.json`): BBK 21, Core System 89, Google 23, Huawei 4, Motorola 15, OnePlus 19, Samsung 44, Transsion 29, Universal 81, Xiaomi 27. Total 352.
-
----
-
-## 6. CLI Commands Reference (`cli/src/debloat_engine.py`)
-
-Python 3.11+, standard library only, no `requirements.txt`.
-
-- Interactive dashboard: `python cli/src/debloat_engine.py --interactive`
-- Scan device packages: `python cli/src/debloat_engine.py --scan`
-- Dry-run simulation: `python cli/src/debloat_engine.py --dry-run --tier 1`
-- Debloat execution: `python cli/src/debloat_engine.py --tier 1 --action disable`
-- Named packages only: `python cli/src/debloat_engine.py --package com.facebook.katana --dry-run` (repeatable; with `--tier`, only if the package is in that tier; critical Tier 4 packages are refused with a non-zero exit; a package with no rule is allowed with a warning and uses `--action`)
+- Interactive menu (default with no arguments): `python cli/src/debloat_engine.py --interactive`
+- Scan and classify installed packages: `python cli/src/debloat_engine.py --scan` (add `--export-json [PATH]` to save the result)
+- Dry run: `python cli/src/debloat_engine.py --tier 1 --dry-run`
+- Apply a tier: `python cli/src/debloat_engine.py --tier 1 --action disable`
+- Named packages only: `python cli/src/debloat_engine.py --package com.facebook.katana --dry-run` (repeatable; with `--tier`, only if the package is in that tier; critical packages are refused with a non-zero exit; a package with no rule is allowed with a warning and uses `--action`)
 - `--action disable|uninstall` (default `disable`) applies to `--tier` or `--package`
-- Other Android user: `--user N` (default 0), e.g. a work profile. Snapshots record the user; `--restore` uses the user stored in the snapshot
+- `--yes` skips the confirmation prompt; it is required for `--tier` or `--package` when there is no terminal
+- `--no-backup` skips the restore snapshot
+- Other Android user: `--user N` (default 0). Snapshots record the user; `--restore` uses the user stored in the snapshot
+- Device selection: `--serial SERIAL`, `--adb-path PATH`, `--manufacturer NAME` (force a brand's rules)
+- Wireless: `--wireless IP:PORT`, `--qr-pair` (Android 11+ QR pairing), `--switch-transport usb|wireless`, `--diagnostics`
 - List snapshots: `python cli/src/debloat_engine.py --list-snapshots` (newest first, no phone needed)
-- Restore newest snapshot of the connected phone: `python cli/src/debloat_engine.py --restore`
+- Restore the newest snapshot of the connected phone: `python cli/src/debloat_engine.py --restore`
 - Restore a specific snapshot: `python cli/src/debloat_engine.py --restore ~/AiPhoneDebloater/backups/snapshot_<model>_<timestamp>.json` (file name, path or unique part of the name)
 - Local web app bridge: `python cli/src/debloat_engine.py --bridge [--port 53123] [--allow-origin http://localhost:4321]` (`--allow-origin` is repeatable)
+- Version: `python cli/src/debloat_engine.py --version` (read from the root `VERSION` file)
+- Help: `python cli/src/debloat_engine.py --help`
 - Rule validation: `python cli/tests/validate_rules.py`
 - Unit tests: `python -m unittest discover -s cli/tests`
-- Version: `python cli/src/debloat_engine.py --version` (loads root `VERSION` via `load_version()`)
-- Help: `python cli/src/debloat_engine.py --help`
 
 The plan and the confirmation list show the app name beside each package id.
 
-Launchers (accept the same flags):
+Launchers (accept the same flags; no arguments opens the interactive menu):
 - Windows: `cli\bin\debloat.bat`
-- Unix: `bash cli/bin/debloat.sh`
+- macOS and Linux: `bash cli/bin/debloat.sh`
 
-All actions create timestamped JSON snapshots in `~/AiPhoneDebloater/backups/`. `cli/backups/` (repo) and `~/.ai-phone-debloater/backups/` (zero-git install) are old locations that are still searched when restoring; nothing new is written there.
+Snapshots are written to `~/AiPhoneDebloater/backups/`. `cli/backups/` (repository) and `~/.ai-phone-debloater/backups/` (one-line install) are older locations that are still searched when restoring; nothing new is written there.
 
-Local bridge security: the bridge listens on `127.0.0.1:53123`, checks for a loopback `Host` and an allowlisted web origin, and requires a per-session token in the `X-Bridge-Token` header on every route except `GET /health` (otherwise `401`). The one-click scripts (`bridge.sh` / `bridge.ps1`) generate a random token per run, pass it in `AIPD_BRIDGE_TOKEN`, and open `https://debloater.rovoxia.com/app?bridge=1#token=<token>`; the fragment is not sent to servers, and the web app moves the token to `sessionStorage` and removes it from the address bar. A bridge started by hand prints that URL; paste it if the web app asks for a token, and treat it as a password for the session. A custom `AIPD_BRIDGE_TOKEN` must be at least 16 characters from `A-Z a-z 0-9 . _ ~ -`. Direct callers: `curl -H "X-Bridge-Token: <token>" http://127.0.0.1:53123/devices`.
+### Local bridge
+`cli/src/bridge_server.py` (also started by `--bridge`) listens on `127.0.0.1:53123`. Every request must have a loopback `Host`, an allowlisted web origin and, on every route except `GET /health`, a per-session token in the `X-Bridge-Token` header (otherwise `401`). The bridge enforces the critical list but not tiers. The one-click scripts (`bridge.sh` and `bridge.ps1`) generate a random token per run, pass it in `AIPD_BRIDGE_TOKEN`, and open `https://debloater.rovoxia.com/app?bridge=1#token=<token>`; the fragment is not sent to servers, and the web app moves the token to `sessionStorage` and removes it from the address bar. A bridge started by hand prints that URL; paste it if the web app asks for a token, and treat it as a password for the session. A custom `AIPD_BRIDGE_TOKEN` must be at least 16 characters from `A-Z a-z 0-9 . _ ~ -`. Direct callers: `curl -H "X-Bridge-Token: <token>" http://127.0.0.1:53123/devices`.
 
-Web app (`/app`): the confirmation dialog lists each package with its app name, and "Export CSV" downloads the currently filtered package list.
+### Web app (`/app`)
+Connects over WebUSB (Chromium browsers) or the local bridge (any browser; `/app?bridge=1` connects automatically). Every change, batch or single package, opens a confirmation dialog that lists each package with its app name, and runs only after it is confirmed. The web app has no dry-run mode; dry run is a CLI feature (`--dry-run`). Snapshots are kept in the browser and can be exported as JSON. "Export CSV" downloads the currently filtered package list.
 
 ---
 
-## 7. Zero-Git Bootstrap (curl / irm)
-
-No git clone required. The zero-git runner endpoints compare installed `VERSION` against the remote version and purge `tools/` only when the version bumps to trigger fresh ADB platform-tools bootstrap.
+## 7. One-line install (no git)
 
 - Windows (PowerShell): `irm https://debloater.rovoxia.com/run.ps1 | iex`
-- macOS / Linux (Bash): `curl -fsSL https://debloater.rovoxia.com/run.sh | bash`
+- macOS and Linux (Bash): `curl -fsSL https://debloater.rovoxia.com/run.sh | bash`
+- Bridge for the web app: `https://debloater.rovoxia.com/bridge.ps1` and `https://debloater.rovoxia.com/bridge.sh`
 
-Routes: `web/src/pages/prompt.md.ts`, `web/src/pages/run.ps1.ts`, `web/src/pages/run.sh.ts`.
+The scripts download the `main` branch archive from GitHub and copy `cli/` and `VERSION` into `~/.ai-phone-debloater`. They compare the installed `VERSION` with the downloaded one and delete the bundled `tools/` (ADB platform-tools) only when the version changes, so fresh ADB binaries are fetched.
 
----
-
-## 8. Rollback Guide
-
-1. Every debloat action writes a timestamped JSON snapshot recording all package states before mutation.
-   - Written to: `~/AiPhoneDebloater/backups/snapshot_<model>_<timestamp>.json`
-   - Old locations still searched on restore: `cli/backups/` (repo), `~/.ai-phone-debloater/backups/` (zero-git install)
-2. Restore via engine: `python cli/src/debloat_engine.py --restore <snapshot.json>`, or `--restore` with no value for the newest snapshot of the connected phone (`--list-snapshots` lists them)
-3. Per-app manual restore: `adb shell cmd package install-existing --user 0 <pkg>`
-4. Full factory reset also returns device to stock since `/system` is never altered (dm-verity intact).
-
-Re-enable a frozen app: `pm enable --user 0 <pkg>`.
+Source routes: `web/src/pages/run.ps1.ts`, `run.sh.ts`, `bridge.ps1.ts`, `bridge.sh.ts`; the prompt is served by `web/src/pages/prompt.md.ts`.
 
 ---
 
-## 9. Forensic Debloat Prompt Guidance
+## 8. Rollback
 
-The master AI prompt lives at `prompt/master-prompt.md` and is served at `https://debloater.rovoxia.com/prompt.md`. AI coding agents (Claude Code, Cursor, Windsurf, ChatGPT, Gemini) use it to:
-
-1. Connect to ADB (USB or wireless mDNS pairing on Android 11+)
-2. Scan installed packages on user 0
-3. Classify each package into one of the 4 safety tiers using `cli/rules/*.json`
-4. Run a dry-run simulation (`--dry-run --tier 1`) before any mutation
-5. Execute safe debloating with `pm disable-user --user 0` or `pm uninstall -k --user 0`
-6. Write a JSON snapshot before mutation for 1-click rollback
-7. Never touch the 89 hard-blocked critical packages (intercepted and blocked)
-
-The prompt emphasizes: rootless, user 0 only, `-k` data preservation, critical blacklist enforcement, reversibility, and no warranty void (Knox 0x0, OTA-safe, banking/Google Pay safe).
+1. Before each change the CLI and the bridge write a timestamped JSON snapshot of the affected packages' state to `~/AiPhoneDebloater/backups/snapshot_<model>_<timestamp>.json`. If the snapshot fails, nothing is changed. The web app over WebUSB keeps its snapshots in the browser.
+2. Restore with the engine: `python cli/src/debloat_engine.py --restore <snapshot.json>`, or `--restore` with no value for the newest snapshot of the connected phone (`--list-snapshots` lists them).
+3. Restore one app by hand: `adb shell cmd package install-existing --user 0 <pkg>` (after an uninstall) or `adb shell pm enable --user 0 <pkg>` (after a disable).
+4. A factory reset also brings back every preinstalled app, because the APKs stay on the system image.
 
 ---
 
-## 10. Web & Repository Layout
+## 9. Master AI prompt
 
-- `cli/src/debloat_engine.py` + `cli/src/connection/` — engine & ADB connection subsystem (stdlib-only)
-- `cli/tests/validate_rules.py` — rule validation suite (CI)
-- `cli/tests/test_*.py` — unit tests (engine, connection, bridge, version), run in CI with `python -m unittest discover -s cli/tests`
-- `cli/generate_rules_dataset.py` — regenerates `web/src/data/rules-dataset.json` from `cli/rules/*.json`; CI fails if out of sync
-- `web/src/pages/index.astro` — landing page
-- `web/src/pages/oems.astro` — OEM directory + interactive rules explorer
-- `web/src/pages/404.astro` — production 404
-- `web/src/pages/prompt.md.ts`, `run.ps1.ts`, `run.sh.ts` — zero-git runner + prompt API routes
-- `web/src/data/rules-dataset.json` — precomputed snapshot of 352 rules (352 total, 89 critical)
-- `web/public/og-image.svg` / `og-image.png` — 1200x630 social poster
-- `web/public/robots.txt`, `llms.txt`, `llms-full.txt`, `pricing.md` — AI/machine-readable files
-- `.github/workflows/ci.yml` — CI (lint, validate, test, web-test, security, final-status)
-- `.github/workflows/release.yml` — creates GitHub Release `v<VERSION>` with generated notes when a push to `main` changes `VERSION` (or on manual dispatch); `CHANGELOG.md` is edited by hand
-- Root `VERSION` — single source of truth (SemVer)
+The master prompt lives at `prompt/master-prompt.md` and is served at https://debloater.rovoxia.com/prompt.md. An AI coding agent that can run commands (Claude Code, Cursor, Windsurf, Cline, Aider, Codex and similar) or a chat assistant without a shell follows it in five steps:
+
+1. Set up and connect over USB or wireless debugging.
+2. Scan installed packages and classify them with `cli/rules/*.json`.
+3. Plan and dry run (`--tier 1 --dry-run`, or `--package ... --dry-run` for a chosen subset), then show the plan.
+4. Apply only after the user replies `PROCEED`, running the same command without `--dry-run` and with `--yes`.
+5. Verify and hand over, including how to undo each change.
+
+The prompt also has a raw ADB mode for when the engine cannot be used, with a manual snapshot before any change. Tier 3 is used only on explicit request, and critical packages are refused.
+
+---
+
+## 10. Repository layout
+
+- `cli/src/debloat_engine.py`: CLI entry point and rule engine
+- `cli/src/connection/`: device layer (USB, wireless, QR pairing, discovery, diagnostics)
+- `cli/src/bridge_server.py`: local HTTP bridge for the web app (standalone)
+- `cli/rules/*.json`: rule files (source of truth)
+- `cli/tests/`: `validate_rules.py` and unit tests for the engine, connection layer, bridge and version sync; CI runs `python -m unittest discover -s cli/tests`
+- `cli/generate_rules_dataset.py`: regenerates `web/src/data/rules-dataset.json` from `cli/rules/*.json`; CI fails if the committed file is out of date
+- `cli/sync_version.py`: copies the root `VERSION` into the derived version fields
+- `web/src/pages/index.astro`: home page
+- `web/src/pages/app.astro` and `web/src/lib/webadb.ts`: web app (WebUSB and bridge clients)
+- `web/src/pages/oems.astro`: searchable rule list
+- `web/src/pages/blog.astro` and `web/src/pages/blog/[slug].astro`: blog index and guides
+- `web/src/pages/404.astro`: not-found page
+- `web/src/pages/run.ps1.ts`, `run.sh.ts`, `bridge.ps1.ts`, `bridge.sh.ts`, `prompt.md.ts`: script and prompt endpoints
+- `web/src/data/rules-dataset.json`: generated copy of all 352 rules for the site
+- `web/public/og-image.svg`, `og-image.png`, `og-image.jpg`: 1200x630 social card
+- `web/public/robots.txt`, `llms.txt`, `llms-full.txt`, `pricing.md`: machine-readable files
+- `.github/workflows/ci.yml`: CI (lint, rule validation, tests, web build and smoke test, security checks)
+- `.github/workflows/release.yml`: creates GitHub Release `v<VERSION>` when a push to `main` changes `VERSION`, or on manual dispatch
+- Root `VERSION`: the single source of the version number
+
+---
+
+## 11. Frequently asked questions
+
+### What is AI Phone Debloater?
+AI Phone Debloater is a free, open-source (MIT) tool that removes preinstalled Android apps over ADB without root. It checks each package against 352 curated rules in four safety tiers, refuses to touch 89 critical system packages, and writes a restore snapshot before each change. It runs as a Python CLI or as a web app at https://debloater.rovoxia.com/app.
+
+### Do I need root to debloat my phone?
+No. AI Phone Debloater uses standard ADB commands (`pm disable-user --user 0` and `pm uninstall -k --user 0`) that work with USB debugging on a stock phone. It does not root the phone, unlock the bootloader or write to the system partition.
+
+### Does debloating void the warranty or trip Samsung Knox?
+AI Phone Debloater does not root the phone, unlock the bootloader, flash anything or write to the system partition. It only disables or removes apps for one user through ADB. Whether that matters for Knox or for a warranty is for the manufacturer and the seller to say, so this project cannot promise how they treat a debloated phone.
+
+### Do banking apps and Google Pay keep working?
+The tool does not root the phone, unlock the bootloader or install anything such as Magisk. This project does not test Play Integrity results or individual banking apps, so it makes no promise about them. An app that depends on a package you disabled can stop working; if that happens, restore the package from the snapshot. Google Play services (`com.google.android.gms`) is on the critical list, so the tool refuses to disable it.
+
+### Will debloating affect OTA system updates?
+No, with one exception. It operates in user 0 without touching read-only system partitions, so official OTA updates install normally. The exception is the single Tier 3 rule, the Transsion OTA updater (`com.transsion.otaupdate`): disabling it stops system updates until you enable it again.
+
+### Can critical Android packages be removed by mistake?
+The engine and the bridge check every package against the 89-entry critical list (System UI, telephony, package installer, settings, Google Play services, the stock dialer, contacts, SMS, keyboards, launchers and others) and refuse to disable or uninstall them, whatever tier, flag or prompt is used. Other packages can still break a feature you rely on, which is why every change can be undone from its snapshot.
+
+### Will my phone be faster or the battery last longer?
+Disabling preinstalled apps stops their background services, which frees memory and reduces background battery and data use. The gain depends on the phone and on what was running; this project does not publish measurements.
+
+### Does it delete my data?
+No user files are touched. `pm disable-user` keeps the app and its data. `pm uninstall -k` removes the app for one user but keeps its data and cache directories, so a restored app comes back with its data. Shared storage such as photos and downloads is not affected by either command.
+
+### Which Android versions work?
+The code has no Android version check, and this project does not publish a list of tested versions. It needs USB debugging; wireless debugging and QR pairing need Android 11 or newer.
+
+### Does the web app have a dry run?
+No. Dry run is a CLI flag (`--dry-run`). The web app shows a confirmation dialog listing every package before each change.
+
+### What does it cost?
+Nothing. It is MIT-licensed, with no paid edition, ads, telemetry or account. See https://debloater.rovoxia.com/pricing.md.

@@ -1,0 +1,24 @@
+---
+// Tier badge: icon + "Tier N" + name, coloured by tier. The icon and the text carry the meaning
+// without colour. Names and icons come from src/data/tiers.ts. A client script that builds rows
+// can produce the identical markup with tierBadgeHtml() from the same module.
+// Its text is always "Tier N: Name" (the ": " is visually hidden), so it reads correctly to
+// screen readers and in copied text.
+import { tierBadgeHtml } from '../data/tiers';
+
+interface Props {
+  /** 1, 2, 3 or 4. Anything else renders as Tier 4 (Critical). */
+  tier: number | null | undefined;
+  /** "Tier 1" only; the name stays available to screen readers. For dense tables. */
+  compact?: boolean;
+  /**
+   * Reference the icon from the page's tier sprite instead of inlining it. For tables with
+   * hundreds of rows; render <TierSprite /> once on the same page.
+   */
+  sprite?: boolean;
+}
+
+const { tier, compact = false, sprite = false } = Astro.props;
+---
+
+<Fragment set:html={tierBadgeHtml(tier, { compact, sprite })} />

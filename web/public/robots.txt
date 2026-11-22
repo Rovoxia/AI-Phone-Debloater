@@ -1,50 +1,6 @@
-# robots.txt for AI-Phone-Debloater (debloater.rovoxia.com)
+# AI Phone Debloater (debloater.rovoxia.com)
+# Summary for AI assistants: https://debloater.rovoxia.com/llms.txt
 User-agent: *
 Allow: /
 
-# Social Media Card Crawlers
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
-User-agent: LinkedInBot
-Allow: /
-
-User-agent: WhatsApp
-Allow: /
-
-User-agent: TelegramBot
-Allow: /
-
-# Explicit AI Search & Discovery Bots
-User-agent: OAI-SearchBot
-Allow: /
-
-User-agent: PerplexityBot
-Allow: /
-
-User-agent: Claude-SearchBot
-Allow: /
-
-User-agent: ChatGPT-User
-Allow: /
-
-User-agent: Googlebot
-Allow: /
-
-User-agent: bingbot
-Allow: /
-
-User-agent: Applebot
-Allow: /
-
-# Sitemaps
 Sitemap: https://debloater.rovoxia.com/sitemap-index.xml
-
-# Machine-Readable AI Context & Prompts
-# LLMs Context: https://debloater.rovoxia.com/llms.txt
-# LLMs Full Technical Reference: https://debloater.rovoxia.com/llms-full.txt
-# Master AI Prompt: https://debloater.rovoxia.com/prompt.md
-# Pricing for AI Agents: https://debloater.rovoxia.com/pricing.md

@@ -1,76 +1,1580 @@
 @import "tailwindcss";
 
+/* `dark:` follows the .dark class that the theme bootstrap in SeoHead.astro puts on <html>. */
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* ==========================================================================
+   1. Tokens
+   `static` keeps every token in the output even when no utility uses it, so
+   scoped <style> blocks in .astro files can rely on var(--color-ink) etc.
+   Each colour token is also a Tailwind colour: bg-canvas, text-muted,
+   border-line, text-accent, bg-ok-soft ...
+   ========================================================================== */
+@theme static {
+  /* Fonts. --font-inter / --font-jetbrains-mono are set by <Fonts /> (Astro fonts API). */
+  --font-sans: var(--font-inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+  --font-mono: var(--font-jetbrains-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+
+  /* Colour, light theme. The dark values are in the .dark block below. */
+  --color-canvas: #ffffff;        /* page background */
+  --color-surface: #ffffff;       /* cards, dialogs, inputs */
+  --color-subtle: #f8fafc;        /* alternate section band, table head */
+  --color-inset: #f1f5f9;         /* inline code, hover fill, pressed chip */
+  --color-line: #e2e8f0;          /* default 1px border */
+  --color-line-strong: #cbd5e1;   /* hover border, dividers that must read */
+  --color-line-control: #8492a6;  /* form control border, 3:1 on canvas */
+  --color-ink: #0f172a;           /* headings and body text */
+  --color-muted: #475569;         /* secondary text */
+  --color-faint: #5b6779;         /* meta text; still 4.5:1 on canvas, subtle and inset */
+  --color-accent: #047857;        /* links, eyebrow, accent text and icons */
+  --color-accent-hover: #065f46;
+  --color-accent-solid: #047857;  /* primary button fill */
+  --color-accent-solid-hover: #065f46;
+  --color-on-accent: #ffffff;     /* label on the primary button */
+  --color-accent-soft: #ecfdf5;   /* accent tint background */
+  --color-accent-line: #a7f3d0;
+  --color-focus: #047857;         /* focus ring */
+
+  /* Status. ok = Tier 1, warn = Tier 2, alert = Tier 3, danger = Tier 4. */
+  --color-ok: #047857;
+  --color-ok-soft: #ecfdf5;
+  --color-ok-line: #a7f3d0;
+  --color-warn: #92400e;
+  --color-warn-soft: #fffbeb;
+  --color-warn-line: #fde68a;
+  --color-alert: #9a3412;
+  --color-alert-soft: #fff7ed;
+  --color-alert-line: #fed7aa;
+  --color-danger: #b91c1c;
+  --color-danger-soft: #fef2f2;
+  --color-danger-line: #fecaca;
+  --color-info: #075985;
+  --color-info-soft: #f0f9ff;
+  --color-info-line: #bae6fd;
+
+  /* Code blocks are dark in both themes. */
+  --color-code: #0f172a;
+  --color-code-ink: #e2e8f0;
+  --color-code-muted: #94a3b8;
+  --color-code-accent: #6ee7b7;
+  --color-code-line: #1e293b;
+
+  /* Fluid type. Each step grows linearly from a 320px to a 1920px viewport and is clamped
+     outside that range: size = min + (max - min) * (100vw - 20rem) / 100rem. The rem term keeps
+     browser zoom and user font-size settings working. text-xs never drops below 12px and
+     text-base never below 16px. */
+  --text-xs: clamp(0.75rem, 0.7375rem + 0.0625vw, 0.8125rem);    /* 12 -> 13 */
+  --text-xs--line-height: 1.5;
+  --text-sm: clamp(0.875rem, 0.8625rem + 0.0625vw, 0.9375rem);   /* 14 -> 15 */
+  --text-sm--line-height: 1.55;
+  --text-base: clamp(1rem, 0.975rem + 0.125vw, 1.125rem);        /* 16 -> 18 */
+  --text-base--line-height: 1.65;
+  --text-lg: clamp(1.125rem, 1.0875rem + 0.1875vw, 1.3125rem);   /* 18 -> 21 */
+  --text-lg--line-height: 1.6;
+  --text-xl: clamp(1.25rem, 1.1875rem + 0.3125vw, 1.5625rem);    /* 20 -> 25 */
+  --text-xl--line-height: 1.4;
+  --text-2xl: clamp(1.375rem, 1.275rem + 0.5vw, 1.875rem);       /* 22 -> 30 */
+  --text-2xl--line-height: 1.3;
+  --text-3xl: clamp(1.625rem, 1.475rem + 0.75vw, 2.375rem);      /* 26 -> 38 */
+  --text-3xl--line-height: 1.2;
+  --text-4xl: clamp(1.875rem, 1.65rem + 1.125vw, 3rem);          /* 30 -> 48 */
+  --text-4xl--line-height: 1.12;
+  --text-5xl: clamp(2.125rem, 1.8rem + 1.625vw, 3.75rem);        /* 34 -> 60 */
+  --text-5xl--line-height: 1.08;
+  --text-6xl: clamp(2.375rem, 1.9rem + 2.375vw, 4.75rem);        /* 38 -> 76 */
+  --text-6xl--line-height: 1.04;
+
+  /* Fluid spacing, same 320px -> 1920px interpolation. Usable in any spacing utility:
+     px-gutter, py-section, gap-stack, mt-stack-lg, space-y-stack ... */
+  --spacing-gutter: clamp(1rem, 0.6rem + 2vw, 3rem);             /* 16 -> 48: page side padding */
+  --spacing-section: clamp(3.5rem, 2.6rem + 4.5vw, 8rem);        /* 56 -> 128: section padding */
+  --spacing-section-sm: clamp(2.5rem, 2rem + 2.5vw, 5rem);       /* 40 -> 80 */
+  /* Not named "block": a spacing token called "block" makes Tailwind read the `inline-block` class
+     as `inline-size: var(--spacing-block)` as well as `display: inline-block`. */
+  --spacing-stack-lg: clamp(2rem, 1.7rem + 1.5vw, 3.5rem);       /* 32 -> 56: heading block to content */
+  --spacing-stack: clamp(1rem, 0.9rem + 0.5vw, 1.5rem);          /* 16 -> 24: gap between siblings */
+  --spacing-stack-sm: clamp(0.5rem, 0.45rem + 0.25vw, 0.75rem);  /* 8 -> 12 */
+  --spacing-header: 4rem;                                        /* sticky header height */
+
+  /* Widths: max-w-page, max-w-measure. */
+  --container-page: 80rem;
+  --container-measure: 70ch;
+
+  /* Radius: rounded-box, rounded-control, rounded-tag. */
+  --radius-box: 0.75rem;
+  --radius-control: 0.5rem;
+  --radius-tag: 0.375rem;
+}
 
 @layer base {
   :root {
-    color-scheme: light dark;
-    --font-sans: 'Google Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    color-scheme: light;
+  }
+
+  .dark {
+    color-scheme: dark;
+    --color-canvas: #0b1120;
+    --color-surface: #111a2e;
+    --color-subtle: #0f172a;
+    --color-inset: #1e293b;
+    --color-line: #1e293b;
+    --color-line-strong: #334155;
+    --color-line-control: #64748b;
+    --color-ink: #f1f5f9;
+    --color-muted: #cbd5e1;
+    --color-faint: #94a3b8;
+    --color-accent: #34d399;
+    --color-accent-hover: #6ee7b7;
+    --color-accent-solid: #34d399;
+    --color-accent-solid-hover: #6ee7b7;
+    --color-on-accent: #022c22;
+    --color-accent-soft: #062a21;
+    --color-accent-line: #065f46;
+    --color-focus: #34d399;
+    --color-ok: #6ee7b7;
+    --color-ok-soft: #062a21;
+    --color-ok-line: #065f46;
+    --color-warn: #fcd34d;
+    --color-warn-soft: #2a1c05;
+    --color-warn-line: #78350f;
+    --color-alert: #fdba74;
+    --color-alert-soft: #2b1608;
+    --color-alert-line: #7c2d12;
+    --color-danger: #fca5a5;
+    --color-danger-soft: #2d1215;
+    --color-danger-line: #7f1d1d;
+    --color-info: #7dd3fc;
+    --color-info-soft: #0b2337;
+    --color-info-line: #075985;
+    /* One step below the canvas, so a code block still reads as a panel. */
+    --color-code: #070c17;
   }
 
   html {
-    scroll-behavior: smooth;
-    scroll-padding-top: 5rem; /* Account for sticky header height */
-    font-family: var(--font-sans);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    /* Safety net only: a stray wide element must not give the whole page a sideways scrollbar.
+       It hides the symptom from users, not from the check: documentElement.scrollWidth still
+       reports the overflow, and every page must keep scrollWidth <= clientWidth. */
+    overflow-x: clip;
+    /* The sticky header covers the top of the viewport. Everything the browser scrolls to (an
+       anchor, a focused control, scrollIntoView) stops this far below the top instead.
+       /app also sets the bottom value, for its sticky dock (src/pages/app.astro). */
+    scroll-padding-top: calc(var(--spacing-header) + 1rem);
   }
 
-  /* Default to clean Google-like light theme, automatically switching on prefers-color-scheme */
-  :root {
-    background-color: #f8f9fa;
-    color: #202124;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      background-color: #121212;
-      color: #e8eaed;
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
     }
   }
 
-  :root[data-theme="dark"] {
-    background-color: #121212;
-    color: #e8eaed;
-  }
-
-  :root[data-theme="light"] {
-    background-color: #f8f9fa;
-    color: #202124;
-  }
-
   body {
-    background-color: inherit;
-    color: inherit;
-    overflow-x: hidden;
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     -webkit-tap-highlight-color: transparent;
-    text-rendering: optimizeLegibility;
   }
 
-  code, pre, kbd {
+  h1, h2, h3, h4 {
+    text-wrap: balance;
+  }
+
+  p, li {
+    text-wrap: pretty;
+  }
+
+  code, pre, kbd, samp {
     font-family: var(--font-mono);
   }
+
+  ::selection {
+    background-color: var(--color-accent-solid);
+    color: var(--color-on-accent);
+  }
+
+  /* <main id="main" tabindex="-1"> takes focus from the skip link; it needs no ring. */
+  main:focus {
+    outline: none;
+  }
 }
 
-/* System scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(128, 128, 128, 0.3);
-  border-radius: 9999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(128, 128, 128, 0.5);
+/* ==========================================================================
+   2. Components
+   In the `components` layer, so any Tailwind utility on the same element wins.
+   ========================================================================== */
+@layer components {
+  /* ---- Layout ---------------------------------------------------------- */
+
+  /* The one page container: 80rem of content plus a fluid gutter on each side. */
+  .container-page {
+    width: 100%;
+    max-width: calc(var(--container-page) + 2 * var(--spacing-gutter));
+    margin-inline: auto;
+    padding-inline: var(--spacing-gutter);
+  }
+
+  /* Cap a text block near 70 characters. */
+  .measure {
+    max-width: var(--container-measure);
+  }
+
+  .section {
+    padding-block: var(--spacing-section);
+  }
+
+  .section-sm {
+    padding-block: var(--spacing-section-sm);
+  }
+
+  /* A section on the subtle band, ruled off above and below. */
+  .section-alt {
+    background-color: var(--color-subtle);
+    border-block: 1px solid var(--color-line);
+  }
+
+  /* Eyebrow + heading + lead at the top of a section. Children keep their own width and sit at
+     the top: a badge or a button placed here is not stretched across the block, and when the
+     block is itself a grid item taller than its content the rows do not spread apart. */
+  .section-head {
+    display: grid;
+    justify-items: start;
+    align-content: start;
+    gap: var(--spacing-stack-sm);
+    max-width: var(--container-measure);
+    margin-bottom: var(--spacing-stack-lg);
+  }
+
+  /* Card grid with no breakpoints: as many equal columns as fit. */
+  .grid-auto,
+  .grid-auto-sm,
+  .grid-auto-lg {
+    display: grid;
+    gap: var(--spacing-stack);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--grid-min)), 1fr));
+  }
+
+  .grid-auto {
+    --grid-min: 17.5rem;
+  }
+
+  .grid-auto-sm {
+    --grid-min: 12rem;
+  }
+
+  .grid-auto-lg {
+    --grid-min: 22rem;
+  }
+
+  /* ---- Type ------------------------------------------------------------ */
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: var(--text-xs--line-height);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+  }
+
+  /* A word longer than the line (large text on a narrow screen) breaks instead of sticking out. */
+  .display,
+  .h1,
+  .h2,
+  .h3,
+  .h4 {
+    color: var(--color-ink);
+    font-weight: 650;
+    overflow-wrap: break-word;
+  }
+
+  /* Home hero only. */
+  .display {
+    font-size: var(--text-6xl);
+    line-height: var(--text-6xl--line-height);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+  }
+
+  /* Page title. */
+  .h1 {
+    font-size: var(--text-5xl);
+    line-height: var(--text-5xl--line-height);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+
+  /* Section heading. */
+  .h2 {
+    font-size: var(--text-3xl);
+    line-height: var(--text-3xl--line-height);
+    letter-spacing: -0.022em;
+  }
+
+  /* Card or subsection heading. */
+  .h3 {
+    font-size: var(--text-xl);
+    line-height: var(--text-xl--line-height);
+    letter-spacing: -0.012em;
+  }
+
+  .h4 {
+    font-size: var(--text-base);
+    line-height: 1.45;
+    font-weight: 600;
+  }
+
+  /* Intro paragraph under a heading. */
+  .lead {
+    max-width: var(--container-measure);
+    font-size: var(--text-lg);
+    line-height: var(--text-lg--line-height);
+    color: var(--color-muted);
+  }
+
+  /* Small print: dates, counts, captions. */
+  .meta {
+    font-size: var(--text-xs);
+    line-height: var(--text-xs--line-height);
+    color: var(--color-faint);
+  }
+
+  .link {
+    color: var(--color-accent);
+    font-weight: 500;
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    transition: color 150ms ease;
+  }
+
+  .link:hover {
+    color: var(--color-accent-hover);
+    text-decoration-thickness: 2px;
+  }
+
+  /* Inline code outside .prose (the same box is applied to inline code inside .prose).
+     An inline-block: the whole snippet moves to the next line instead of breaking after a hyphen
+     ("pm uninstall -" / "k"). Only a snippet longer than the full line wraps inside its box, at
+     any character if it has to, so a long package name cannot widen the page.
+     The line-height and the negative block margin (it cancels the padding and border) keep the
+     box inside the text line it sits on, so a line with code is no taller than its neighbours. */
+  .code,
+  .prose :where(:not(pre)) > code {
+    display: inline-block;
+    max-width: 100%;
+    margin-block: calc(-0.125em - 1px);
+    padding: 0.125em 0.375em;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-tag);
+    background-color: var(--color-inset);
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+
+  /* In a table cell a snippet stays on one line. "May break anywhere" would let the table squeeze
+     the column down to a few characters; a table is its own scroll box (.table-wrap, .prose
+     table), so a wide cell scrolls there and does not widen the page. */
+  .table :where(th, td) .code,
+  .prose :where(th, td) > code {
+    white-space: nowrap;
+  }
+
+  /* Android package name: mono, and allowed to break so it cannot widen the page. */
+  .pkg {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    overflow-wrap: anywhere;
+  }
+
+  .kbd {
+    display: inline-block;
+    min-width: 1.5em;
+    padding: 0 0.375em;
+    border: 1px solid var(--color-line-strong);
+    border-bottom-width: 2px;
+    border-radius: var(--radius-tag);
+    background-color: var(--color-surface);
+    font-family: var(--font-mono);
+    font-size: 0.8125em;
+    text-align: center;
+  }
+
+  /* ---- Icons ----------------------------------------------------------- */
+
+  /* <Icon /> output. Sized in em so it follows the text it sits in. */
+  .icon {
+    flex-shrink: 0;
+    width: 1.25em;
+    height: 1.25em;
+  }
+
+  /* ---- Buttons --------------------------------------------------------- */
+
+  .btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.5rem 1.125rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-control);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, opacity 150ms ease;
+  }
+
+  .btn:disabled,
+  .btn[aria-disabled="true"] {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    background-color: var(--color-accent-solid);
+    color: var(--color-on-accent);
+  }
+
+  .btn-primary:hover:not(:disabled, [aria-disabled="true"]) {
+    background-color: var(--color-accent-solid-hover);
+  }
+
+  .btn-secondary {
+    border-color: var(--color-line-strong);
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+  }
+
+  .btn-secondary:hover:not(:disabled, [aria-disabled="true"]) {
+    border-color: var(--color-line-control);
+    background-color: var(--color-subtle);
+  }
+
+  .btn-ghost {
+    color: var(--color-muted);
+  }
+
+  .btn-ghost:hover:not(:disabled, [aria-disabled="true"]) {
+    background-color: var(--color-inset);
+    color: var(--color-ink);
+  }
+
+  .btn-danger {
+    border-color: var(--color-danger-line);
+    background-color: var(--color-danger-soft);
+    color: var(--color-danger);
+  }
+
+  .btn-danger:hover:not(:disabled, [aria-disabled="true"]) {
+    border-color: var(--color-danger);
+  }
+
+  .btn-lg {
+    min-height: 3.25rem;
+    padding: 0.75rem 1.5rem;
+    font-size: var(--text-base);
+  }
+
+  /* Visually 36px; the ::after pad keeps the hit area at 44px. */
+  .btn-sm {
+    min-height: 2.25rem;
+    padding: 0.375rem 0.75rem;
+  }
+
+  .btn-sm::after {
+    content: "";
+    position: absolute;
+    inset: -0.25rem;
+  }
+
+  .btn-block {
+    width: 100%;
+  }
+
+  /* Square icon-only button. Always give it an aria-label. */
+  .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex-shrink: 0;
+    border: 1px solid transparent;
+    border-radius: var(--radius-control);
+    color: var(--color-muted);
+    cursor: pointer;
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+
+  .icon-btn:hover {
+    background-color: var(--color-inset);
+    color: var(--color-ink);
+  }
+
+  /* Filter pill. A <button aria-pressed> or a link with aria-current. */
+  .chip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    min-width: 2.75rem;
+    min-height: 2.25rem;
+    padding: 0.25rem 0.75rem;
+    border: 1px solid var(--color-line-strong);
+    border-radius: 999px;
+    background-color: var(--color-surface);
+    color: var(--color-muted);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    line-height: 1.25;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  }
+
+  .chip::after {
+    content: "";
+    position: absolute;
+    inset: -0.25rem 0;
+  }
+
+  .chip:hover {
+    border-color: var(--color-line-control);
+    color: var(--color-ink);
+  }
+
+  .chip[aria-pressed="true"],
+  .chip[aria-current] {
+    border-color: var(--color-ink);
+    background-color: var(--color-ink);
+    color: var(--color-canvas);
+  }
+
+  /* ---- Cards ----------------------------------------------------------- */
+
+  .card {
+    display: block;
+    padding: clamp(1.25rem, 1.1rem + 0.75vw, 2rem);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-box);
+    background-color: var(--color-surface);
+  }
+
+  /* No padding and clipped corners: for a table or code block that fills the card. */
+  .card-flush {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  a.card,
+  .card-hover {
+    transition: border-color 150ms ease, background-color 150ms ease;
+  }
+
+  a.card:hover,
+  .card-hover:hover {
+    border-color: var(--color-line-control);
+  }
+
+  /* Number + label, for counts read from the dataset. */
+  .stat-value {
+    font-family: var(--font-mono);
+    font-size: var(--text-4xl);
+    line-height: var(--text-4xl--line-height);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-ink);
+  }
+
+  .stat-label {
+    margin-top: 0.375rem;
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    color: var(--color-muted);
+  }
+
+  /* ---- Badges ---------------------------------------------------------- */
+
+  .badge,
+  .tier {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375em;
+    padding: 0.1875rem 0.5rem;
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-tag);
+    background-color: var(--color-subtle);
+    color: var(--color-muted);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    line-height: 1.35;
+    white-space: nowrap;
+  }
+
+  .badge-mono {
+    font-family: var(--font-mono);
+    font-weight: 500;
+  }
+
+  .badge-accent,
+  .badge-ok,
+  .tier-1 {
+    border-color: var(--color-ok-line);
+    background-color: var(--color-ok-soft);
+    color: var(--color-ok);
+  }
+
+  .badge-warn,
+  .tier-2 {
+    border-color: var(--color-warn-line);
+    background-color: var(--color-warn-soft);
+    color: var(--color-warn);
+  }
+
+  .badge-alert,
+  .tier-3 {
+    border-color: var(--color-alert-line);
+    background-color: var(--color-alert-soft);
+    color: var(--color-alert);
+  }
+
+  .badge-danger,
+  .tier-4 {
+    border-color: var(--color-danger-line);
+    background-color: var(--color-danger-soft);
+    color: var(--color-danger);
+  }
+
+  .badge-info {
+    border-color: var(--color-info-line);
+    background-color: var(--color-info-soft);
+    color: var(--color-info);
+  }
+
+  /* Tier badge parts, see TierBadge.astro. The icon is the non-colour cue. The stroke
+     properties are for the sprite form (<use>), which carries no attributes of its own. */
+  .tier .icon {
+    width: 1.1em;
+    height: 1.1em;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .tier-name {
+    font-weight: 500;
+  }
+
+  /* Drawn in place of the visually hidden ": " between "Tier 1" and the name. */
+  .tier-name::before {
+    content: "\00b7";
+    margin-right: 0.375em;
+    opacity: 0.7;
+  }
+
+  /* ---- Tables ---------------------------------------------------------- */
+
+  /* Wide tables scroll inside this box, never the page.
+     Markup: <div class="table-wrap" role="region" aria-label="..." tabindex="0"><table class="table">
+     position: relative makes the box the containing block of absolutely positioned content in
+     the table (.sr-only text in a heading or a badge). Without it that content is not clipped by
+     the box, and in a column scrolled out of view it widens the page. */
+  .table-wrap {
+    position: relative;
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-box);
+    background-color: var(--color-surface);
+  }
+
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    text-align: left;
+  }
+
+  .table caption {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--color-line);
+    color: var(--color-muted);
+    font-size: var(--text-sm);
+    text-align: left;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--color-line);
+    vertical-align: top;
+  }
+
+  .table thead th {
+    background-color: var(--color-subtle);
+    color: var(--color-muted);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .table tbody th {
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+
+  .table tbody tr:last-child > * {
+    border-bottom: 0;
+  }
+
+  .table tbody tr:hover > * {
+    background-color: var(--color-subtle);
+  }
+
+  .table-compact th,
+  .table-compact td {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .table .num {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  /* ---- Stacked table ---------------------------------------------------
+     A table of records that turns into a list of blocks below 75rem, so it never scrolls
+     sideways. Used for the package rules on /oems and /oems/<brand>.
+
+       <div class="table-wrap"><table class="table table-compact table-stack">
+
+     Columns are read by position:
+       1      the row header (<th scope="row">): the record's key, such as a package name.
+              Mono, and allowed to break at any character.
+       2      the title (bold when stacked)
+       3      the kind (faint when stacked)
+       4, 5   optional facts, none, one or two (tier, action). data-label="Action" on a cell
+              shows "Action: " before its value while the column headings are not visible.
+       last   the description
+
+     From 75rem up it is an ordinary table with table-layout: fixed, so hiding rows never moves
+     the columns; set the widths on the header cells (class="min-[75rem]:w-[28%]").
+     Below 75rem the header row is visually hidden and every row is a block: under 40rem one
+     column of running text, from 40rem key and facts on the first line with title and kind
+     beside the description. The elements stay table elements; only their boxes change.
+     A script that hides rows puts .is-last on the last visible one. */
+  .table-stack tbody th {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+
+  .table-stack td {
+    overflow-wrap: break-word;
+  }
+
+  .table-stack td:last-child {
+    color: var(--color-muted);
+  }
+
+  .table-stack tbody tr.is-last > * {
+    border-bottom: 0;
+  }
+
+  @media (min-width: 75rem) {
+    .table-stack {
+      table-layout: fixed;
+    }
+  }
+
+  @media (max-width: 74.99rem) {
+    .table-stack,
+    .table-stack tbody {
+      display: block;
+    }
+
+    .table-stack thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .table-stack tbody tr {
+      padding: 0.875rem 1rem;
+      border-bottom: 1px solid var(--color-line);
+    }
+
+    .table-stack tbody tr:last-child,
+    .table-stack tbody tr.is-last {
+      border-bottom: 0;
+    }
+
+    .table-stack tbody tr > * {
+      min-width: 0;
+      padding: 0;
+      border: 0;
+      vertical-align: baseline;
+    }
+
+    .table-stack tbody tr:hover > * {
+      background-color: transparent;
+    }
+
+    .table-stack tbody th {
+      font-weight: 600;
+    }
+
+    .table-stack td:nth-child(2) {
+      color: var(--color-ink);
+      font-weight: 600;
+    }
+
+    .table-stack td:nth-child(3) {
+      color: var(--color-faint);
+    }
+
+    .table-stack td[data-label]::before {
+      content: attr(data-label) ": ";
+      color: var(--color-faint);
+    }
+  }
+
+  /* Phones: title and kind share a line of running text, so any length wraps; the facts get a
+     line of their own; the description ends the block. The space between two cells in the
+     markup is part of the gap, hence the smaller margin on that side. */
+  @media (max-width: 39.99rem) {
+    .table-stack tbody tr,
+    .table-stack tbody th {
+      display: block;
+    }
+
+    .table-stack tbody td {
+      display: inline;
+    }
+
+    .table-stack td:nth-child(3)::before {
+      content: "\00b7";
+      margin: 0 0.5em 0 0.25em;
+    }
+
+    .table-stack td:nth-child(3):not(:nth-last-child(2))::after {
+      content: "\A";
+      white-space: pre;
+    }
+
+    .table-stack tbody td:nth-child(n + 4):not(:last-child) {
+      display: inline-block;
+      margin: 0.375rem 0.5rem 0 0;
+      vertical-align: middle;
+    }
+
+    .table-stack tbody td:last-child {
+      display: block;
+      margin-top: 0.375rem;
+    }
+  }
+
+  /* Tablets: three lines per record. Key and facts on the first; title and kind on the left of
+     the next two, the description on their right. */
+  @media (min-width: 40rem) and (max-width: 74.99rem) {
+    .table-stack tbody tr {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: baseline;
+      gap: 0.25rem 1rem;
+    }
+
+    .table-stack tbody th {
+      grid-area: 1 / 1;
+    }
+
+    .table-stack td:nth-child(2) {
+      grid-area: 2 / 1;
+    }
+
+    .table-stack td:nth-child(3) {
+      grid-area: 3 / 1;
+    }
+
+    .table-stack td:nth-child(4) {
+      grid-area: 1 / 2;
+    }
+
+    .table-stack td:nth-child(5) {
+      grid-area: 1 / 3;
+    }
+
+    /* A single fact starts where the description below it starts. */
+    .table-stack td:nth-child(4):nth-last-child(2) {
+      grid-column: 2 / -1;
+    }
+
+    .table-stack td:last-child {
+      grid-area: 2 / 2 / span 2 / -1;
+    }
+
+    /* No facts: the description takes the whole right-hand side. */
+    .table-stack td:nth-child(4):last-child {
+      grid-row: 1 / span 3;
+    }
+  }
+
+  /* ---- Code ------------------------------------------------------------ */
+
+  /* <pre class="code-block" tabindex="0"><code>...</code></pre>. Long lines scroll inside. */
+  .code-block {
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--color-code-line);
+    border-radius: var(--radius-box);
+    background-color: var(--color-code);
+    color: var(--color-code-ink);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: 1.7;
+    tab-size: 2;
+  }
+
+  .code-block .c {
+    color: var(--color-code-muted);
+  }
+
+  .code-block .a {
+    color: var(--color-code-accent);
+  }
+
+  /* <figure class="code-figure"><figcaption class="code-caption">label + copy button</figcaption><pre class="code-block"> */
+  .code-figure {
+    overflow: hidden;
+    border: 1px solid var(--color-code-line);
+    border-radius: var(--radius-box);
+    background-color: var(--color-code);
+  }
+
+  .code-figure .code-block {
+    border: 0;
+    border-radius: 0;
+  }
+
+  /* Label left, button right. With enlarged text on a narrow screen the button moves to a line
+     of its own instead of being pushed out of the figure. */
+  .code-caption {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0 0.75rem;
+    min-height: 2.75rem;
+    padding: 0.25rem 0.5rem 0.25rem 1.25rem;
+    border-bottom: 1px solid var(--color-code-line);
+    color: var(--color-code-muted);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+  }
+
+  .code-caption > :first-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .code-caption .btn {
+    margin-left: auto;
+    color: var(--color-code-ink);
+  }
+
+  .code-caption .btn:hover {
+    background-color: var(--color-code-line);
+    color: #ffffff;
+  }
+
+  /* ---- Callout --------------------------------------------------------- */
+
+  /* <div class="callout callout-warn" role="note"><Icon /><div><p class="callout-title">..</p><p>..</p></div></div> */
+  .callout {
+    display: flex;
+    gap: 0.75rem;
+    padding: 1rem 1.125rem;
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-box);
+    background-color: var(--color-subtle);
+    color: var(--color-ink);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+  }
+
+  .callout > .icon {
+    margin-top: 0.125em;
+    color: var(--color-muted);
+  }
+
+  .callout-title {
+    font-weight: 600;
+  }
+
+  .callout-info {
+    border-color: var(--color-info-line);
+    background-color: var(--color-info-soft);
+  }
+
+  .callout-info > .icon,
+  .callout-info .callout-title {
+    color: var(--color-info);
+  }
+
+  .callout-ok {
+    border-color: var(--color-ok-line);
+    background-color: var(--color-ok-soft);
+  }
+
+  .callout-ok > .icon,
+  .callout-ok .callout-title {
+    color: var(--color-ok);
+  }
+
+  .callout-warn {
+    border-color: var(--color-warn-line);
+    background-color: var(--color-warn-soft);
+  }
+
+  .callout-warn > .icon,
+  .callout-warn .callout-title {
+    color: var(--color-warn);
+  }
+
+  .callout-danger {
+    border-color: var(--color-danger-line);
+    background-color: var(--color-danger-soft);
+  }
+
+  .callout-danger > .icon,
+  .callout-danger .callout-title {
+    color: var(--color-danger);
+  }
+
+  /* ---- Breadcrumb ------------------------------------------------------ */
+
+  /* Use <Breadcrumbs items={crumbs} />; this is its styling. */
+  .breadcrumb ol {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0.5rem;
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    color: var(--color-faint);
+  }
+
+  .breadcrumb li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .breadcrumb li + li::before {
+    content: "/";
+    color: var(--color-line-control);
+  }
+
+  .breadcrumb a {
+    color: var(--color-muted);
+    text-decoration-line: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 0.2em;
+    transition: color 150ms ease, text-decoration-color 150ms ease;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-ink);
+    text-decoration-color: currentColor;
+  }
+
+  .breadcrumb [aria-current="page"] {
+    color: var(--color-ink);
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+
+  /* ---- Disclosure (FAQ) ------------------------------------------------ */
+
+  /* <details class="disclosure"><summary><h3>Question</h3><Icon name="chevron-down" /></summary>
+     <div class="disclosure-body prose">answer</div></details> */
+  .disclosure {
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .disclosure:first-of-type {
+    border-top: 1px solid var(--color-line);
+  }
+
+  .disclosure > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 3.5rem;
+    padding-block: 1rem;
+    color: var(--color-ink);
+    font-size: var(--text-base);
+    font-weight: 600;
+    line-height: 1.45;
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .disclosure > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .disclosure > summary > .icon {
+    color: var(--color-faint);
+    transition: transform 150ms ease;
+  }
+
+  .disclosure[open] > summary > .icon {
+    transform: rotate(180deg);
+  }
+
+  .disclosure-body {
+    max-width: var(--container-measure);
+    padding-bottom: 1.25rem;
+    color: var(--color-muted);
+  }
+
+  /* ---- Steps ----------------------------------------------------------- */
+
+  /* <ol class="steps"><li><h3 class="h4">Step title</h3><p>...</p></li></ol> */
+  .steps {
+    display: grid;
+    gap: var(--spacing-stack);
+    counter-reset: step;
+  }
+
+  .steps > li {
+    position: relative;
+    min-height: 2rem;
+    padding-left: 3rem;
+    counter-increment: step;
+  }
+
+  .steps > li::before {
+    content: counter(step);
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--color-line-strong);
+    border-radius: 999px;
+    color: var(--color-accent);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  /* ---- Forms ----------------------------------------------------------- */
+
+  /* <div class="field"><label class="label" for="x">..</label><input id="x" class="input" /><p class="hint">..</p></div> */
+  .field {
+    display: grid;
+    gap: 0.375rem;
+  }
+
+  .label {
+    color: var(--color-ink);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  /* Text input, select and textarea. 16px text, so iOS does not zoom on focus. */
+  .input {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--color-line-control);
+    border-radius: var(--radius-control);
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+    font-size: max(1rem, var(--text-sm));
+    line-height: 1.4;
+    transition: border-color 150ms ease;
+  }
+
+  .input::placeholder {
+    color: var(--color-faint);
+    opacity: 1;
+  }
+
+  .input:hover {
+    border-color: var(--color-muted);
+  }
+
+  .input:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .input[aria-invalid="true"] {
+    border-color: var(--color-danger);
+  }
+
+  .hint {
+    color: var(--color-faint);
+    font-size: var(--text-xs);
+    line-height: var(--text-xs--line-height);
+  }
+
+  .hint-error {
+    color: var(--color-danger);
+  }
+
+  /* <label class="check"><input type="checkbox" /> Text</label> */
+  .check {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    min-height: 2.75rem;
+    font-size: var(--text-sm);
+    cursor: pointer;
+  }
+
+  .check input {
+    width: 1.125rem;
+    height: 1.125rem;
+    flex-shrink: 0;
+    accent-color: var(--color-accent-solid);
+  }
+
+  /* ---- Dialog ---------------------------------------------------------- */
+
+  /* <dialog class="dialog" aria-labelledby="t"><div class="dialog-head"><h2 id="t" class="h3">..</h2></div>
+     <div class="dialog-body">..</div><div class="dialog-foot">buttons</div></dialog>, opened with showModal(). */
+  .dialog {
+    width: min(32rem, calc(100vw - 2 * var(--spacing-gutter)));
+    max-height: calc(100dvh - 2rem);
+    margin: auto;
+    padding: 0;
+    overflow: auto;
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-box);
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+  }
+
+  .dialog::backdrop {
+    background-color: rgb(2 6 23 / 0.6);
+  }
+
+  .dialog-head,
+  .dialog-body,
+  .dialog-foot {
+    padding: 1rem 1.25rem;
+  }
+
+  .dialog-head {
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .dialog-body {
+    color: var(--color-muted);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+  }
+
+  .dialog-foot {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    border-top: 1px solid var(--color-line);
+  }
+
+  /* ---- Prose ----------------------------------------------------------- */
+
+  /* Long-form article body. Styles plain elements, so rendered Markdown needs no classes. */
+  .prose {
+    max-width: var(--container-measure);
+    color: var(--color-muted);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    overflow-wrap: break-word;
+  }
+
+  .prose > * + * {
+    margin-top: 1.25em;
+  }
+
+  .prose :where(h2, h3, h4) {
+    color: var(--color-ink);
+    font-weight: 650;
+  }
+
+  .prose h2 {
+    margin-top: 2.25em;
+    font-size: var(--text-2xl);
+    line-height: var(--text-2xl--line-height);
+    letter-spacing: -0.018em;
+  }
+
+  .prose h3 {
+    margin-top: 1.75em;
+    font-size: var(--text-xl);
+    line-height: var(--text-xl--line-height);
+    letter-spacing: -0.012em;
+  }
+
+  .prose h4 {
+    margin-top: 1.5em;
+    font-size: var(--text-base);
+    line-height: 1.45;
+  }
+
+  .prose :where(h2, h3, h4) + * {
+    margin-top: 0.6em;
+  }
+
+  .prose > :first-child {
+    margin-top: 0;
+  }
+
+  .prose :where(strong, b) {
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+
+  .prose a {
+    color: var(--color-accent);
+    font-weight: 500;
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    transition: color 150ms ease;
+  }
+
+  .prose a:hover {
+    color: var(--color-accent-hover);
+    text-decoration-thickness: 2px;
+  }
+
+  .prose :where(ul, ol) {
+    padding-left: 1.5em;
+  }
+
+  .prose ul {
+    list-style: disc;
+  }
+
+  .prose ol {
+    list-style: decimal;
+  }
+
+  .prose li + li,
+  .prose li > :where(ul, ol) {
+    margin-top: 0.4em;
+  }
+
+  /* Blocks inside a list item or a quote: a "loose" Markdown list, a code block under a step. */
+  .prose :where(li, blockquote) > :where(p, blockquote, figure):not(:first-child) {
+    margin-top: 0.75em;
+  }
+
+  .prose :where(li, blockquote) > :where(pre, table) {
+    margin-block: 0.75em;
+  }
+
+  .prose :where(li, blockquote) > :where(pre, table):last-child {
+    margin-bottom: 0;
+  }
+
+  .prose li::marker {
+    color: var(--color-faint);
+  }
+
+  .prose ol > li::marker {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    font-weight: 500;
+  }
+
+  .prose blockquote {
+    padding-left: 1em;
+    border-left: 2px solid var(--color-accent);
+    color: var(--color-ink);
+  }
+
+  .prose hr {
+    margin-block: 2.5em;
+    border: 0;
+    border-top: 1px solid var(--color-line);
+  }
+
+  /* Inline code: the box is the .code rule in the Type section. */
+  .prose :where(:not(pre)) > code {
+    color: var(--color-ink);
+  }
+
+  .prose pre {
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--color-code-line);
+    border-radius: var(--radius-box);
+    background-color: var(--color-code);
+    color: var(--color-code-ink);
+    font-size: var(--text-sm);
+    line-height: 1.7;
+    overflow-wrap: normal;
+    tab-size: 2;
+  }
+
+  /* A table in Markdown has no wrapper, so the table itself becomes the scroll box
+     (position: relative for the same reason as .table-wrap). */
+  .prose table {
+    position: relative;
+    display: block;
+    width: max-content;
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-box);
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    text-align: left;
+    overflow-wrap: normal;
+  }
+
+  .prose :where(th, td) {
+    padding: 0.625rem 0.875rem;
+    border-bottom: 1px solid var(--color-line);
+    vertical-align: top;
+  }
+
+  .prose thead th {
+    background-color: var(--color-subtle);
+    color: var(--color-ink);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .prose tbody tr:last-child > * {
+    border-bottom: 0;
+  }
+
+  .prose img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-box);
+  }
+
+  .prose figcaption {
+    margin-top: 0.5em;
+    color: var(--color-faint);
+    font-size: var(--text-sm);
+  }
+
+  /* ---- Skip link ------------------------------------------------------- */
+
+  .skip-link {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 100;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-control);
+    background-color: var(--color-accent-solid);
+    color: var(--color-on-accent);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    transform: translateY(-200%);
+  }
+
+  .skip-link:focus {
+    transform: none;
+  }
 }
 
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
+/* Touch screens: the compact controls grow to a 44px target. */
+@media (pointer: coarse) {
+  .btn-sm,
+  .chip {
+    min-height: 2.75rem;
+  }
+
+  .breadcrumb a {
+    display: inline-flex;
+    align-items: center;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
 }
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+
+/* ==========================================================================
+   3. Accessibility rules that nothing may override
+   Left outside every layer on purpose: unlayered CSS beats Tailwind utilities,
+   so a stray `outline-none` cannot remove the focus ring.
+   ========================================================================== */
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.code-block:focus-visible,
+.code-figure :focus-visible,
+.prose pre:focus-visible {
+  outline-color: var(--color-code-accent);
+}
+
+.code-block:focus-visible,
+.prose pre:focus-visible,
+.table-wrap:focus-visible,
+.input:focus-visible {
+  outline-offset: -2px;
+}
+
+main:focus-visible {
+  outline: none;
+}
+
+/* Reduced motion: keyframe animations end at once and nothing transitions.
+   `transition: none`, not a very short duration: a 0.01ms transition is still created for every
+   element whose colour changes, and a theme switch on the 352-row list then blocked the page for
+   most of a second. No script here waits for a transitionend event. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -1,0 +1,12 @@
+---
+// Self-hosted fonts (Astro fonts API, configured under `fonts` in astro.config.mjs).
+// Each <Font> writes the @font-face rules and a --font-* variable; global.css maps those to
+// --font-sans and --font-mono. Astro adds the generated CSS to the CSP by hash.
+// Only the sans file is preloaded: it paints the first screen on every page. The mono file
+// loads when a page first uses it.
+// SeoHead.astro includes this; a page built on Base.astro never needs it directly.
+import { Font } from 'astro:assets';
+---
+
+<Font cssVariable="--font-inter" preload />
+<Font cssVariable="--font-jetbrains-mono" />

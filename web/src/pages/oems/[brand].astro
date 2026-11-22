@@ -1,0 +1,483 @@
+---
+// /oems/<oemId>: one static page per brand group of the rule set, and /oems/critical for the
+// protected list. Paths, counts, tables, titles, descriptions and JSON-LD are generated from
+// src/data/rules-dataset.json through src/data/brands.ts. The display copy for each brand (names,
+// guide links, the words `--manufacturer` accepts) is in that module.
+import Base from '../../layouts/Base.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import CopyButton from '../../components/CopyButton.astro';
+import Icon from '../../components/Icon.astro';
+import TierBadge from '../../components/TierBadge.astro';
+import { RULE_STATS, tierFor } from '../../data/tiers';
+import {
+  BRANDS,
+  BRAND_BY_ID,
+  actionLabel,
+  categoryLabel,
+  categorySplitText,
+  firstThatFits,
+  joinList,
+  plural,
+  tierSplitShort,
+  tierSplitText,
+} from '../../data/brands';
+import { SITE_VERSION } from '../../lib/version';
+import {
+  DATASET_ID,
+  GITHUB_REPO,
+  LICENSE_URL,
+  ORG_ID,
+  SITE_LANG,
+  SITE_NAME,
+  abs,
+  pageId,
+  type Crumb,
+  type JsonLdNode,
+} from '../../lib/seo';
+
+export function getStaticPaths() {
+  return BRANDS.map((brand) => ({ params: { brand: brand.id } }));
+}
+
+const brand = BRAND_BY_ID[Astro.params.brand as string];
+const others = BRANDS.filter((other) => other.id !== brand.id);
+const universal = BRANDS.find((other) => other.id === 'universal');
+const critical = BRANDS.find((other) => other.critical);
+
+const crumbs: Crumb[] = [
+  { name: 'Home', path: '/' },
+  { name: 'Package list by OEM', path: '/oems' },
+  { name: brand.name, path: brand.path },
+];
+
+// " | AI Phone Debloater" is added by the layout; the whole title should stay within 60 characters.
+const TITLE_ROOM = 60 - ` | ${SITE_NAME}`.length;
+
+const heading = brand.critical
+  ? `${brand.listName} that are never removed`
+  : `${brand.listName} bloatware list`;
+
+const title = brand.critical
+  ? firstThatFits([`${brand.titleName}: ${brand.count} Protected`, brand.titleName], TITLE_ROOM)
+  : firstThatFits(
+      [
+        `${brand.titleName} Bloatware List: ${plural(brand.count, 'Rule')}`,
+        `${brand.titleName} Bloatware List`,
+      ],
+      TITLE_ROOM,
+    );
+
+const description = brand.critical
+  ? `The ${brand.count} core Android packages that ${SITE_NAME} never disables or uninstalls, with the reason each one is protected. No tier or flag overrides the list.`
+  : firstThatFits(
+      [
+        `${brand.listName} bloatware list: ${plural(brand.count, 'package rule')} (${tierSplitShort(brand)}) with the package name, what each app does and the recommended ADB action.`,
+        `${brand.listName} bloatware list: ${plural(brand.count, 'package rule')} (${tierSplitShort(brand)}) with package name, purpose and recommended ADB action.`,
+      ],
+      160,
+    );
+
+// "The recommended action is disable for 35 and uninstall for 9."
+const actionParts = [
+  brand.disableCount ? `disable for ${brand.disableCount === brand.count ? `all ${brand.count}` : brand.disableCount}` : '',
+  brand.uninstallCount
+    ? `uninstall for ${brand.uninstallCount === brand.count ? `all ${brand.count}` : brand.uninstallCount}`
+    : '',
+].filter(Boolean);
+
+// The critical list reads better by area than in file order.
+const criticalRules = brand.critical
+  ? brand.categories.flatMap((category) => brand.rules.filter((rule) => rule.category === category.id))
+  : [];
+
+// Example commands. `--tier` acts on one tier; the lowest tier this list has is the example.
+const exampleTier = brand.tiers[0].tier.id;
+const manufacturerFlag = brand.manufacturers.length ? ` --manufacturer ${brand.manufacturers[0]}` : '';
+const engine = `python cli/src/debloat_engine.py --tier ${exampleTier}${manufacturerFlag}`;
+const cliCommands = [
+  { caption: 'Preview. Nothing is changed.', name: 'the preview command', text: `${engine} --dry-run` },
+  { caption: 'Apply. A snapshot is saved first.', name: 'the apply command', text: engine },
+];
+
+const rawRuleFile = (file: string) =>
+  `${GITHUB_REPO.replace('https://github.com/', 'https://raw.githubusercontent.com/')}/main/cli/rules/${file}`;
+
+// This brand's rule file as a part of the Dataset node on /oems.
+const brandDataset: JsonLdNode = {
+  '@type': 'Dataset',
+  '@id': `${abs(brand.path)}#dataset`,
+  name: heading,
+  description,
+  url: abs(brand.path),
+  version: SITE_VERSION,
+  license: LICENSE_URL,
+  isAccessibleForFree: true,
+  inLanguage: SITE_LANG,
+  creator: { '@id': ORG_ID },
+  isPartOf: { '@id': DATASET_ID },
+  mainEntityOfPage: { '@id': pageId(brand.path) },
+  distribution: brand.sourceFiles.map((file) => ({
+    '@type': 'DataDownload',
+    name: file,
+    encodingFormat: 'application/json',
+    contentUrl: rawRuleFile(file),
+  })),
+};
+---
+
+<Base title={title} description={description} path={brand.path} breadcrumbs={crumbs} jsonLd={[brandDataset]}>
+  <section class="section">
+    <div class="container-page">
+      <Breadcrumbs items={crumbs} />
+      <p class="eyebrow mt-stack-lg">{brand.critical ? 'Protected list' : 'Package list'}</p>
+      <h1 class="h1 mt-3">{heading}</h1>
+
+      {
+        brand.critical ? (
+          <>
+            <p class="lead mt-stack">
+              {SITE_NAME} never disables or uninstalls these {plural(brand.count, 'core Android package')}, whatever
+              tier or flag is used. They are the critical list, {tierSplitText(brand)}.
+            </p>
+            <p class="measure mt-stack text-muted">
+              The list holds {categorySplitText(brand)}. It is here so you can check a package name before you touch
+              it with another tool. It is a reference, not a debloat list: this page has no removal steps.
+            </p>
+          </>
+        ) : (
+          <>
+            <p class="lead mt-stack">
+              The {heading} has {plural(brand.count, 'package rule')}: {tierSplitText(brand)}. They cover
+              {categorySplitText(brand)}.
+            </p>
+            <p class="measure mt-stack text-muted">
+              {brand.scope} The recommended action is {joinList(actionParts)}.
+              {brand.id === 'universal' ? (
+                <>
+                  The CLI loads this list for every phone, next to the rule file of the phone's own brand.
+                  {critical && (
+                    <>
+                      The <a class="link" href={critical.path}>{plural(critical.count, 'critical package')}</a> are
+                      never changed.
+                    </>
+                  )}
+                </>
+              ) : (
+                universal &&
+                critical && (
+                  <>
+                    On these phones the
+                    <a class="link" href={universal.path}>{plural(universal.count, 'universal rule')}</a> apply as
+                    well, and the <a class="link" href={critical.path}>{plural(critical.count, 'critical package')}</a>
+                    are never changed.
+                  </>
+                )
+              )}
+            </p>
+          </>
+        )
+      }
+
+      <div class="mt-stack-lg flex flex-wrap gap-3">
+        {
+          brand.critical ? (
+            <a href="#packages" class="btn btn-primary">
+              <Icon name="list" />
+              See the {brand.count} packages
+            </a>
+          ) : (
+            <a href="/app" class="btn btn-primary">
+              Open the web app
+              <Icon name="arrow-right" />
+            </a>
+          )
+        }
+        <a href="/oems" class="btn btn-secondary">
+          <Icon name="arrow-left" />
+          All brands
+        </a>
+      </div>
+
+      <p class="meta mt-stack">
+        Source:
+        {
+          brand.sourceFiles.map((file, index) => (
+            <>
+              {index > 0 && ', '}
+              <a
+                class="link inline-flex items-center gap-1"
+                href={`${GITHUB_REPO}/blob/main/cli/rules/${file}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span class="pkg">{file}</span>
+                <Icon name="arrow-up-right" class="size-3" />
+                <span class="sr-only">(opens in a new tab)</span>
+              </a>
+            </>
+          ))
+        }
+        in {SITE_NAME} v{SITE_VERSION}, MIT license.
+      </p>
+    </div>
+  </section>
+
+  {
+    brand.critical ? (
+      <>
+        <section class="section section-alt">
+          <div class="container-page">
+            <div class="section-head">
+              <p class="eyebrow">Why</p>
+              <h2 class="h2">Why these packages are never changed</h2>
+              <p class="lead">
+                Android needs them to start, to place calls, to connect and to unlock. A phone without one of them may
+                not boot, or may lose calls, Wi-Fi, Bluetooth, settings or the lock screen.
+              </p>
+            </div>
+
+            <ul class="grid-auto">
+              <li class="card">
+                <Icon name="terminal" class="size-6 text-accent" />
+                <h3 class="h4 mt-4">The CLI refuses them</h3>
+                <p class="mt-2 text-sm text-muted">
+                  A plan that names a critical package stops before anything is changed, with any tier and any flag.
+                </p>
+              </li>
+              <li class="card">
+                <Icon name="monitor" class="size-6 text-accent" />
+                <h3 class="h4 mt-4">The web app and the bridge refuse them</h3>
+                <p class="mt-2 text-sm text-muted">
+                  The <a class="link" href="/app">web app</a> and the local ADB bridge check the same list before they
+                  act on a package.
+                </p>
+              </li>
+              <li class="card">
+                <Icon name="shield-check" class="size-6 text-accent" />
+                <h3 class="h4 mt-4">No rule file can override them</h3>
+                <p class="mt-2 text-sm text-muted">
+                  The rule validator rejects a brand rule for a package on this list, and the CLI ignores such a rule
+                  if it meets one.
+                </p>
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="section" id="packages">
+          <div class="container-page">
+            <div class="section-head">
+              <TierBadge tier={4} />
+              <h2 class="h2">The {brand.count} protected packages</h2>
+              <p class="lead">Grouped by the part of Android they belong to, with the reason each one is protected.</p>
+            </div>
+
+            <div class="table-wrap">
+              <table class="table table-compact table-stack">
+                <caption class="sr-only">{brand.listName}, by area</caption>
+                <thead>
+                  <tr>
+                    <th scope="col" class="min-[75rem]:w-[28%]">Package</th>
+                    <th scope="col" class="min-[75rem]:w-[17%]">Name</th>
+                    <th scope="col" class="min-[75rem]:w-[13rem]">Area</th>
+                    <th scope="col">Why it is protected</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {criticalRules.map((rule) => (
+                    <tr>
+                      <th scope="row">{rule.package}</th>
+                      <td>{rule.name}</td>
+                      <td>{categoryLabel(rule)}</td>
+                      <td>{rule.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </>
+    ) : (
+      <>
+        <section class="section section-alt">
+          <div class="container-page">
+            <div class="section-head">
+              <p class="eyebrow">Rules</p>
+              <h2 class="h2">{brand.name} packages by tier</h2>
+              <p class="lead">
+                Disable switches a package off and keeps it on the phone. Uninstall removes it for the current user
+                profile only; the system partition is not written to.
+              </p>
+            </div>
+
+            <div class="grid gap-stack-lg">
+              {brand.tiers.map(({ tier, count }) => (
+                <div id={`tier-${tier.id}`}>
+                  <h3 class="h3 flex flex-wrap items-center gap-3">
+                    <TierBadge tier={tier.id} />
+                    {plural(count, 'package')}
+                  </h3>
+                  <p class="measure mt-2 text-sm text-muted">
+                    {tier.audience} {tier.description}
+                  </p>
+                  <div class="table-wrap mt-stack">
+                    <table class="table table-compact table-stack">
+                      <caption class="sr-only">
+                        {heading}: {tier.label}, {tier.name}
+                      </caption>
+                      <thead>
+                        <tr>
+                          <th scope="col" class="min-[75rem]:w-[28%]">Package</th>
+                          <th scope="col" class="min-[75rem]:w-[17%]">App</th>
+                          <th scope="col" class="min-[75rem]:w-[9.5rem]">Category</th>
+                          <th scope="col" class="min-[75rem]:w-[6.5rem]">Action</th>
+                          <th scope="col">What it does</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {brand.rules
+                          .filter((rule) => tierFor(rule.tier).id === tier.id)
+                          .map((rule) => (
+                            <tr>
+                              <th scope="row">{rule.package}</th>
+                              <td>{rule.name}</td>
+                              <td>{categoryLabel(rule)}</td>
+                              <td data-label="Action">{actionLabel(rule)}</td>
+                              <td>{rule.description}</td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="apply">
+          <div class="container-page">
+            <div class="section-head">
+              <p class="eyebrow">Apply</p>
+              <h2 class="h2">How to apply the {brand.name} list</h2>
+              <p class="lead">
+                Both ways save a snapshot before every change and refuse the {RULE_STATS.critical} critical packages.
+              </p>
+            </div>
+
+            <div class="grid gap-stack lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+              <div class="card">
+                <Icon name="monitor" class="size-6 text-accent" />
+                <h3 class="h3 mt-4">In the browser</h3>
+                <p class="mt-2 text-muted">
+                  Open the web app and connect the phone over WebUSB or the local ADB bridge. It looks up every
+                  installed package in the rule set and shows the tier of each one that has a rule. Nothing is changed
+                  until you confirm.
+                </p>
+                <p class="mt-stack">
+                  <a href="/app" class="btn btn-primary">
+                    Open the web app
+                    <Icon name="arrow-right" />
+                  </a>
+                </p>
+              </div>
+
+              <div class="card min-w-0">
+                <Icon name="terminal" class="size-6 text-accent" />
+                <h3 class="h3 mt-4">With the CLI</h3>
+                <p class="mt-2 text-muted">
+                  From the project folder, preview {tierFor(exampleTier).label} first, then run the same command
+                  without <code class="code">--dry-run</code>.
+                </p>
+                {
+                  cliCommands.map((command) => (
+                    <figure class="code-figure mt-stack">
+                      <figcaption class="code-caption">
+                        <span>{command.caption}</span>
+                        <CopyButton text={command.text} name={command.name} announce="The command is on the clipboard." />
+                      </figcaption>
+                      <pre class="code-block" tabindex="0"><code>{command.text}</code></pre>
+                    </figure>
+                  ))
+                }
+                <ul class="mt-stack grid gap-2 text-sm text-muted">
+                  <li>
+                    <code class="code">--tier</code> acts on one tier at a time, across this list and
+                    {brand.id === 'universal' ? "the rule file of the phone's brand" : 'the universal list'}.
+                  </li>
+                  <li>
+                    The default action is disable. Add <code class="code">--action uninstall</code> to uninstall
+                    instead.
+                  </li>
+                  {brand.manufacturers.length > 0 ? (
+                    <li>
+                      The CLI reads the manufacturer from the phone and loads this rule file by itself.
+                      <code class="code">--manufacturer</code> forces it; for this file it accepts
+                      {brand.manufacturers.map((word, index) => (
+                        <>{index > 0 && (index === brand.manufacturers.length - 1 ? ' or ' : ', ')}<code class="code">{word}</code></>
+                      ))}.
+                    </li>
+                  ) : (
+                    <li>This list is loaded for every phone, so it needs no brand flag.</li>
+                  )}
+                </ul>
+                <p class="mt-stack">
+                  <a class="link inline-flex min-h-11 items-center gap-1.5" href="/#cli">
+                    Install the CLI
+                    <Icon name="arrow-right" class="size-4" />
+                  </a>
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </>
+    )
+  }
+
+  <section class="section section-alt">
+    <div class="container-page">
+      <div class="grid-auto-lg">
+        <div>
+          <h2 class="h3">Guides</h2>
+          <ul class="mt-stack grid gap-1">
+            {
+              brand.allGuides.map((guide) => (
+                <li>
+                  <a class="link inline-flex min-h-11 items-center gap-1.5" href={guide.path}>
+                    <Icon name="book-open" class="size-4" />
+                    {guide.title}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+
+        <div>
+          <h2 class="h3">Other lists</h2>
+          <ul class="mt-stack flex flex-wrap gap-2">
+            {
+              others.map((other) => (
+                <li>
+                  <a class="chip" href={other.path}>
+                    {other.name}
+                    <span class="font-mono text-xs">{other.count}</span>
+                    <span class="sr-only">{other.count === 1 ? 'rule' : 'rules'}</span>
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+          <p class="mt-stack">
+            <a class="link inline-flex min-h-11 items-center gap-1.5" href="/oems#rules-explorer">
+              Search all {RULE_STATS.total} rules
+              <Icon name="arrow-right" class="size-4" />
+            </a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
