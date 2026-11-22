@@ -18,7 +18,7 @@
       "name": "Bixby Voice Wakeup",
       "tier": 1,
       "category": "voice_assistant",
-      "description": "Always-listening hotword microphone detector for 'Hi Bixby'. Disabling saves significant battery life.",
+      "description": "Always-listening hotword microphone detector for 'Hi Bixby'. Disabling stops the hotword listener.",
       "safe_to_remove": true,
       "recommended_action": "disable"
     },

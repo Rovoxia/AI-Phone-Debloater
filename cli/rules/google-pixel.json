@@ -45,7 +45,7 @@
       "name": "Pixel Live Wallpapers",
       "tier": 2,
       "category": "optional_feature",
-      "description": "Animated live wallpaper backgrounds. Disabling frees up RAM and GPU rendering overhead.",
+      "description": "Animated live wallpaper backgrounds. Not needed if you use a static wallpaper.",
       "safe_to_remove": true,
       "recommended_action": "disable"
     },
@@ -117,7 +117,7 @@
       "name": "Digital Wellbeing",
       "tier": 2,
       "category": "optional_feature",
-      "description": "Constantly logs app foreground usage, notification counts, and unlock frequencies. Disabling noticeably saves battery and CPU cycles.",
+      "description": "Logs app foreground usage, notification counts, and unlock frequency for Digital Wellbeing. Disabling stops that logging and the Wellbeing dashboard.",
       "safe_to_remove": true,
       "recommended_action": "disable"
     },
