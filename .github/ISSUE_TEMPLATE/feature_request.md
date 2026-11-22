@@ -22,5 +22,5 @@ assignees: ""
 
 ### Checklist
 - [ ] I searched existing issues to avoid duplicates
-- [ ] I read [CONTRIBUTING.md](CONTRIBUTING.md)
+- [ ] I read [CONTRIBUTING.md](https://github.com/Rovoxia/AI-Phone-Debloater/blob/main/CONTRIBUTING.md)
 - [ ] I am willing to submit a pull request for this feature (optional)

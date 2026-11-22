@@ -11,11 +11,13 @@ Endpoints:
     GET  /health        | /api/health
     GET  /devices       | /api/devices
     GET  /packages?serial=X   | /api/packages?serial=X
-    GET  /packages?serial=X&view=disabled
+    GET  /packages?serial=X&view=disabled|installed
     GET  /device?serial=X | /api/device?serial=X
     POST /execute       | /api/execute   {serial, mode, action, packages}
     POST /restore       | /api/restore   {serial, packages}
-    POST /shutdown
+
+Every request must be addressed to 127.0.0.1/localhost (Host header) and, when
+it carries an Origin, come from an allowed web origin (see ALLOWED_ORIGINS).
 """
 
 from __future__ import annotations
@@ -25,7 +27,6 @@ import os
 import re
 import shutil
 import signal
-import socket
 import subprocess
 import sys
 import threading
@@ -33,14 +34,22 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qsl, urlsplit
+
+# A device model or home directory in a log line must not abort a request.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
 # ---------------------------------------------------------------------------
-# Path resolution (script lives at cli/src/bridge_server.py)
+# Path resolution (script lives at cli/src/bridge_server.py, or src/ when installed flat)
 # ---------------------------------------------------------------------------
 
 SCRIPT_DIR = Path(__file__).resolve().parent          # cli/src
 PROJECT_ROOT = SCRIPT_DIR.parent.parent                # repo root
-RULES_DIR = PROJECT_ROOT / "cli" / "rules"
+RULES_DIR = SCRIPT_DIR.parent / "rules"
 CRITICAL_FILE = RULES_DIR / "critical-do-not-touch.json"
 
 DEFAULT_PORT = 53123
@@ -60,21 +69,24 @@ VERSION = load_version()
 TIMESTAMP_FORMAT = "%Y%m%d_%H%M%S"
 
 BACKUPS_DIR = Path.home() / "AiPhoneDebloater" / "backups"
-LOCAL_BACKUPS_DIR = PROJECT_ROOT / "cli" / "backups"
 
-# Package name validation (exact regex required by the bridge spec).
+# Package name validation (exact regex required by the bridge spec); used with fullmatch.
 PACKAGE_RE = re.compile(r"^[a-zA-Z0-9._]+$")
 
 ALLOWED_ACTIONS = ("disable", "uninstall", "enable")
 ALLOWED_MODES = ("dry-run", "apply")
 
-# CORS headers applied to every response.
-CORS_HEADERS = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
-    "Access-Control-Max-Age": "86400",
-}
+# Request gate. The Host check stops DNS rebinding; the Origin check stops other
+# websites driving the bridge. Extra origins come from --allow-origin.
+_LOOPBACK = r"(?:127\.0\.0\.1|localhost)(?::[0-9]{1,5})?"
+HOST_RE = re.compile(_LOOPBACK, re.IGNORECASE)
+LOCAL_ORIGIN_RE = re.compile("http://" + _LOOPBACK)
+ALLOWED_ORIGINS: set[str] = {"https://debloater.rovoxia.com"}
+
+MAX_BODY_BYTES = 1024 * 1024
+
+# Serialises device mutations (snapshot + pm calls) across request threads.
+_APPLY_LOCK = threading.Lock()
 
 # ---------------------------------------------------------------------------
 # Small helpers
@@ -84,20 +96,8 @@ def _log(msg: str) -> None:
     print(f"[bridge] {msg}", flush=True)
 
 
-def load_version() -> str:
-    for cand in (PROJECT_ROOT / "VERSION", SCRIPT_DIR.parent / "VERSION", Path.cwd() / "VERSION"):
-        try:
-            if cand.is_file():
-                val = cand.read_text(encoding="utf-8").strip()
-                if val:
-                    return val
-        except (OSError, ValueError):
-            pass
-    return VERSION
-
-
 def load_critical_packages() -> set[str]:
-    """Load the 89 critical (Tier 4) packages that must never be modified."""
+    """Load the critical (Tier 4) packages that must never be disabled or uninstalled."""
     critical: set[str] = set()
     try:
         with CRITICAL_FILE.open("r", encoding="utf-8") as fh:
@@ -106,7 +106,7 @@ def load_critical_packages() -> set[str]:
         for entry in rules:
             if isinstance(entry, dict) and isinstance(entry.get("package"), str):
                 critical.add(entry["package"])
-    except (OSError, ValueError):
+    except (OSError, ValueError, AttributeError, TypeError):
         pass
     return critical
 
@@ -115,7 +115,11 @@ CRITICAL_PACKAGES: set[str] = load_critical_packages()
 
 
 def is_valid_package(pkg: Any) -> bool:
-    return isinstance(pkg, str) and bool(PACKAGE_RE.match(pkg))
+    return isinstance(pkg, str) and bool(PACKAGE_RE.fullmatch(pkg))
+
+
+def origin_allowed(origin: str) -> bool:
+    return origin in ALLOWED_ORIGINS or bool(LOCAL_ORIGIN_RE.fullmatch(origin))
 
 
 def is_critical(pkg: str) -> bool:
@@ -141,18 +145,12 @@ def discover_adb(explicit: str | None = None) -> str:
     if env_path:
         candidates.append(env_path)
 
-    bundled = [
-        str(PROJECT_ROOT / "cli" / "tools" / "platform-tools" / "adb.exe"),
-        str(PROJECT_ROOT / "cli" / "tools" / "platform-tools" / "adb"),
-        str(Path.cwd() / "cli" / "tools" / "platform-tools" / "adb.exe"),
-        str(Path.cwd() / "cli" / "tools" / "platform-tools" / "adb"),
-        str(Path.cwd() / "tools" / "platform-tools" / "adb.exe"),
-        str(Path.cwd() / "tools" / "platform-tools" / "adb"),
-        str(Path.cwd() / "platform-tools" / "adb.exe"),
-        str(Path.cwd() / "platform-tools" / "adb"),
-    ]
-    candidates.extend(bundled)
-    candidates.append("adb")
+    bundled = SCRIPT_DIR.parent / "tools" / "platform-tools"
+    candidates.extend([str(bundled / "adb.exe"), str(bundled / "adb")])
+    # PATH, one directory at a time. A bare "adb" is never used: on Windows both
+    # shutil.which and CreateProcess look in the current working directory
+    # first, so a planted adb.exe there would win.
+    candidates.extend(os.path.join(d, "adb") for d in os.get_exec_path())
     candidates.extend(
         [
             r"C:\platform-tools\adb.exe",
@@ -168,7 +166,8 @@ def discover_adb(explicit: str | None = None) -> str:
     )
 
     for cand in candidates:
-        if not cand:
+        # Only a path the user chose may be relative to the working directory.
+        if not cand or (not os.path.isabs(cand) and cand not in (explicit, env_path)):
             continue
         p = Path(cand)
         try:
@@ -180,7 +179,7 @@ def discover_adb(explicit: str | None = None) -> str:
         except (OSError, ValueError):
             continue
 
-    return "adb"  # last resort; subprocess will surface a clear error
+    return str(bundled / "adb")  # not found; run_adb reports this path in a clear error
 
 
 def run_adb(args: list[str], adb_path: str, serial: str | None = None,
@@ -277,9 +276,9 @@ def adb_device_props(adb_path: str, serial: str) -> dict[str, str]:
     return props
 
 
-def adb_packages(adb_path: str, serial: str) -> list[str]:
+def adb_packages(adb_path: str, serial: str, installed_only: bool = False) -> list[str]:
     rc, out, err = run_adb(
-        ["shell", "pm", "list", "packages", "-u", "--user", "0"],
+        ["shell", "pm", "list", "packages", *([] if installed_only else ["-u"]), "--user", "0"],
         adb_path,
         serial=serial,
         timeout=30.0,
@@ -322,18 +321,16 @@ def write_snapshot(model: str, packages_meta: list[dict[str, Any]], adb_path: st
     BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
     ts = datetime.now().strftime(TIMESTAMP_FORMAT)
     path = snapshot_path(model, ts)
-    enabled_set = set()
-    user0_set = set()
-    try:
-        _, out, _ = run_adb(["shell", "pm", "list", "packages", "--user", "0"], adb_path, serial=serial)
-        user0_set = {line[len("package:"):].strip() for line in out.splitlines() if line.startswith("package:")}
-    except RuntimeError:
-        pass
-    try:
-        _, out, _ = run_adb(["shell", "pm", "list", "packages", "--user", "0", "-e"], adb_path, serial=serial)
-        enabled_set = {line[len("package:"):].strip() for line in out.splitlines() if line.startswith("package:")}
-    except RuntimeError:
-        pass
+    # A snapshot that could not read the device state is worthless for restore:
+    # raise (the caller aborts) instead of recording every package as absent.
+    sets = []
+    for extra in ([], ["-e"]):
+        rc, out, err = run_adb(["shell", "pm", "list", "packages", "--user", "0", *extra], adb_path, serial=serial)
+        pkgs = {line[len("package:"):].strip() for line in out.splitlines() if line.startswith("package:")}
+        if rc != 0 or not pkgs:
+            raise RuntimeError(f"pm list packages failed: {err.strip() or out.strip() or f'exit {rc}'}")
+        sets.append(pkgs)
+    user0_set, enabled_set = sets
     meta_by_name: dict[str, dict[str, Any]] = {}
     for m in packages_meta or []:
         if isinstance(m, dict) and m.get("name"):
@@ -372,67 +369,86 @@ def write_snapshot(model: str, packages_meta: list[dict[str, Any]], adb_path: st
 class BridgeHandler(BaseHTTPRequestHandler):
     server_version = "AI-Phone-DebloaterBridge/1.0"
 
-    def log_message(self, fmt: str, *args) -> None:
-        # Keep the bridge quiet; only log errors to stderr.
-        if args and ("404" in fmt or "500" in fmt or "Error" in fmt):
-            super().log_message(fmt, *args)
+    _origin: str | None = None  # validated Origin of the current request, set by _gate
+
+    def log_request(self, code: Any = "-", size: Any = "-") -> None:
+        # Keep the bridge quiet; only log error responses to stderr.
+        if isinstance(code, int) and code >= 400:
+            super().log_request(code, size)
 
     # -- request plumbing ---------------------------------------------------
 
-    def _send_json(self, status: int, payload: dict[str, Any], extra_headers: dict[str, str] | None = None) -> None:
+    def _gate(self) -> bool:
+        """Reject (and answer) requests that fail the Host/Origin/Content-Type checks."""
+        self._origin = None
+        origin = self.headers.get("Origin")
+        if not HOST_RE.fullmatch(self.headers.get("Host") or ""):
+            self._send_json(403, {"success": False, "error": "forbidden Host header"})
+            return False
+        if origin is not None and not origin_allowed(origin):
+            self._send_json(403, {"success": False, "error": "origin not allowed (see --allow-origin)"})
+            return False
+        self._origin = origin
+        if self.command == "POST" and self.headers.get_content_type() != "application/json":
+            self._send_json(415, {"success": False, "error": "Content-Type must be application/json"})
+            return False
+        return True
+
+    def _send_cors(self) -> None:
+        if self._origin:
+            self.send_header("Access-Control-Allow-Origin", self._origin)
+        self.send_header("Vary", "Origin")
+
+    def _send_json(self, status: int, payload: dict[str, Any]) -> None:
         body = json.dumps(payload).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
-        self.send_header("Access-Control-Allow-Origin", "*")
-        if extra_headers:
-            for k, v in extra_headers.items():
-                self.send_header(k, v)
+        self._send_cors()
         self.end_headers()
         self.wfile.write(body)
 
-    def _read_body(self) -> bytes:
-        length = int(self.headers.get("Content-Length") or 0)
-        return self.rfile.read(length) if length > 0 else b""
-
     def _parse_body(self) -> dict[str, Any] | None:
-        raw = self._read_body()
-        if not raw:
-            return None
+        """Return the JSON object body, or None if it is missing, oversized or not an object."""
         try:
-            return json.loads(raw.decode("utf-8"))
-        except (ValueError, UnicodeDecodeError):
+            length = int(self.headers.get("Content-Length") or 0)
+            if not 0 < length <= MAX_BODY_BYTES:
+                return None
+            body = json.loads(self.rfile.read(length))
+        except (ValueError, RecursionError):
             return None
-
-    def _cors_preflight(self) -> None:
-        self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
-        self.send_header("Access-Control-Max-Age", "86400")
-        self.end_headers()
+        return body if isinstance(body, dict) else None
 
     # -- routing -----------------------------------------------------------
 
     def do_OPTIONS(self) -> None:
-        self._cors_preflight()
+        if not self._gate():
+            return
+        self.send_response(204)
+        self._send_cors()
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+        self.send_header("Access-Control-Allow-Private-Network", "true")
+        self.send_header("Access-Control-Max-Age", "86400")
+        self.end_headers()
 
     def do_GET(self) -> None:
-        path = self.path.split("?", 1)[0].rstrip("/")
-        query = self.path.split("?", 1)[1] if "?" in self.path else ""
-        params: dict[str, str] = {}
-        if query:
-            for part in query.split("&"):
-                if "=" in part:
-                    k, v = part.split("=", 1)
-                    params[k] = v
+        if not self._gate():
+            return
+        try:
+            url = urlsplit(self.path)
+        except ValueError:
+            self._send_json(400, {"success": False, "error": "invalid request path"})
+            return
+        path = url.path.rstrip("/")
+        params = dict(parse_qsl(url.query))
 
         adb_path = discover_adb()
 
         if path in ("/health", "/api/health"):
             self._send_json(200, {
                 "status": "ok",
-                "version": load_version(),
+                "version": VERSION,
                 "adb_available": adb_available(adb_path),
                 "adb_path": adb_path,
             })
@@ -447,13 +463,13 @@ class BridgeHandler(BaseHTTPRequestHandler):
             if not serial:
                 self._send_json(400, {"success": False, "error": "serial query parameter is required"})
                 return
-            if not is_valid_package(serial) and ":" not in serial:
-                # serials can be IP:Port for wireless; only validate plain serials
-                pass
             try:
                 if params.get("view") == "disabled":
                     pkgs = adb_disabled_packages(adb_path, serial)
                     self._send_json(200, {"view": "disabled", "packages": pkgs})
+                elif params.get("view") == "installed":
+                    pkgs = adb_packages(adb_path, serial, installed_only=True)
+                    self._send_json(200, {"view": "installed", "packages": pkgs})
                 else:
                     pkgs = adb_packages(adb_path, serial)
                     self._send_json(200, {"view": "all", "packages": pkgs})
@@ -473,19 +489,23 @@ class BridgeHandler(BaseHTTPRequestHandler):
             self._send_json(404, {"success": False, "error": "not found"})
 
     def do_POST(self) -> None:
+        if not self._gate():
+            return
         path = self.path.split("?", 1)[0].rstrip("/")
         body = self._parse_body()
         if body is None:
-            self._send_json(400, {"success": False, "error": "invalid JSON body"})
+            self._send_json(400, {"success": False, "error": "body must be a JSON object"})
             return
 
         if path in ("/execute", "/api/execute"):
-            self._handle_execute(body)
+            if body.get("mode") == "apply":
+                with _APPLY_LOCK:
+                    self._handle_execute(body)
+            else:
+                self._handle_execute(body)
         elif path in ("/restore", "/api/restore"):
-            self._handle_restore(body)
-        elif path == "/shutdown":
-            self._send_json(200, {"success": True, "message": "shutting down"})
-            threading.Thread(target=self.server.shutdown, daemon=True).start()
+            with _APPLY_LOCK:
+                self._handle_restore(body)
         else:
             self._send_json(404, {"success": False, "error": "not found"})
 
@@ -497,8 +517,8 @@ class BridgeHandler(BaseHTTPRequestHandler):
         action = body.get("action", "")
         packages = body.get("packages", [])
 
-        if not serial:
-            self._send_json(400, {"success": False, "error": "serial is required"})
+        if not serial or not isinstance(serial, str):
+            self._send_json(400, {"success": False, "error": "serial is required (string)"})
             return
         if mode not in ALLOWED_MODES:
             self._send_json(400, {"success": False, "error": f"mode must be one of {ALLOWED_MODES}"})
@@ -506,8 +526,8 @@ class BridgeHandler(BaseHTTPRequestHandler):
         if action not in ALLOWED_ACTIONS:
             self._send_json(400, {"success": False, "error": f"action must be one of {ALLOWED_ACTIONS}"})
             return
-        if not isinstance(packages, list):
-            self._send_json(400, {"success": False, "error": "packages must be a list"})
+        if not isinstance(packages, list) or not all(isinstance(p, str) for p in packages):
+            self._send_json(400, {"success": False, "error": "packages must be a list of strings"})
             return
 
         adb_path = discover_adb()
@@ -515,6 +535,7 @@ class BridgeHandler(BaseHTTPRequestHandler):
         planned: list[str] = []
 
         # Partition packages: critical (protected) vs actionable.
+        # Enabling a critical package is recovery, so only disable/uninstall are blocked.
         actionable: list[str] = []
         seen: set[str] = set()
         for pkg in packages:
@@ -524,7 +545,7 @@ class BridgeHandler(BaseHTTPRequestHandler):
             if not is_valid_package(pkg):
                 results.append({"package": str(pkg), "status": "failed", "output": "invalid package name"})
                 continue
-            if is_critical(pkg):
+            if action != "enable" and is_critical(pkg):
                 results.append({"package": pkg, "status": "skipped_protected", "output": "critical package, protected"})
                 _log(f"skipped protected package: {pkg}")
                 continue
@@ -562,7 +583,8 @@ class BridgeHandler(BaseHTTPRequestHandler):
         try:
             snap = write_snapshot(model, [], adb_path, serial, actionable)
             _log(f"snapshot written: {snap}")
-        except OSError as exc:
+        except (OSError, RuntimeError) as exc:
+            _log(f"snapshot failed, nothing changed: {exc}")
             self._send_json(500, {"success": False, "error": f"snapshot failed, aborting: {exc}"})
             return
 
@@ -590,11 +612,11 @@ class BridgeHandler(BaseHTTPRequestHandler):
     def _handle_restore(self, body: dict[str, Any]) -> None:
         serial = body.get("serial", "")
         packages = body.get("packages", [])
-        if not serial:
-            self._send_json(400, {"success": False, "error": "serial is required"})
+        if not serial or not isinstance(serial, str):
+            self._send_json(400, {"success": False, "error": "serial is required (string)"})
             return
-        if not isinstance(packages, list):
-            self._send_json(400, {"success": False, "error": "packages must be a list"})
+        if not isinstance(packages, list) or not all(isinstance(p, str) for p in packages):
+            self._send_json(400, {"success": False, "error": "packages must be a list of strings"})
             return
 
         adb_path = discover_adb()
@@ -603,9 +625,7 @@ class BridgeHandler(BaseHTTPRequestHandler):
             if not is_valid_package(pkg):
                 results.append({"package": str(pkg), "status": "failed", "output": "invalid package name"})
                 continue
-            if is_critical(pkg):
-                results.append({"package": pkg, "status": "skipped_protected", "output": "critical package, protected"})
-                continue
+            # No critical guard: reinstalling a package for user 0 is recovery.
             shell_cmd = f"cmd package install-existing --user 0 {pkg}"
             try:
                 rc, out, err = run_adb(["shell", shell_cmd], adb_path, serial=serial, timeout=30.0)
@@ -628,37 +648,24 @@ class BridgeHandler(BaseHTTPRequestHandler):
 # ---------------------------------------------------------------------------
 
 class ReusableThreadingHTTPServer(ThreadingHTTPServer):
-    """ThreadingHTTPServer with immediate address reuse enabled on socket."""
+    """ThreadingHTTPServer with immediate address reuse (POSIX only)."""
 
-    allow_reuse_address = True
+    # On Windows SO_REUSEADDR would let a second bridge bind the same port.
+    allow_reuse_address = os.name != "nt"
     daemon_threads = True
 
 
-def find_free_port(start: int = DEFAULT_PORT) -> int:
-    for port in range(start, start + 200):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            try:
-                s.bind(("127.0.0.1", port))
-                return port
-            except OSError:
-                continue
-    raise OSError(f"could not find a free port starting at {start}")
-
-
-def start_bridge(port: int = DEFAULT_PORT, host: str = "127.0.0.1", fallback_port: bool = True) -> None:
-    """Start the bridge server on ``port`` (falls back to a free port if busy unless fallback_port=False)."""
-    actual_port = port
+def start_bridge(port: int = DEFAULT_PORT, allow_origins: tuple[str, ...] | list[str] = ()) -> None:
+    """Start the bridge on 127.0.0.1:``port``; exits non-zero if it cannot start safely."""
+    if not CRITICAL_PACKAGES:
+        sys.exit(f"[bridge] refusing to start: no critical packages loaded from {CRITICAL_FILE}")
+    ALLOWED_ORIGINS.update(o.rstrip("/") for o in allow_origins)
     try:
-        httpd = ReusableThreadingHTTPServer((host, port), BridgeHandler)
-    except OSError as err:
-        if not fallback_port:
-            _log(f"port {port} is unavailable: {err}")
-            raise
-        actual_port = find_free_port(port)
-        _log(f"port {port} busy, using {actual_port}")
-        httpd = ReusableThreadingHTTPServer((host, actual_port), BridgeHandler)
+        httpd = ReusableThreadingHTTPServer(("127.0.0.1", port), BridgeHandler)
+    except (OSError, OverflowError) as err:
+        sys.exit(f"[bridge] port {port} in use — is the bridge already running? ({err})")
 
-    _log(f"AI-Phone-Debloater Local ADB Bridge running at http://{host}:{actual_port} (v{VERSION})")
+    _log(f"AI-Phone-Debloater Local ADB Bridge running at http://127.0.0.1:{port} (v{VERSION})")
 
     stop_event = threading.Event()
 
@@ -690,13 +697,14 @@ def main() -> int:
 
     parser = argparse.ArgumentParser(description="AI-Phone-Debloater Local ADB Bridge HTTP Server")
     parser.add_argument("--port", "-p", type=int, default=DEFAULT_PORT, help=f"HTTP server port (default: {DEFAULT_PORT})")
-    parser.add_argument("--host", type=str, default="127.0.0.1", help="HTTP server bind host (default: 127.0.0.1)")
-    parser.add_argument("--strict-port", action="store_true", help="Fail if the requested port is busy rather than selecting a fallback")
+    parser.add_argument("--allow-origin", action="append", default=[], metavar="URL",
+                        help="Extra web origin allowed to call the bridge, e.g. https://my-fork.example (repeatable)")
+    parser.add_argument("--strict-port", action="store_true", help=argparse.SUPPRESS)  # no-op, kept for old launch scripts
     parser.add_argument("--version", "-v", action="version", version=f"AI-Phone-Debloater Bridge Server v{VERSION}")
     args = parser.parse_args()
 
     try:
-        start_bridge(port=args.port, host=args.host, fallback_port=not args.strict_port)
+        start_bridge(port=args.port, allow_origins=args.allow_origin)
         return 0
     except (OSError, RuntimeError) as exc:
         _log(f"Server error: {exc}")

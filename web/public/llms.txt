@@ -12,7 +12,7 @@ AI-Phone-Debloater is an open-source, rootless Android bloatware removal engine 
 - GitHub Repository: https://github.com/Rovoxia/AI-Phone-Debloater.git
 - Author / Organization: Rovoxia (https://rovoxia.com)
 - License: MIT License (100% Free & Open Source)
-- Core Engine: Python 3.8+ (`cli/src/debloat_engine.py`, standard library only, zero pip install)
+- Core Engine: Python 3.11+ (`cli/src/debloat_engine.py`, standard library only, zero pip install)
 - Safety Rules: 352 curated rules across 4 safety tiers with code-level hard-blocked critical blacklist of 89 packages.
 
 ## Instant 1-Command Runners (Zero-Git Required)

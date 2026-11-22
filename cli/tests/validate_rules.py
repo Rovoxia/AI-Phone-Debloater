@@ -98,18 +98,10 @@ def main() -> int:
         return 1
     version = vfile.read_text(encoding="utf-8").strip()
     import re
-    if not re.match(r"^\d+\.\d+\.\d+", version):
+    if not re.fullmatch(r"\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?", version):
         print(f"ERROR: VERSION '{version}' is not valid SemVer (e.g. 1.0.0)!")
         return 1
     print(f"Verified VERSION file: v{version}")
-
-    # Synchronize version metadata across manifests
-    sys.path.insert(0, str(repo_root / "cli"))
-    try:
-        from sync_version import sync_all
-        sync_all()
-    except (ImportError, OSError, ValueError) as e:
-        print(f"WARNING: Could not sync version metadata: {e}")
 
     return 0
 

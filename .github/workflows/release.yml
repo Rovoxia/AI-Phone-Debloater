@@ -30,7 +30,7 @@ jobs:
       - name: Determine version
         id: ver
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
             TAG="${GITHUB_REF#refs/tags/}"
           else
             TAG="v$(cat VERSION | tr -d '\r\n')"
@@ -40,10 +40,12 @@ jobs:
           echo "Version: $TAG"
 
       - name: Verify version matches VERSION file
+        env:
+          TAG: ${{ steps.ver.outputs.tag }}
         run: |
           FILE_VER=$(cat VERSION | tr -d '\r\n')
-          if [ "${{ steps.ver.outputs.tag }}" != "v$FILE_VER" ]; then
-            echo "::error::Tag ${{ steps.ver.outputs.tag }} does not match VERSION file ($FILE_VER)"
+          if [ "$TAG" != "v$FILE_VER" ]; then
+            echo "::error::Tag $TAG does not match VERSION file ($FILE_VER)"
             exit 1
           fi
 
@@ -56,20 +58,24 @@ jobs:
 
       - name: Skip when already released
         if: steps.check.outputs.latest_release == steps.ver.outputs.tag
-        run: echo "Release ${{ steps.ver.outputs.tag }} already exists. Skipping."
+        env:
+          TAG: ${{ steps.ver.outputs.tag }}
+        run: echo "Release $TAG already exists. Skipping."
 
       - name: Generate changelog
         if: steps.check.outputs.latest_release != steps.ver.outputs.tag
+        env:
+          TAG: ${{ steps.ver.outputs.tag }}
+          LAST_TAG: ${{ steps.check.outputs.latest_release }}
         run: |
-          LAST_TAG="${{ steps.check.outputs.latest_release }}"
           if [ -n "$LAST_TAG" ] && [ "$LAST_TAG" != "none" ]; then
             RANGE="${LAST_TAG}..HEAD"
           else
             RANGE="HEAD"
           fi
-          NOTES=$(git log --pretty=format:"%s" $RANGE | grep -v "^\s*$" | head -100)
+          NOTES=$(git log --pretty=format:"%s" "$RANGE" | grep -v "^\s*$" | head -100)
           {
-            echo "# Release ${{ steps.ver.outputs.tag }}"
+            echo "# Release $TAG"
             echo ""
             echo "## Changes"
             echo '```'
@@ -79,10 +85,12 @@ jobs:
 
       - name: Update changelog.md
         if: steps.check.outputs.latest_release != steps.ver.outputs.tag
+        env:
+          TAG: ${{ steps.ver.outputs.tag }}
         run: |
           {
             echo ""
-            echo "# Release ${{ steps.ver.outputs.tag }}"
+            echo "# Release $TAG"
             echo ""
             echo "## Changes"
             echo '```'
@@ -90,12 +98,14 @@ jobs:
             echo '```'
           } >> CHANGELOG.md
           git add CHANGELOG.md
-          git -c user.name="Rovoxia" -c user.email="devs@rovoxia.com" commit -m "docs: update changelog for ${{ steps.ver.outputs.tag }}" || true
+          git -c user.name="Rovoxia" -c user.email="devs@rovoxia.com" commit -m "docs: update changelog for $TAG" || true
           git push origin HEAD || true
 
       - name: Create GitHub Release
         if: steps.check.outputs.latest_release != steps.ver.outputs.tag
+        env:
+          TAG: ${{ steps.ver.outputs.tag }}
         run: |
-          gh release create "${{ steps.ver.outputs.tag }}" \
-            --title "Release ${{ steps.ver.outputs.tag }}" \
+          gh release create "$TAG" \
+            --title "Release $TAG" \
             --notes-file RELEASE_NOTES.md

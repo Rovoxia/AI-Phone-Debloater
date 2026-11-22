@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 
 from .adb_client import AdbClient
+from .exceptions import DeviceNotFoundError
 from .models import DeviceInfo, TransportType
 
 logger = logging.getLogger("rovoxia.connection.device_identity")
@@ -87,12 +88,7 @@ class DeviceIdentityManager:
     def is_same_physical_device(dev1: DeviceInfo, dev2: DeviceInfo) -> bool:
         """
         Determine if two DeviceInfo records (e.g. one USB and one Wi-Fi) correspond to
-        the exact same physical device.
-
-        Build IDs change on OTA updates, so a strict build_id equality would
-        treat a post-OTA device as a different phone. When the model, manufacturer,
-        and architecture all match, we tolerate a build_id change and still
-        consider it the same physical device.
+        the exact same physical device: same serial or same known physical id.
         """
         if not dev1 or not dev2:
             return False
@@ -104,26 +100,6 @@ class DeviceIdentityManager:
         # Physical ID match (e.g. ro.serialno matched on both USB and Wi-Fi)
         if dev1.physical_id and dev2.physical_id and dev1.physical_id == dev2.physical_id:
             return True
-
-        # Disallow false positive match on generic defaults
-        if dev1.physical_id in ("unknown", "") or dev2.physical_id in ("unknown", ""):
-            return False
-
-        # If both have detailed metadata, check if manufacturer, model, and architecture match.
-        # build_id is allowed to differ: it changes across OTA updates on the same hardware.
-        if (
-            dev1.manufacturer
-            and dev2.manufacturer
-            and dev1.model
-            and dev2.model
-            and dev1.architecture
-            and dev2.architecture
-        ):
-            return (
-                dev1.manufacturer.lower() == dev2.manufacturer.lower()
-                and dev1.model.lower() == dev2.model.lower()
-                and dev1.architecture == dev2.architecture
-            )
 
         return False
 
@@ -137,8 +113,9 @@ class DeviceIdentityManager:
             return False, "No target device specified"
 
         # Check ADB device state
-        current_state = self.adb.get_device_state(target.serial)
-        if current_state == "disconnected":
+        try:
+            current_state = self.adb.get_device_state(target.serial)
+        except DeviceNotFoundError:
             return False, f"Target device {target.serial} was disconnected from ADB."
         if current_state != "device":
             return False, (

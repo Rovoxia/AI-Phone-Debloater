@@ -21,14 +21,19 @@ if %ERRORLEVEL% neq 0 (
 set /a STEP+=1
 echo.
 
-:: --- Step 2: Ruff Linter ---
+:: --- Step 2: Ruff Linter (same scope as CI) ---
 echo [%STEP%] Running Ruff linter...
-python -m ruff check cli\
+where ruff >nul 2>&1
 if %ERRORLEVEL% neq 0 (
-    echo [FAIL] Ruff linter found errors!
-    set /a FAIL_COUNT+=1
+    echo [WARN] ruff not found on PATH - skipping lint. Install with: pip install ruff
 ) else (
-    echo [PASS] Zero lint errors.
+    ruff check cli/src/debloat_engine.py cli/tests/
+    if !ERRORLEVEL! neq 0 (
+        echo [FAIL] Ruff linter found errors!
+        set /a FAIL_COUNT+=1
+    ) else (
+        echo [PASS] Zero lint errors.
+    )
 )
 set /a STEP+=1
 echo.
@@ -45,14 +50,23 @@ if %ERRORLEVEL% neq 0 (
 set /a STEP+=1
 echo.
 
-:: --- Step 4: Connection Subsystem Unit Tests ---
-echo [%STEP%] Running connection subsystem tests...
-python cli\tests\test_connection.py
+:: --- Step 4: Python Test Suites (same as CI) ---
+echo [%STEP%] Running connection, bridge server and version SSOT tests...
+for %%T in (test_connection test_bridge_server test_version_ssot) do (
+    python cli\tests\%%T.py
+    if !ERRORLEVEL! neq 0 (
+        echo [FAIL] %%T failed!
+        set /a FAIL_COUNT+=1
+    ) else (
+        echo [PASS] %%T passed.
+    )
+)
+python cli\sync_version.py --check
 if %ERRORLEVEL% neq 0 (
-    echo [FAIL] Connection unit tests failed!
+    echo [FAIL] Version drift detected!
     set /a FAIL_COUNT+=1
 ) else (
-    echo [PASS] Connection tests passed.
+    echo [PASS] No version drift.
 )
 set /a STEP+=1
 echo.

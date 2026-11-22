@@ -6,8 +6,8 @@
 - Limits: Unlimited devices, unlimited debloating sessions
 - Features:
   - Full CLI engine (cli/src/debloat_engine.py)
-  - 324+ curated OEM safety rules across 7 manufacturers
-  - 4-tier safety classification with 61 hard-blocked critical packages
+  - 352 curated safety rules across 8 OEM rule sets plus a universal set
+  - 4-tier safety classification with 89 hard-blocked critical packages
   - Automated JSON rollback snapshots
   - Dry-run simulation before any changes
   - 100% reversible execution (disable / uninstall -k)
@@ -22,8 +22,7 @@
   - WebApp workspace (debloater.rovoxia.com/app)
 
 ## Community Support
-- GitHub Issues: Bug reports, feature requests
-- GitHub Discussions: Questions, device-specific help, rule contributions
+- GitHub Issues: Bug reports, feature requests, questions, device-specific help, rule contributions
 - Documentation: README.md, QUICKSTART.md, SAFETY_GUIDELINES.md
 - No SLA, no guaranteed response time
 

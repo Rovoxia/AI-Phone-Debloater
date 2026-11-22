@@ -7,8 +7,9 @@
  */
 
 import { Adb, AdbDaemonTransport } from '@yume-chan/adb';
-import { AdbDaemonWebUsbDeviceManager } from '@yume-chan/adb-daemon-webusb';
+import { AdbDaemonWebUsbDevice, AdbDaemonWebUsbDeviceManager } from '@yume-chan/adb-daemon-webusb';
 import AdbWebCredentialStore from '@yume-chan/adb-credential-web';
+import rulesData from '../data/rules-dataset.json';
 
 export interface DeviceInfo {
   serial: string;
@@ -26,99 +27,27 @@ export interface ExecutionResult {
 }
 
 /**
- * Exactly 89 Inviolable Tier 4 Core OS Packages from critical-do-not-touch.json
+ * Inviolable Tier 4 core OS packages, derived from the generated dataset
+ * (cli/rules/critical-do-not-touch.json) so it cannot drift from the CLI's list.
  */
-export const CRITICAL_PACKAGES: Set<string> = new Set([
-  'android',
-  'com.android.biometrics',
-  'com.android.bips',
-  'com.android.bluetooth',
-  'com.android.browser',
-  'com.android.calendar',
-  'com.android.carrierconfig',
-  'com.android.cellbroadcastreceiver',
-  'com.android.contacts',
-  'com.android.desktopclock',
-  'com.android.documentsui',
-  'com.android.emergency',
-  'com.android.externalstorage',
-  'com.android.inputdevices',
-  'com.android.inputmethod.latin',
-  'com.android.keychain',
-  'com.android.launcher',
-  'com.android.launcher3',
-  'com.android.location.fused',
-  'com.android.mms',
-  'com.android.mms.service',
-  'com.android.mtp',
-  'com.android.networkstack',
-  'com.android.nfc',
-  'com.android.ons',
-  'com.android.packageinstaller',
-  'com.android.pacprocessor',
-  'com.android.permissioncontroller',
-  'com.android.phone',
-  'com.android.printspooler',
-  'com.android.providers.blockednumber',
-  'com.android.providers.calendar',
-  'com.android.providers.contacts',
-  'com.android.providers.downloads',
-  'com.android.providers.downloads.ui',
-  'com.android.providers.media',
-  'com.android.providers.settings',
-  'com.android.providers.telephony',
-  'com.android.providers.userdictionary',
-  'com.android.provision',
-  'com.android.server',
-  'com.android.server.activitymanager',
-  'com.android.server.appop',
-  'com.android.server.backup',
-  'com.android.server.connectivity',
-  'com.android.server.devicepolicy',
-  'com.android.server.display',
-  'com.android.server.input',
-  'com.android.server.media',
-  'com.android.server.net',
-  'com.android.server.notification',
-  'com.android.server.package',
-  'com.android.server.power',
-  'com.android.server.storage',
-  'com.android.server.telecom',
-  'com.android.server.trust',
-  'com.android.server.usb',
-  'com.android.server.wallpaper',
-  'com.android.server.wm',
-  'com.android.settings',
-  'com.android.settings.intelligence',
-  'com.android.sharedstoragebackup',
-  'com.android.shell',
-  'com.android.smspush',
-  'com.android.statementservice',
-  'com.android.storagemanager',
-  'com.android.systemui',
-  'com.android.systemui.plugin',
-  'com.android.telecom',
-  'com.android.telephonyprovider',
-  'com.android.traceur',
-  'com.android.vpndialogs',
-  'com.android.wallpaper.livepicker',
-  'com.android.wallpaperbackup',
-  'com.android.wallpapercropper',
-  'com.google.android.ext.services',
-  'com.google.android.ext.shared',
-  'com.google.android.feedback',
-  'com.google.android.gms',
-  'com.google.android.gsf',
-  'com.google.android.networkstack',
-  'com.google.android.onetimeinitializer',
-  'com.google.android.packageinstaller',
-  'com.google.android.partnersetup',
-  'com.google.android.permissioncontroller',
-  'com.google.android.printservice.recommendation',
-  'com.google.android.providers.media.module',
-  'com.google.android.syncadapters.contacts',
-  'com.google.android.webview'
-]);
+export const CRITICAL_PACKAGES: Set<string> = new Set(
+  rulesData.rules.filter((rule) => rule.tier === 4).map((rule) => rule.package)
+);
+
+interface ShellResult {
+  output: string;
+  /** null when the device lacks the shell protocol (Android < 7) and reports no exit code. */
+  exitCode: number | null;
+}
+
+/**
+ * Same rule as the bridge's _pm_succeeded: the exit code decides, then pm's own failure text.
+ * Without an exit code, empty output is a failure because pm always prints on success.
+ */
+function pmSucceeded(res: ShellResult, pkg: string): boolean {
+  if (res.exitCode === null ? res.output === '' : res.exitCode !== 0) return false;
+  return !/fail|error|exception|unknown package|not installed for/i.test(res.output.replaceAll(pkg, ''));
+}
 
 /**
  * Direct in-browser WebUSB ADB Client (Chrome, Edge, Brave, Opera)
@@ -126,6 +55,9 @@ export const CRITICAL_PACKAGES: Set<string> = new Set([
 export class WebAdbClient {
   private adb: Adb | null = null;
   private currentDevice: DeviceInfo | null = null;
+
+  /** Called when the connection is lost without disconnect() being called (cable unplugged). */
+  public onDisconnect: (() => void) | null = null;
 
   public static isSupported(): boolean {
     return typeof navigator !== 'undefined' && 'usb' in navigator;
@@ -153,16 +85,36 @@ export class WebAdbClient {
       throw new Error('No device was selected in the USB picker.');
     }
 
-    const connection = await usbDevice.connect();
-    const credentialStore = new AdbWebCredentialStore();
+    let transport: AdbDaemonTransport;
+    try {
+      const connection = await usbDevice.connect();
+      transport = await AdbDaemonTransport.authenticate({
+        serial: usbDevice.serial,
+        connection,
+        credentialStore: new AdbWebCredentialStore(),
+      });
+    } catch (err) {
+      // Release the interface so the next attempt, or desktop adb, can claim it.
+      await usbDevice.raw.close().catch(() => {});
+      if (err instanceof AdbDaemonWebUsbDevice.DeviceBusyError) {
+        throw new Error(
+          'The phone is in use by another program, usually the adb server on this computer. Run `adb kill-server` and try again, or connect through the Local Bridge instead.'
+        );
+      }
+      throw err;
+    }
 
-    const transport = await AdbDaemonTransport.authenticate({
-      serial: usbDevice.serial,
-      connection,
-      credentialStore,
-    });
-
-    this.adb = new Adb(transport);
+    const adb = new Adb(transport);
+    this.adb = adb;
+    // Settles on unplug as well as on close(). disconnect() clears this.adb first,
+    // so only an unexpected loss reaches onDisconnect.
+    const lost = () => {
+      if (this.adb !== adb) return;
+      this.adb = null;
+      this.currentDevice = null;
+      this.onDisconnect?.();
+    };
+    adb.disconnected.then(lost, lost);
 
     // Retrieve device properties
     let manufacturer = 'Android';
@@ -192,14 +144,13 @@ export class WebAdbClient {
   }
 
   public async disconnect(): Promise<void> {
-    if (this.adb) {
-      try {
-        await this.adb.close();
-      } catch {
-        // Ignore close errors
-      }
-      this.adb = null;
-      this.currentDevice = null;
+    const adb = this.adb;
+    this.adb = null;
+    this.currentDevice = null;
+    try {
+      await adb?.close();
+    } catch {
+      // Ignore close errors
     }
   }
 
@@ -208,34 +159,44 @@ export class WebAdbClient {
     return (await this.adb.getProp(key)).trim();
   }
 
-  public async runShell(command: string): Promise<string> {
+  private async run(command: string): Promise<ShellResult> {
     if (!this.adb) throw new Error('Not connected');
 
-    if (this.adb.subprocess.shellProtocol) {
-      const res = await this.adb.subprocess.shellProtocol.spawnWaitText(command);
-      return (res.stdout || res.stderr || '').trim();
+    const shell = this.adb.subprocess.shellProtocol;
+    if (shell) {
+      const res = await shell.spawnWaitText(command);
+      return { output: (res.stdout || res.stderr || '').trim(), exitCode: res.exitCode };
     }
-    return (await this.adb.subprocess.noneProtocol.spawnWaitText(command)).trim();
+    return {
+      output: (await this.adb.subprocess.noneProtocol.spawnWaitText(command)).trim(),
+      exitCode: null,
+    };
   }
 
-  public async listPackages(): Promise<string[]> {
-    const output = await this.runShell('pm list packages -u --user 0');
+  public async runShell(command: string): Promise<string> {
+    return (await this.run(command)).output;
+  }
+
+  private async pmList(command: string): Promise<string[]> {
+    const output = await this.runShell(command);
     return output
       .split('\n')
       .map((l) => l.trim().replace(/^package:/, ''))
       .filter((pkg) => pkg.length > 0 && /^[a-zA-Z0-9._]+$/.test(pkg));
   }
 
-  public async listDisabledPackages(): Promise<string[]> {
-    try {
-      const output = await this.runShell('pm list packages -d --user 0');
-      return output
-        .split('\n')
-        .map((l) => l.trim().replace(/^package:/, ''))
-        .filter((pkg) => pkg.length > 0 && /^[a-zA-Z0-9._]+$/.test(pkg));
-    } catch {
-      return [];
-    }
+  /** Every package known for user 0, including ones uninstalled for that user (-u). */
+  public listPackages(): Promise<string[]> {
+    return this.pmList('pm list packages -u --user 0');
+  }
+
+  /** Packages currently installed for user 0. Anything in listPackages() but not here is uninstalled. */
+  public listInstalledPackages(): Promise<string[]> {
+    return this.pmList('pm list packages --user 0').catch(() => []);
+  }
+
+  public listDisabledPackages(): Promise<string[]> {
+    return this.pmList('pm list packages -d --user 0').catch(() => []);
   }
 
   public async execute(
@@ -255,7 +216,7 @@ export class WebAdbClient {
       let cmd = '';
       if (action === 'disable') cmd = `pm disable-user --user 0 ${pkg}`;
       else if (action === 'uninstall') cmd = `pm uninstall -k --user 0 ${pkg}`;
-      else cmd = `cmd package install-existing --user 0 ${pkg}`;
+      else cmd = `cmd package install-existing --user 0 ${pkg}; pm enable --user 0 ${pkg}`;
       return {
         package: pkg,
         status: 'success',
@@ -264,40 +225,25 @@ export class WebAdbClient {
     }
 
     try {
-      let cmd = '';
-      if (action === 'disable') {
-        cmd = `pm disable-user --user 0 ${pkg}`;
-      } else if (action === 'uninstall') {
-        cmd = `pm uninstall -k --user 0 ${pkg}`;
-      } else {
-        cmd = `pm enable --user 0 ${pkg}`;
-      }
-
-      const out = await this.runShell(cmd);
-      const isSuccess =
-        out.toLowerCase().includes('success') ||
-        out.toLowerCase().includes('new state') ||
-        out.toLowerCase().includes('enabled') ||
-        out.toLowerCase().includes('installed') ||
-        out === '';
-
-      if (action === 'enable' && !isSuccess) {
-        // Fallback for restoring uninstalled packages
-        const restoreOut = await this.runShell(`cmd package install-existing --user 0 ${pkg}`);
-        const restoreSuccess =
-          restoreOut.toLowerCase().includes('installed') ||
-          restoreOut.toLowerCase().includes('success');
+      if (action === 'enable') {
+        // Same order as the CLI's restore_package: put the package back for user 0, then
+        // enable it. `pm enable` alone does not bring back a package uninstalled for the user.
+        const reinstall = await this.run(`cmd package install-existing --user 0 ${pkg}`);
+        const enable = await this.run(`pm enable --user 0 ${pkg}`);
         return {
           package: pkg,
-          status: restoreSuccess ? 'success' : 'failed',
-          output: restoreOut || out,
+          status: pmSucceeded(reinstall, pkg) && pmSucceeded(enable, pkg) ? 'success' : 'failed',
+          output: `${reinstall.output}\n${enable.output}`.trim(),
         };
       }
 
+      const res = await this.run(
+        action === 'disable' ? `pm disable-user --user 0 ${pkg}` : `pm uninstall -k --user 0 ${pkg}`
+      );
       return {
         package: pkg,
-        status: isSuccess ? 'success' : 'failed',
-        output: out,
+        status: pmSucceeded(res, pkg) ? 'success' : 'failed',
+        output: res.output,
       };
     } catch (err: any) {
       return {
@@ -360,16 +306,25 @@ export class LocalBridgeClient {
     return data.packages || [];
   }
 
-  public async listDisabledPackages(serial: string): Promise<string[]> {
+  private async listView(serial: string, view: 'disabled' | 'installed'): Promise<string[]> {
     const res = await fetch(
-      `${this.baseUrl}/packages?serial=${encodeURIComponent(serial)}&view=disabled`,
+      `${this.baseUrl}/packages?serial=${encodeURIComponent(serial)}&view=${view}`,
       { method: 'GET', headers: { Accept: 'application/json' } }
     );
     if (!res.ok) return [];
     const data = await res.json();
     // Ignore a bridge that does not understand `view` — it would return every package.
-    if (data.view !== 'disabled' || !Array.isArray(data.packages)) return [];
+    if (data.view !== view || !Array.isArray(data.packages)) return [];
     return data.packages;
+  }
+
+  public listDisabledPackages(serial: string): Promise<string[]> {
+    return this.listView(serial, 'disabled');
+  }
+
+  /** Packages installed for user 0. Empty when the bridge has no `installed` view. */
+  public listInstalledPackages(serial: string): Promise<string[]> {
+    return this.listView(serial, 'installed');
   }
 
   public async getDeviceProps(
@@ -443,21 +398,24 @@ const STORAGE_KEY = 'ai_phone_debloater_snapshots_v1';
 export function getLocalSnapshots(): DebloatSnapshot[] {
   if (typeof window === 'undefined') return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed.filter((s) => s && Array.isArray(s.packages)) : [];
   } catch {
     return [];
   }
 }
 
-export function saveLocalSnapshot(snapshot: DebloatSnapshot): void {
-  if (typeof window === 'undefined') return;
+/** Adds the snapshot, or replaces the stored one with the same id. False when it could not be written. */
+export function saveLocalSnapshot(snapshot: DebloatSnapshot): boolean {
+  if (typeof window === 'undefined') return false;
   try {
     const current = getLocalSnapshots();
     const updated = [snapshot, ...current.filter((s) => s.id !== snapshot.id)].slice(0, 50);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    return true;
   } catch {
-    // Ignore storage quota errors
+    // Storage quota exceeded or storage blocked
+    return false;
   }
 }
 

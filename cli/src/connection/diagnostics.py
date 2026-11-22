@@ -17,7 +17,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from .adb_client import AdbClient, AdbServerError
+from .adb_client import AdbClient
 from .discovery import LanDiscovery, MdnsDiscovery
 from .exceptions import ConnectionError
 from .models import DiagnosticItem, DiagnosticReport
@@ -110,7 +110,7 @@ class ConnectionDiagnostics:
                 )
             )
             log(f"OK: ADB version {ver_str}")
-        except (OSError, ValueError, AdbServerError) as exc:
+        except (OSError, ValueError, ConnectionError) as exc:
             items.append(
                 DiagnosticItem(
                     category="adb",
@@ -165,6 +165,7 @@ class ConnectionDiagnostics:
                 out = subprocess.check_output(
                     ["tasklist", "/FI", "IMAGENAME eq adb.exe"],
                     stderr=subprocess.DEVNULL,
+                    timeout=10,
                     text=True,
                     encoding="utf-8",
                     errors="replace",
@@ -181,7 +182,7 @@ class ConnectionDiagnostics:
                         )
                     )
                     log(f"WARN: Multiple ({count}) adb.exe instances running.")
-            except (OSError, subprocess.CalledProcessError):
+            except (OSError, subprocess.SubprocessError):
                 pass
 
     def _check_usb_subsystem(self, items: list[DiagnosticItem], log: Any) -> None:
@@ -328,7 +329,11 @@ class ConnectionDiagnostics:
             log("WARN: adb mdns check reported false or inactive.")
 
         # Query services
-        services = self.mdns.discover_services()
+        try:
+            services = self.mdns.discover_services()
+        except (OSError, ConnectionError) as exc:
+            log(f"WARN: mDNS service discovery failed: {exc}")
+            services = []
         pairing_services = [s for s in services if s.is_pairing]
         connect_services = [s for s in services if s.is_connect]
 

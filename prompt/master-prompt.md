@@ -19,7 +19,7 @@ Execute these stages sequentially. Never skip ahead without completing the curre
 * **If you have Terminal / Shell Execution access** (Claude Code, Cursor, Windsurf, Cline, Aider):
   1. Clone `https://github.com/Rovoxia/AI-Phone-Debloater.git` (if not already inside the repo directory).
   2. **Verify or Resolve ADB:** Check if `adb` is in the system PATH (`adb version`). If `adb` is NOT found:
-     * **First:** Check the repository's bundled binaries/tools directory (e.g., `./platform-tools/`, `./cli/bin/`, or `./tools/`) and use the bundled `adb` binary (`./platform-tools/adb` or `.\platform-tools\adb.exe`).
+     * **First:** Check the launcher-downloaded `adb` in `./cli/tools/platform-tools/` (`./cli/tools/platform-tools/adb` or `.\cli\tools\platform-tools\adb.exe`), then `./platform-tools/` (`./platform-tools/adb` or `.\platform-tools\adb.exe`).
      * **Second (Auto-Download Fallback):** If not bundled locally, automatically download and extract the official Google SDK Platform-Tools for the host OS (`https://dl.google.com/android/repository/platform-tools-latest-[windows|darwin|linux].zip`) or install via package manager (`winget install Google.PlatformTools`, `brew install android-platform-tools`, or `sudo apt install adb`).
   3. Verify ADB connectivity and scan the device by running:
      `python cli/src/debloat_engine.py --scan` (or `adb devices -l`).
@@ -44,7 +44,7 @@ Execute these stages sequentially. Never skip ahead without completing the curre
 ### STAGE 4: Snapshot & Reversible Execution
 1. **Create Rollback Snapshot:**
    * Engine Mode automatically generates `~/AiPhoneDebloater/backups/snapshot_<model>_<timestamp>.json`.
-   * Raw ADB Mode must first run: `adb shell pm list packages -u -f --user 0 > backup_packages.txt`
+   * Raw ADB Mode must first run: `adb shell pm list packages -d --user 0 > disabled_before.txt` and `adb shell pm list packages --user 0 > installed_before.txt`
 2. **Execute Safe Debloat:**
    * Use `disable` (preferred) or `uninstall -k` (preserves user data).
    * Conclude by displaying the snapshot file path and the exact 1-line restore command.
@@ -65,9 +65,9 @@ Execute these stages sequentially. Never skip ahead without completing the curre
      * `com.android.systemui` (System UI, lock screen, navigation bar)
      * `com.android.server.telecom` / `com.android.phone` (Cellular call stack, emergency calls)
      * `com.android.providers.telephony` / `com.android.providers.settings` (Core OS database providers)
-     * `android.security.keystore` / `com.android.keychain` (Hardware encryption, credentials, biometrics)
-     * `com.android.packageinstaller` / `com.google.android.packageinstaller` (APK installation engine)
-     * `android.hardware.wifi` / `com.android.bluetooth` (Wireless hardware abstraction layers)
+     * `com.android.keychain` (Hardware encryption, credentials, biometrics)
+     * `com.android.packageinstaller` (APK installation engine)
+     * `com.android.wifi` / `com.android.bluetooth` (Wireless hardware abstraction layers)
    * If a user asks to remove a Tier 4 package, refuse politely, explain the exact bootloop/brick risk, and offer safe alternatives.
 
 ---
@@ -77,14 +77,14 @@ Execute these stages sequentially. Never skip ahead without completing the curre
 ### ADB Auto-Resolution (If `adb` is Missing from PATH)
 ```bash
 # 1. Check bundled ADB inside repository first
-./platform-tools/adb devices || ./cli/bin/adb devices
+./cli/tools/platform-tools/adb devices || ./platform-tools/adb devices   # Windows: .\cli\tools\platform-tools\adb.exe
 
 # 2. Or auto-download official Google SDK Platform-Tools if not present:
 # Windows (PowerShell)
-Invoke-WebRequest -Uri "[https://dl.google.com/android/repository/platform-tools-latest-windows.zip](https://dl.google.com/android/repository/platform-tools-latest-windows.zip)" -OutFile "platform-tools.zip"; Expand-Archive "platform-tools.zip" -DestinationPath "."; .\platform-tools\adb.exe devices
+Invoke-WebRequest -Uri "https://dl.google.com/android/repository/platform-tools-latest-windows.zip" -OutFile "platform-tools.zip"; Expand-Archive "platform-tools.zip" -DestinationPath "."; .\platform-tools\adb.exe devices
 
 # Linux / macOS (Bash)
-OS=$(uname -s | tr '[:upper:]' '[:lower:]'); curl -sLO "[https://dl.google.com/android/repository/platform-tools-latest-$](https://dl.google.com/android/repository/platform-tools-latest-$){OS}.zip" && unzip -q "platform-tools-latest-${OS}.zip" && ./platform-tools/adb devices
+OS=$(uname -s | tr '[:upper:]' '[:lower:]'); curl -sLO "https://dl.google.com/android/repository/platform-tools-latest-${OS}.zip" && unzip -q "platform-tools-latest-${OS}.zip" && ./platform-tools/adb devices
 ```
 
 ### Track A: CLI Engine Commands (Local Repo)
@@ -95,10 +95,10 @@ python cli/src/debloat_engine.py --scan
 # Dry-run simulation (no changes made)
 python cli/src/debloat_engine.py --tier 1 --dry-run
 
-# Execute safe freeze (recommended)
+# Execute safe freeze (recommended; an agent without a TTY must add --yes, and only after the user has replied PROCEED)
 python cli/src/debloat_engine.py --tier 1 --action disable
 
-# Execute safe uninstall (retains app data via -k)
+# Execute safe uninstall (retains app data via -k; without a TTY add --yes, only after the user has replied PROCEED)
 python cli/src/debloat_engine.py --tier 1 --action uninstall
 
 # Restore from snapshot
@@ -126,15 +126,15 @@ adb shell pm disable-user --user 0 <package_name>
 adb shell pm uninstall -k --user 0 <package_name>
 
 # 4. Instant Recovery / Restore
-adb shell pm enable <package_name>
-adb shell cmd package install-existing <package_name>
+adb shell pm enable --user 0 <package_name>
+adb shell cmd package install-existing --user 0 <package_name>
 ```
 
 ---
 
 ## 📂 OEM Rulebook Reference (`cli/rules/`)
 
-Cross-reference device packages against these curated rule files (324 rules):
+Cross-reference device packages against these curated rule files (352 rules: 263 removable + 89 critical):
 * `samsung-oneui.json` — Samsung One UI (Bixby, AR Zone, GOS, Knox Analytics, Link to Windows)
 * `xiaomi-miui-hyperos.json` — Xiaomi MIUI / HyperOS (MSA Ad Service, Analytics, Joyose, Mi Pay, GetApps)
 * `oneplus-oxygenos.json` — OnePlus OxygenOS (HeyTap, OPBugreport, Membership, LogKit)
@@ -142,14 +142,15 @@ Cross-reference device packages against these curated rule files (324 rules):
 * `bbk-oppo-vivo-realme.json` — Oppo / Vivo / Realme (HeyTap Cloud, Game Space, Jovi, App Market)
 * `motorola.json` — Motorola (Moto Display, Moto Suggestions, Ready For, Telemetry)
 * `transsion-tecno-infinix.json` — Tecno / Infinix / itel (Palm Store, Carlcare, AHA Games, Phone Master)
+* `huawei-emui.json` — Huawei EMUI (System App Controller, AllShare, Push Service, AI Voice Assistant)
 * `universal-safe-to-remove.json` — Cross-OEM (Facebook AppManager/Installer, Microsoft Link, Google Partner Setup)
 * `critical-do-not-touch.json` — Hard-blocked Tier 4 core system packages
 
 ### Heuristic Triage for Unknown Packages
 If a package is not in `cli/rules/`, inspect it before classifying:
 1. Run `adb shell pm dump <package_name> | head -n 40` and `adb shell pm list packages -i <package_name>`.
-2. If it holds `BIND_ACCESSIBILITY_SERVICE`, `DEVICE_ADMIN`, `INTERACT_ACROSS_USERS`, or telephony permissions → Classify as **Tier 2/3 (Caution)**.
-3. If uncertain → Always recommend `pm disable-user --user 0` instead of uninstalling.
+2. If it holds `BIND_ACCESSIBILITY_SERVICE`, `DEVICE_ADMIN`, `INTERACT_ACROSS_USERS`, or telephony permissions → Report it as **Unclassified** and flag the risk.
+3. Report every unknown package as **Unclassified** and never act on it without per-package user approval; if approved, prefer `pm disable-user --user 0` over uninstalling.
 
 ---
 
@@ -162,7 +163,7 @@ Always present your proposed debloat plan using this exact structure before aski
 * **Android Version:** [OS Release]
 * **Connection Mode:** [USB ADB / Wireless ADB]
 * **ADB Binary Used:** [System PATH / Bundled Repo / Auto-Downloaded]
-* **Backup Target:** [Snapshot file path]
+* **Backup Target:** [Backup directory, e.g. `~/AiPhoneDebloater/backups/` (snapshot is created at execution)]
 
 ### 📋 Proposed Debloat Plan
 | Tier | Package Name | App / Service Purpose | Proposed Action |
@@ -175,7 +176,7 @@ Always present your proposed debloat plan using this exact structure before aski
 * **Telemetry/Tracking Blocked:** [Summary]
 
 ### 🛡️ Rollback Command
-`adb shell pm enable <package_name>` or `adb shell cmd package install-existing <package_name>`
+`adb shell pm enable --user 0 <package_name>` or `adb shell cmd package install-existing --user 0 <package_name>`
 
 ### ⚠️ Safety & Best Practices Reminder
 * AI-Phone-Debloater uses non-destructive ADB commands (`disable-user` and `uninstall -k`) with **no root required** and blocks critical OS packages by default.

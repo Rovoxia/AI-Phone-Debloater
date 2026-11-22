@@ -4,6 +4,58 @@ All notable changes to AI-Phone-Debloater are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+
+- Local bridge no longer loses its Tier 4 guard in the one-liner install layout: rules are resolved relative to the script, and the bridge refuses to start if the critical list is empty
+- Local bridge now rejects requests from unknown origins. `Access-Control-Allow-Origin: *` is replaced by an allowlist (`https://debloater.rovoxia.com`, `http://localhost:*`, `http://127.0.0.1:*`, plus `--allow-origin URL`), the `Host` header must be loopback (blocks DNS rebinding), and `POST` requires `Content-Type: application/json`
+- Package-name validation in the engine and bridge uses `fullmatch`, so a name with a trailing newline can no longer bypass the critical list
+- Removed the unauthenticated bridge `POST /shutdown` route and the `--host` flag; the bridge always binds `127.0.0.1`
+- Web app derives its Tier 4 set from `rules-dataset.json` instead of a hand-copied list that had drifted from `critical-do-not-touch.json` by 44 packages in each direction
+- Removed the `/api/adb` dev endpoint, which ran arbitrary `adb shell` commands from a query parameter
+- `debloat.bat` verifies the Authenticode signature of the downloaded Python installer and checks its exit code
+- `adb` and `rules/` are no longer loaded from the current working directory
+- `VERSION` is validated with a strict SemVer `fullmatch`, and `release.yml` passes the tag to shell steps through `env` instead of inline interpolation
+- Installer one-liners use `curl -fsSL`, so an HTTP error page is no longer handed to `unzip`
+
+### Fixed
+
+- Web app: dismissing the confirm dialog by its backdrop left a stale handler that ran the previous package set on the next "Apply live"; the dialog is now a native `<dialog>` with a single close path
+- Web app: per-row Freeze/Uninstall in Live mode now asks for confirmation
+- Web app: command success is decided by exit code and output, so `Failure [not installed for 0]` is no longer reported as success
+- Web app: a live run aborts if its snapshot cannot be saved, and results are written to the correct snapshot
+- Web app: packages uninstalled for user 0 show as "Uninstalled"; restore reinstalls then enables, and leaves packages that were disabled before the snapshot alone
+- Web app: `?bridge=1` waits up to 20 seconds for the bridge; busy USB interface, unplugged device and multiple bridge devices are handled
+- `bridge.sh` aborted on start with `BRIDGE_PORT: unbound variable`; `bridge.ps1` threw in `finally` and hid the bridge output
+- Bridge one-liners start through the launcher, so `adb` is downloaded when missing
+- `run.sh` no longer leaks its temp directory; served scripts no longer contain a literal CR/LF
+- Launchers require Python 3.11+ (the code already did) and report it clearly; `debloat.bat` works from a folder whose name contains `)`
+- Missing `adb` now gives a one-line error instead of a traceback
+- Every `adb` timeout and missing-binary error in the connection layer raised `AttributeError`
+- Reconnect no longer connects to other phones found over mDNS; QR pairing no longer falls back to a different phone or matches an address by substring
+- `is_same_physical_device` returned true for two different phones of the same model
+- Diagnostics reported "ADB not installed" when `adb` was on `PATH`, and aborted when mDNS discovery failed
+- Bridge: URL-encoded serials (wireless devices) are decoded; malformed bodies return `400`; a failed snapshot aborts the apply; critical packages can be enabled and restored; error responses are logged
+- Engine refuses to plan or apply changes when the critical list cannot be loaded
+- Unknown paths return a real 404 in `nginx.conf`; sitemap lists all pages
+- Home page sample table, README, SAFETY_GUIDELINES, SECURITY, pricing, `llms.txt` and the master prompt corrected to match the code (Python version, flags, rule counts, tier examples, restore commands)
+
+### Changed
+
+- Bridge listens only on the requested port and exits with a clear message if it is in use (the web app only ever used 53123); `--strict-port` is accepted and ignored
+- Bridge `GET /packages` accepts `view=installed`
+- `validate_rules.py`, `generate_rules_dataset.py` and `astro.config.mjs` no longer rewrite version files. After editing `VERSION`, run `python cli/sync_version.py`; CI now fails on drift
+- Remembered devices are stored in `~/AiPhoneDebloater/known_devices.json`, which survives reinstall (the old registry is not migrated)
+- `test_all.bat` runs the same test scripts as CI
+- Contributors target the `QA` branch (CONTRIBUTING)
+
+### Removed
+
+- Launcher modes `dump-rules` and `apply-rules`, which called a script that is not in the repository
+- Newsletter form and `/api/newsletter`, which never worked on the static site
+- Hand-written `/sitemap.xml`; use `/sitemap-index.xml`
+
 ## [1.1.1] - 2026-11-10
 
 ### Added

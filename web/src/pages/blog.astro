@@ -295,33 +295,6 @@ const categories = [...new Set(posts.map(p => p.category))].sort();
           </div>
         </div>
       </section>
-
-      <!-- Newsletter CTA -->
-      <section class="py-16 md:py-20 bg-gradient-to-r from-emerald-600 to-teal-700 text-white text-center">
-        <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight mb-4">
-            Get New Debloat Guides Delivered
-          </h2>
-          <p class="text-emerald-100 mb-8 text-base">
-            No spam. One email per new OEM guide or safety deep-dive. Unsubscribe anytime.
-          </p>
-          <form action="https://debloater.rovoxia.com/api/newsletter" method="POST" class="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
-            <input
-              type="email"
-              name="email"
-              placeholder="your@email.com"
-              required
-              class="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:bg-white/20 transition"
-            />
-            <button
-              type="submit"
-              class="px-6 py-3 rounded-xl bg-white text-emerald-800 font-bold hover:bg-emerald-50 transition-colors shadow-lg shrink-0"
-            >
-              Subscribe
-            </button>
-          </form>
-        </div>
-      </section>
     </main>
 
     <Footer />

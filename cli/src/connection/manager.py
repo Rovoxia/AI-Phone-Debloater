@@ -342,7 +342,7 @@ class ConnectionManager:
                 target_record = next((r for r in remembered_list if r.physical_id == physical_id), None)
             else:
                 # Pick the most recently connected device
-                target_record = remembered_list[0]
+                target_record = max(remembered_list, key=lambda r: r.last_connected)
 
             if not target_record:
                 return None
@@ -356,25 +356,14 @@ class ConnectionManager:
                     self.set_active_device(dev)
                     return dev
 
-            # 2. Check mDNS for matching wireless device
-            connect_services = self.mdns.get_connect_services()
-            for s in connect_services:
-                # Connect and check identity
-                try:
-                    dev = self.connect_wifi(s.endpoint, timeout=timeout)
-                    if dev.physical_id == target_record.physical_id:
-                        return dev
-                except (ConnectionError, OSError) as exc:
-                    logger.debug(f"Connection attempt to {s.endpoint} failed: {exc}")
-                    continue
-
-            # 3. Try last known endpoint as fallback (USB or wireless)
+            # 2. Try last known endpoint as fallback (USB or wireless)
             if target_record.last_endpoint:
                 try:
                     dev = self.connect_wifi(target_record.last_endpoint, timeout=timeout)
                     if dev and dev.physical_id == target_record.physical_id:
                         return dev
-                    # Mismatch: disconnect the wrong device silently
+                    # Mismatch: drop the wrong device and disconnect it silently
+                    self._active_device = None
                     if dev and dev.serial != target_record.last_endpoint:
                         try:
                             self.wireless.disconnect(target_record.last_endpoint)

@@ -12,7 +12,7 @@ OEM-specific bloat lists live in `cli/rules/`. Each file is a JSON rule set desc
 
 ### Steps
 
-1. **Fork the repo** and create a feature branch: `git checkout -b add/oem-<vendor>-rules`.
+1. **Fork the repo** and create a feature branch from `QA`: `git checkout -b add/oem-<vendor>-rules QA`.
 2. **Add or update a rule file** in `cli/rules/` named `<vendor>-<skin>.json` (lowercase, hyphenated), e.g. `cli/rules/motorola.json` or `cli/rules/sony-xperia.json`.
 3. **Follow the rule JSON schema** below. Every package entry must include `package`, `tier`, and a descriptive `description`.
 4. **Never include blacklisted/critical packages.** Cross-check against `cli/rules/critical-do-not-touch.json` and the Tier-4 table in [SAFETY_GUIDELINES.md](SAFETY_GUIDELINES.md). The CI validation test rejects any rule that references a critical package.
@@ -61,6 +61,8 @@ OEM-specific bloat lists live in `cli/rules/`. Each file is a JSON rule set desc
 | `safe_to_remove` | boolean | Optional | `true` if safe to disable or uninstall for user 0. |
 | `recommended_action` | string | Optional | `disable` (preferred) or `uninstall`. |
 
+Entries in `critical-do-not-touch.json` carry no `tier` field and are treated as Tier 4.
+
 ---
 
 ## 3. Local Validation & Testing
@@ -71,14 +73,17 @@ Before submitting a pull request, run the automated test suite locally:
 # 1. Run Rule Validation Test (Checks JSON syntax, structure, and 0 collisions with Critical Blacklist)
 python cli/tests/validate_rules.py
 
-# 2. Run Connection Subsystem Tests
+# 2. Run Connection, Bridge Server and Version SSOT Tests
 python cli/tests/test_connection.py
+python cli/tests/test_bridge_server.py
+python cli/tests/test_version_ssot.py
+python cli/sync_version.py --check   # after changing VERSION, run: python cli/sync_version.py
 
 # 3. Compile Python Sources (Syntax & type checking)
-python -m py_compile cli/src/debloat_engine.py cli/tests/validate_rules.py cli/tests/test_connection.py
+python -m py_compile cli/src/debloat_engine.py cli/src/bridge_server.py cli/tests/validate_rules.py cli/tests/test_connection.py cli/tests/test_bridge_server.py
 
-# 4. Lint Python (ruff)
-pip install ruff && ruff check cli/src cli/tests
+# 4. Lint Python (ruff, same command as CI)
+pip install ruff && ruff check cli/src/debloat_engine.py cli/tests/
 
 # 5. Test CLI Engine Simulation
 python cli/src/debloat_engine.py --help
@@ -91,14 +96,14 @@ shellcheck cli/bin/debloat.sh
 # 7. Build Web Dashboard (if web files modified)
 npm --prefix web run build
 
-# 8. Verify web dataset is in sync with cli/rules/*.json
+# 8. Verify web dataset is in sync with cli/rules/*.json (run after changing cli/rules/*)
 python cli/generate_rules_dataset.py
 git diff --exit-code web/src/data/rules-dataset.json
 ```
 
 These checks run automatically in GitHub Actions CI on Ubuntu, Windows, and macOS (Python 3.11 + Node 22), across the `lint`, `validate`, `test`, `web-test`, and `security` jobs.
 
-CI also runs a release workflow (`.github/workflows/release.yml`) that creates GitHub Releases for version-bump tags and updates `CHANGELOG.md`.
+CI also runs a release workflow (`.github/workflows/release.yml`) that runs on `v*` tags and on every merged pull request to `main`, creates GitHub Releases and updates `CHANGELOG.md`.
 
 ---
 
@@ -121,7 +126,7 @@ CI also runs a release workflow (`.github/workflows/release.yml`) that creates G
 
 ## 5. Submitting a Pull Request
 
-1. Ensure your branch is up to date with `main`.
+1. Ensure your branch is up to date with `QA` and open the pull request against `QA` (QA is merged to `main`).
 2. Run `python cli/tests/validate_rules.py` locally and verify output shows `Zero collisions`.
 3. Open a pull request with a descriptive title and summary of changes.
 4. A maintainer will review your rules for OEM accuracy, tier classification, and safety invariants.

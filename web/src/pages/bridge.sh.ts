@@ -10,8 +10,7 @@ set -euo pipefail
 ARCHIVE_URL="https://github.com/Rovoxia/AI-Phone-Debloater/archive/refs/heads/main.zip"
 SUBFOLDER="cli"
 INSTALL_DIR="\${HOME}/.ai-phone-debloater"
-PORT=53123
-if [ -n "\${BRIDGE_PORT}" ]; then PORT="\${BRIDGE_PORT}"; fi
+PORT="\${BRIDGE_PORT:-53123}"
 APP_URL="https://debloater.rovoxia.com/app?bridge=1"
 
 echo "========================================================"
@@ -27,7 +26,7 @@ sync_repo() {
     trap "rm -rf \"\${tmpdir}\"" EXIT
 
     echo "[INFO] Fetching latest repository files..."
-    curl -sSL "\${ARCHIVE_URL}" -o "\${zipfile}"
+    curl -fsSL "\${ARCHIVE_URL}" -o "\${zipfile}"
 
     echo "[INFO] Extracting archive..."
     if command -v unzip &>/dev/null; then
@@ -47,13 +46,13 @@ sync_repo() {
     installed_version=""
     installed_version_file="\${INSTALL_DIR}/VERSION"
     if [ -f "\${installed_version_file}" ]; then
-        installed_version="\$(tr -d '\r\n' < "\${installed_version_file}")"
+        installed_version="\$(tr -d '\\r\\n' < "\${installed_version_file}")"
     fi
 
     new_versionfile="\${extracted_root}/VERSION"
     new_version=""
     if [ -f "\${new_versionfile}" ]; then
-        new_version="\$(tr -d '\r\n' < "\${new_versionfile}")"
+        new_version="\$(tr -d '\\r\\n' < "\${new_versionfile}")"
     else
         echo "[ERROR] VERSION file not found in repository archive." >&2
         exit 1
@@ -86,29 +85,6 @@ sync_repo() {
     fi
 }
 
-# --- Helper: launch bridge server ---
-launch_bridge() {
-    local bridge_server debloat_engine
-
-    bridge_server="\${INSTALL_DIR}/src/bridge_server.py"
-    debloat_engine="\${INSTALL_DIR}/debloat_engine.py"
-
-    if [ -f "\${bridge_server}" ]; then
-        echo "[INFO] Starting bridge server on port \${PORT} ..."
-        python3 "\${bridge_server}" "--port" "\${PORT}"
-    else
-        echo "[INFO] Starting debloat engine in bridge mode on port \${PORT} ..."
-        python3 "\${debloat_engine}" "--bridge" "--port" "\${PORT}"
-    fi
-}
-
-cleanup() {
-    if [ -n "\${tmpdir}" ]; then
-        rm -rf "\${tmpdir}"
-    fi
-}
-trap cleanup EXIT
-
 # --- Helpers / prerequisites ---
 if ! command -v curl >/dev/null 2>&1; then
     echo "[ERROR] Required tool 'curl' is not installed." >&2
@@ -123,11 +99,11 @@ fi
 # Open default browser to the app with bridge=1 query param
 open_browser() {
     if command -v xdg-open >/dev/null 2>&1; then
-        xdg-open "\${APP_URL}" >/dev/null 2>&1
+        xdg-open "\${APP_URL}" >/dev/null 2>&1 || true
     elif command -v open >/dev/null 2>&1; then
-        open "\${APP_URL}" >/dev/null 2>&1
+        open "\${APP_URL}" >/dev/null 2>&1 || true
     elif command -v start >/dev/null 2>&1; then
-        start "" "\${APP_URL}" >/dev/null 2>&1
+        start "" "\${APP_URL}" >/dev/null 2>&1 || true
     else
         echo "[WARN] No browser opener found. Opening manually: \${APP_URL}" >&2
     fi
@@ -135,14 +111,11 @@ open_browser() {
 
 # --- Main ---
 sync_repo
-mkdir -p "\${INSTALL_DIR}/src"
-
 open_browser
-launch_bridge
 
-echo "[INFO] Bridge server active on http://127.0.0.1:\${PORT}"
+echo "[INFO] Starting bridge server on http://127.0.0.1:\${PORT}"
 echo "[INFO] Press Ctrl+C in this terminal to stop the bridge when done."
-
+bash "\${INSTALL_DIR}/bin/debloat.sh" --bridge --port "\${PORT}"
 `;
 
 export const GET: APIRoute = async () => {

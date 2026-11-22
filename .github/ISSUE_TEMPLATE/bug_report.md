@@ -32,13 +32,13 @@ Clear and concise description of the bug.
 - Bootloader unlocked: yes/no
 
 ### Logs / output
-Paste the command output or attach a log. Use `python cli/src/debloat_engine.py --dry-run` first and include its output.
+Paste the command output or attach a log. Run `python cli/src/debloat_engine.py --scan --verbose` and include its output.
 
 ```
 <output here>
 ```
 
 ### Checklist
-- [ ] I read [SAFETY_GUIDELINES.md](SAFETY_GUIDELINES.md)
+- [ ] I read [SAFETY_GUIDELINES.md](https://github.com/Rovoxia/AI-Phone-Debloater/blob/main/SAFETY_GUIDELINES.md)
 - [ ] I searched existing issues to avoid duplicates
 - [ ] I included the exact `adb` command that failed (if any)
