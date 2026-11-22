@@ -16,7 +16,7 @@ AI-Phone-Debloater is an open-source, rootless Android bloatware removal engine 
 Key facts:
 - 352 curated rules across 4 safety tiers
 - 89 inviolable core system packages hard-blocked against removal (Tier 4 / Critical Sentinel)
-- Operates strictly on Android user 0 (primary owner profile)
+- Operates on Android user 0 (primary owner profile) by default; `--user N` selects another user such as a work profile
 - 100% reversible via timestamped JSON snapshots + 1-click restore
 - No root, no unlocked bootloader, Samsung Knox counter stays 0x0
 - dm-verity / read-only system partitions never modified; OTA updates continue normally
@@ -34,13 +34,13 @@ Master AI prompt: https://debloater.rovoxia.com/prompt.md
 Rules are partitioned into four strict tiers. Higher tiers are progressively more restrictive.
 
 ### Tier 1 — Safe Bloat (Default)
-Pure bloatware, telemetry, and junk with zero side-effects. Preloaded third-party apps (Facebook, Microsoft, Netflix, Amazon), carrier telemetry, aggressive OEM ad daemons (e.g., Xiaomi MSA `com.miui.msa.global`), diagnostic loggers. 100% safe to disable for any user.
+196 rules. Bloatware, telemetry, and junk with no side-effects for normal use: carrier apps, preloaded partner apps (Facebook, Microsoft, Netflix, Amazon), OEM ad daemons (Xiaomi MSA `com.miui.msa.global`), telemetry, and OEM extras such as Bixby, AR Emoji / AR Zone, game hubs and duplicate OEM cloud apps (Xiaomi Cloud). Safe to disable for any user.
 
 ### Tier 2 — Advanced Debloat
-OEM companion apps and optional services. OEM voice assistants (Samsung Bixby `com.samsung.android.bixby.agent`), OEM cloud sync (Samsung Cloud, Xiaomi Cloud), Digital Wellbeing, AR Zone / sticker apps. Disabling saves significant battery and CPU.
+66 rules. Optional OEM and Google features that some people use: wallets and Samsung Pass, DeX, Link to Windows, theme stores and Galaxy Store, Android Auto, Digital Wellbeing, Modes and Routines, accessibility (TalkBack, Live Transcribe), OEM accounts and cloud (HeyTap Cloud), stock notes, recorder and file apps. Safe to disable if the user does not use the feature.
 
-### Tier 3 — Aggressive / Expert
-Stock OEM apps (OEM stock calculators, stock notes, stock gallery, OEM keyboards) when the user prefers third-party or open-source alternatives. Use only when replacements are available.
+### Tier 3 — Extreme
+1 rule: the Transsion OTA updater (`com.transsion.otaupdate`); disabling it stops system updates. Stock dialer, contacts, SMS, keyboards and launchers are Tier 4 (hard-blocked), not Tier 3.
 
 ### Tier 4 — Critical System Blacklist (Protected)
 89 core operating system packages that must NEVER be touched under any circumstances. Examples: Android Framework `android`, `com.android.systemui` (SystemUI), `com.android.phone` (Telephony), `com.android.settings`, `com.android.vending` (Play Store), `com.google.android.gms` (GMS), Keystore, Wi-Fi stack, Bluetooth, NFC, PackageInstaller, DocumentsUI, Media providers, Keyguard, Biometrics, Fingerprint, LockSettings, WebView, Vending, Shell, NetworkStack, IMS, CarrierConfig, SMS push, Emergency services, Samsung system apps (`com.samsung.android.app.rss`, `com.samsung.android.app.sbrowser`, `com.samsung.android.scloud`, etc.), Google Latin IME, Google WebView.
@@ -52,7 +52,7 @@ Tier summary:
 |------|------|-------------|------------|
 | 1 | Safe Bloat | All users | No |
 | 2 | Advanced | Experienced users | No |
-| 3 | Aggressive / Expert | Experts only | No |
+| 3 | Extreme | Experts only | No |
 | 4 | Critical | Nobody (hard-blocked) | Yes — 89 packages |
 
 ---
@@ -113,16 +113,29 @@ Python 3.11+, standard library only, no `requirements.txt`.
 - Scan device packages: `python cli/src/debloat_engine.py --scan`
 - Dry-run simulation: `python cli/src/debloat_engine.py --dry-run --tier 1`
 - Debloat execution: `python cli/src/debloat_engine.py --tier 1 --action disable`
-- Restore snapshot: `python cli/src/debloat_engine.py --restore cli/backups/snapshot_<model>_<timestamp>.json`
+- Named packages only: `python cli/src/debloat_engine.py --package com.facebook.katana --dry-run` (repeatable; with `--tier`, only if the package is in that tier; critical Tier 4 packages are refused with a non-zero exit; a package with no rule is allowed with a warning and uses `--action`)
+- `--action disable|uninstall` (default `disable`) applies to `--tier` or `--package`
+- Other Android user: `--user N` (default 0), e.g. a work profile. Snapshots record the user; `--restore` uses the user stored in the snapshot
+- List snapshots: `python cli/src/debloat_engine.py --list-snapshots` (newest first, no phone needed)
+- Restore newest snapshot of the connected phone: `python cli/src/debloat_engine.py --restore`
+- Restore a specific snapshot: `python cli/src/debloat_engine.py --restore ~/AiPhoneDebloater/backups/snapshot_<model>_<timestamp>.json` (file name, path or unique part of the name)
+- Local web app bridge: `python cli/src/debloat_engine.py --bridge [--port 53123] [--allow-origin http://localhost:4321]` (`--allow-origin` is repeatable)
 - Rule validation: `python cli/tests/validate_rules.py`
+- Unit tests: `python -m unittest discover -s cli/tests`
 - Version: `python cli/src/debloat_engine.py --version` (loads root `VERSION` via `load_version()`)
 - Help: `python cli/src/debloat_engine.py --help`
 
-Launchers:
+The plan and the confirmation list show the app name beside each package id.
+
+Launchers (accept the same flags):
 - Windows: `cli\bin\debloat.bat`
 - Unix: `bash cli/bin/debloat.sh`
 
-All actions create timestamped JSON snapshots in `~/AiPhoneDebloater/backups/` (primary) with `cli/backups/` as secondary fallback.
+All actions create timestamped JSON snapshots in `~/AiPhoneDebloater/backups/`. `cli/backups/` (repo) and `~/.ai-phone-debloater/backups/` (zero-git install) are old locations that are still searched when restoring; nothing new is written there.
+
+Local bridge security: the bridge listens on `127.0.0.1:53123`, checks for a loopback `Host` and an allowlisted web origin, and requires a per-session token in the `X-Bridge-Token` header on every route except `GET /health` (otherwise `401`). The one-click scripts (`bridge.sh` / `bridge.ps1`) generate a random token per run, pass it in `AIPD_BRIDGE_TOKEN`, and open `https://debloater.rovoxia.com/app?bridge=1#token=<token>`; the fragment is not sent to servers, and the web app moves the token to `sessionStorage` and removes it from the address bar. A bridge started by hand prints that URL; paste it if the web app asks for a token, and treat it as a password for the session. A custom `AIPD_BRIDGE_TOKEN` must be at least 16 characters from `A-Z a-z 0-9 . _ ~ -`. Direct callers: `curl -H "X-Bridge-Token: <token>" http://127.0.0.1:53123/devices`.
+
+Web app (`/app`): the confirmation dialog lists each package with its app name, and "Export CSV" downloads the currently filtered package list.
 
 ---
 
@@ -140,9 +153,9 @@ Routes: `web/src/pages/prompt.md.ts`, `web/src/pages/run.ps1.ts`, `web/src/pages
 ## 8. Rollback Guide
 
 1. Every debloat action writes a timestamped JSON snapshot recording all package states before mutation.
-   - Primary: `~/AiPhoneDebloater/backups/snapshot_<model>_<timestamp>.json`
-   - Fallback: `cli/backups/`
-2. Restore via engine: `python cli/src/debloat_engine.py --restore <snapshot.json>`
+   - Written to: `~/AiPhoneDebloater/backups/snapshot_<model>_<timestamp>.json`
+   - Old locations still searched on restore: `cli/backups/` (repo), `~/.ai-phone-debloater/backups/` (zero-git install)
+2. Restore via engine: `python cli/src/debloat_engine.py --restore <snapshot.json>`, or `--restore` with no value for the newest snapshot of the connected phone (`--list-snapshots` lists them)
 3. Per-app manual restore: `adb shell cmd package install-existing --user 0 <pkg>`
 4. Full factory reset also returns device to stock since `/system` is never altered (dm-verity intact).
 
@@ -170,7 +183,7 @@ The prompt emphasizes: rootless, user 0 only, `-k` data preservation, critical b
 
 - `cli/src/debloat_engine.py` + `cli/src/connection/` — engine & ADB connection subsystem (stdlib-only)
 - `cli/tests/validate_rules.py` — rule validation suite (CI)
-- `cli/tests/test_connection.py` — connection subsystem tests (CI)
+- `cli/tests/test_*.py` — unit tests (engine, connection, bridge, version), run in CI with `python -m unittest discover -s cli/tests`
 - `cli/generate_rules_dataset.py` — regenerates `web/src/data/rules-dataset.json` from `cli/rules/*.json`; CI fails if out of sync
 - `web/src/pages/index.astro` — landing page
 - `web/src/pages/oems.astro` — OEM directory + interactive rules explorer
@@ -180,5 +193,5 @@ The prompt emphasizes: rootless, user 0 only, `-k` data preservation, critical b
 - `web/public/og-image.svg` / `og-image.png` — 1200x630 social poster
 - `web/public/robots.txt`, `llms.txt`, `llms-full.txt`, `pricing.md` — AI/machine-readable files
 - `.github/workflows/ci.yml` — CI (lint, validate, test, web-test, security, final-status)
-- `.github/workflows/release.yml` — tag-based release (GitHub Release + CHANGELOG.md)
+- `.github/workflows/release.yml` — creates GitHub Release `v<VERSION>` with generated notes when a push to `main` changes `VERSION` (or on manual dispatch); `CHANGELOG.md` is edited by hand
 - Root `VERSION` — single source of truth (SemVer)

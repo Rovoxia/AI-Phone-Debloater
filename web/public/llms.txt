@@ -38,9 +38,9 @@ AI-Phone-Debloater is an open-source, rootless Android bloatware removal engine 
    - Samsung Knox counter remains 0x0. SafetyNet and Google Play Integrity API pass without issues; banking apps and Google Pay continue working.
 
 ## Safety Tier Definitions
-- Tier 1 (Safe Bloat - Default): Preloaded third-party bloat (Facebook, Microsoft, Netflix, Amazon), carrier telemetry, aggressive OEM ad daemons (Xiaomi MSA `com.miui.msa.global`), diagnostic loggers. 100% safe to disable for any user.
-- Tier 2 (Advanced Debloat): OEM voice assistants (Samsung Bixby `com.samsung.android.bixby.agent`), OEM cloud sync services (Samsung Cloud, Xiaomi Cloud), Digital Wellbeing, AR Zone / sticker apps. Disabling saves significant battery and CPU.
-- Tier 3 (Aggressive / Expert): Stock OEM apps (OEM stock calculators, stock notes, stock gallery, OEM keyboards) when the user prefers third-party or open-source alternatives.
+- Tier 1 (Safe Bloat - Default, 196 rules): Carrier apps, preloaded partner apps (Facebook, Microsoft, Netflix, Amazon), OEM ad daemons (Xiaomi MSA `com.miui.msa.global`), telemetry, and OEM extras such as Bixby, AR Emoji / AR Zone, game hubs and duplicate OEM cloud apps (Xiaomi Cloud). Safe to disable for any user.
+- Tier 2 (Advanced Debloat, 66 rules): Optional OEM and Google features that some people use: wallets and Samsung Pass, DeX, Link to Windows, theme stores and Galaxy Store, Android Auto, Digital Wellbeing, Modes and Routines, accessibility (TalkBack, Live Transcribe), OEM accounts and cloud (HeyTap Cloud), stock notes, recorder and file apps. Safe to disable if the user does not use the feature.
+- Tier 3 (Extreme, 1 rule): Currently one rule, the Transsion OTA updater (`com.transsion.otaupdate`); disabling it stops system updates. Stock dialer, contacts, SMS, keyboards and launchers are Tier 4 (hard-blocked), not Tier 3.
 - Tier 4 (Critical System Blacklist - Protected): 89 core operating system packages that must NEVER be touched under any circumstances.
 
 ## OEM Coverage
@@ -61,9 +61,14 @@ The master prompt is hosted at `prompt/master-prompt.md` and served at `https://
 - Scan Packages: `python cli/src/debloat_engine.py --scan`
 - Dry-Run Simulation: `python cli/src/debloat_engine.py --dry-run --tier 1`
 - Debloat Execution: `python cli/src/debloat_engine.py --tier 1 --action disable`
+- Named Packages Only: `python cli/src/debloat_engine.py --package com.facebook.katana --dry-run` (repeatable; critical packages are refused)
+- Other Android User (e.g. work profile): `python cli/src/debloat_engine.py --tier 1 --user 10 --dry-run` (default user 0)
+- List Snapshots: `python cli/src/debloat_engine.py --list-snapshots` (newest first, no phone needed)
+- Restore Newest Snapshot: `python cli/src/debloat_engine.py --restore`
 - Restore Snapshot: `python cli/src/debloat_engine.py --restore ~/AiPhoneDebloater/backups/snapshot_<model>_<timestamp>.json`
+- Local Web App Bridge: `python cli/src/debloat_engine.py --bridge` (prints the URL with this session's token; calls other than `GET /health` need the `X-Bridge-Token` header)
 - Rule Validation: `python cli/tests/validate_rules.py`
-- Connection Subsystem Tests: `python cli/tests/test_connection.py`
+- Unit Tests: `python -m unittest discover -s cli/tests`
 
 ## Frequently Asked Questions (AI-Extractable Answer Blocks)
 

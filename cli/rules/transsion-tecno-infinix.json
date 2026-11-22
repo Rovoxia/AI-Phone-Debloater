@@ -53,7 +53,7 @@
       "package": "com.transsion.lockscreenmagazine",
       "name": "Lockscreen Magazine",
       "tier": 1,
-      "category": "ad",
+      "category": "adware",
       "description": "Aggressive lockscreen ad/promo service that pushes ads and sponsored content to the lockscreen.",
       "safe_to_remove": true,
       "recommended_action": "uninstall"
@@ -80,7 +80,7 @@
       "package": "com.transsion.recommendation",
       "name": "App Recommendation Service",
       "tier": 1,
-      "category": "ad",
+      "category": "adware",
       "description": "System service that pushes recommended app install notifications and promotional popups.",
       "safe_to_remove": true,
       "recommended_action": "uninstall"
@@ -89,7 +89,7 @@
       "package": "com.transsion.ads",
       "name": "Transsion Ads Framework",
       "tier": 1,
-      "category": "ad",
+      "category": "adware",
       "description": "Transsion advertising framework delivering system-level ads and promos across HiOS/XOS.",
       "safe_to_remove": true,
       "recommended_action": "uninstall"
@@ -107,7 +107,7 @@
       "package": "com.transsion.browser",
       "name": "Transsion Browser",
       "tier": 1,
-      "category": "browser",
+      "category": "bloatware",
       "description": "Preloaded Transsion web browser with sponsored bookmarks, trending content ads, and search tracking.",
       "safe_to_remove": true,
       "recommended_action": "uninstall"
@@ -116,7 +116,7 @@
       "package": "com.transsion.themestore",
       "name": "Transsion Theme Store",
       "tier": 2,
-      "category": "theme_store",
+      "category": "optional_feature",
       "description": "Storefront for purchasing wallpapers, ringtones, lockscreens, and system fonts. Optional.",
       "safe_to_remove": true,
       "recommended_action": "disable"
@@ -206,7 +206,7 @@
       "package": "com.infinix.adservice",
       "name": "Infinix Ad Service",
       "tier": 1,
-      "category": "ad",
+      "category": "adware",
       "description": "Infinix XOS ad delivery service pushing promotional notifications.",
       "safe_to_remove": true,
       "recommended_action": "uninstall"

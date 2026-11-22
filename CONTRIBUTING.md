@@ -61,7 +61,7 @@ OEM-specific bloat lists live in `cli/rules/`. Each file is a JSON rule set desc
 | `safe_to_remove` | boolean | Optional | `true` if safe to disable or uninstall for user 0. |
 | `recommended_action` | string | Optional | `disable` (preferred) or `uninstall`. |
 
-Entries in `critical-do-not-touch.json` carry no `tier` field and are treated as Tier 4.
+Entries in `critical-do-not-touch.json` carry no `tier` field and are treated as Tier 4. They use `"recommended_action": "never"` and carry an extra `severity` key (e.g. `"CRITICAL_BRICK_RISK"`).
 
 ---
 
@@ -73,17 +73,17 @@ Before submitting a pull request, run the automated test suite locally:
 # 1. Run Rule Validation Test (Checks JSON syntax, structure, and 0 collisions with Critical Blacklist)
 python cli/tests/validate_rules.py
 
-# 2. Run Connection, Bridge Server and Version SSOT Tests
-python cli/tests/test_connection.py
-python cli/tests/test_bridge_server.py
-python cli/tests/test_version_ssot.py
+# 2. Run all unit tests (engine, connection, bridge server, version SSOT) and the version check
+python -m unittest discover -s cli/tests
 python cli/sync_version.py --check   # after changing VERSION, run: python cli/sync_version.py
+# Single test:
+python -m unittest discover -s cli/tests -k test_package_validation
 
 # 3. Compile Python Sources (Syntax & type checking)
 python -m py_compile cli/src/debloat_engine.py cli/src/bridge_server.py cli/tests/validate_rules.py cli/tests/test_connection.py cli/tests/test_bridge_server.py
 
 # 4. Lint Python (ruff, same command as CI)
-pip install ruff && ruff check cli/src/debloat_engine.py cli/tests/
+pip install ruff==0.17.6 && ruff check cli/src/debloat_engine.py cli/tests/
 
 # 5. Test CLI Engine Simulation
 python cli/src/debloat_engine.py --help
@@ -103,7 +103,16 @@ git diff --exit-code web/src/data/rules-dataset.json
 
 These checks run automatically in GitHub Actions CI on Ubuntu, Windows, and macOS (Python 3.11 + Node 22), across the `lint`, `validate`, `test`, `web-test`, and `security` jobs.
 
-CI also runs a release workflow (`.github/workflows/release.yml`) that runs on `v*` tags and on every merged pull request to `main`, creates GitHub Releases and updates `CHANGELOG.md`.
+### Changelog and releases
+
+The release workflow (`.github/workflows/release.yml`) creates a GitHub release `v<VERSION>` with generated notes when a push to `main` changes the root `VERSION` file, or on manual dispatch. It does not edit `CHANGELOG.md`: add your entry under `## [Unreleased]` in `CHANGELOG.md` by hand in the same pull request.
+
+To release:
+
+1. Edit `VERSION`.
+2. Run `python cli/sync_version.py`.
+3. Move the `## [Unreleased]` entries in `CHANGELOG.md` under a new heading for that version.
+4. Merge to `main`.
 
 ---
 
@@ -111,9 +120,9 @@ CI also runs a release workflow (`.github/workflows/release.yml`) that runs on `
 
 ### Safety Tier Assignment
 
-- **Tier 1 (Safe Bloat — Default):** Carrier apps, preloaded sponsor apps (Netflix, Facebook, Amazon, LinkedIn), OEM ad daemons (`com.miui.msa.global`), tracking loggers. Disabling carries zero negative impact on OS stability.
-- **Tier 2 (Advanced Debloat):** OEM cloud sync, secondary voice assistants (Bixby, Celia), Digital Wellbeing, AR Zone / sticker apps. Safe to disable if user does not rely on that specific ecosystem feature.
-- **Tier 3 (Extreme / Replacement Required):** Stock Dialer, Contacts, Keyboard, Launcher. **Strict requirement:** User must have a working third-party replacement installed and configured before touching these.
+- **Tier 1 (Safe Bloat — Default):** Carrier apps, preloaded sponsor apps (Netflix, Facebook, Amazon, LinkedIn), OEM ad daemons (`com.miui.msa.global`), telemetry, and OEM extras nobody needs (Bixby, AR Emoji, game hubs, duplicate OEM cloud apps). Disabling carries zero negative impact on OS stability.
+- **Tier 2 (Advanced Debloat):** Optional OEM or Google features some users rely on: wallets and Samsung Pass, DeX, Link to Windows, theme stores, Android Auto, Digital Wellbeing, Modes and Routines, accessibility services, OEM accounts/cloud, stock notes/recorder/file apps. Safe to disable if the user does not use that feature.
+- **Tier 3 (Extreme):** Packages whose removal costs something real even for users who never open them, such as system updaters (today only `com.transsion.otaupdate`). Stock Dialer, Contacts, SMS, Keyboard and Launcher are Tier 4 and must not be added to OEM files.
 - **Tier 4 (Critical Core — HARD BLOCKED):** Never propose packages in `cli/rules/critical-do-not-touch.json` or core Android subsystems (`com.android.systemui`, telephony stack, keystore, package installer).
 
 ### Data Preservation Invariants

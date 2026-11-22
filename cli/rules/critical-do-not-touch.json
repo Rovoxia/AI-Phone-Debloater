@@ -573,9 +573,9 @@
     },
     {
       "package": "com.android.calendar",
-      "name": "Calendar provider",
+      "name": "Calendar",
       "category": "framework_core",
-      "description": "Calendar provider required by the system or core user experience.",
+      "description": "Calendar app required by the system or core user experience.",
       "severity": "CRITICAL_BRICK_RISK",
       "safe_to_remove": false,
       "recommended_action": "never"
