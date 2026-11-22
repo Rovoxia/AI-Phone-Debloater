@@ -284,6 +284,7 @@ class TestAdbClient(unittest.TestCase):
         with tempfile.NamedTemporaryFile(suffix=".exe" if os.name == "nt" else "", delete=False) as f:
             temp_adb = f.name
         self.addCleanup(os.remove, temp_adb)
+        os.chmod(temp_adb, 0o755)  # POSIX: adb candidates must be executable
         return AdbClient(adb_path=temp_adb)
 
     @patch("subprocess.run", side_effect=subprocess.TimeoutExpired(["adb"], 1))
