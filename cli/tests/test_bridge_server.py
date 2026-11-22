@@ -105,10 +105,14 @@ class TestBridgeHttpEndpoints(unittest.TestCase):
             self.assertIn("GET", resp.headers.get("Access-Control-Allow-Methods", ""))
 
     def test_foreign_origin_rejected(self):
-        """A request from a website that is not allow-listed gets 403 and no CORS grant."""
-        for method in ("GET", "OPTIONS"):
+        """A request from a website that is not allow-listed gets 403 and no CORS grant.
+
+        Localhost origins are not trusted by default either (opt in with --allow-origin).
+        """
+        for method, origin in (("GET", "https://evil.example"), ("OPTIONS", "https://evil.example"),
+                               ("GET", "http://localhost:4321"), ("GET", "http://127.0.0.1:8080")):
             req = urllib.request.Request(f"http://127.0.0.1:{self.port}/health", method=method,
-                                         headers={"Origin": "https://evil.example"})
+                                         headers={"Origin": origin})
             with self.assertRaises(urllib.error.HTTPError) as ctx:
                 urllib.request.urlopen(req)
             self.assertEqual(ctx.exception.code, 403)
@@ -130,7 +134,7 @@ class TestBridgeHttpEndpoints(unittest.TestCase):
 
     def test_allowed_origin_echoed(self):
         """Allowed origins are echoed back (never '*') together with Vary: Origin."""
-        for origin in ("https://debloater.rovoxia.com", "http://localhost:4321"):
+        for origin in ("https://debloater.rovoxia.com",):
             req = urllib.request.Request(f"http://127.0.0.1:{self.port}/packages", headers={"Origin": origin})
             with self.assertRaises(urllib.error.HTTPError) as ctx:  # 400: no serial, no adb call
                 urllib.request.urlopen(req)

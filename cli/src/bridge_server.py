@@ -80,7 +80,6 @@ ALLOWED_MODES = ("dry-run", "apply")
 # websites driving the bridge. Extra origins come from --allow-origin.
 _LOOPBACK = r"(?:127\.0\.0\.1|localhost)(?::[0-9]{1,5})?"
 HOST_RE = re.compile(_LOOPBACK, re.IGNORECASE)
-LOCAL_ORIGIN_RE = re.compile("http://" + _LOOPBACK)
 ALLOWED_ORIGINS: set[str] = {"https://debloater.rovoxia.com"}
 
 MAX_BODY_BYTES = 1024 * 1024
@@ -119,7 +118,8 @@ def is_valid_package(pkg: Any) -> bool:
 
 
 def origin_allowed(origin: str) -> bool:
-    return origin in ALLOWED_ORIGINS or bool(LOCAL_ORIGIN_RE.fullmatch(origin))
+    # No blanket localhost trust: any local web server could otherwise drive the phone.
+    return origin in ALLOWED_ORIGINS
 
 
 def is_critical(pkg: str) -> bool:

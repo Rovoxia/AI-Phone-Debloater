@@ -10,7 +10,7 @@ AI-Phone-Debloater is an open-source Android debloating utility. Security update
 
 ## Reporting a Vulnerability
 
-AI-Phone-Debloater does not expose network services by default. The optional local WebApp bridge (`python cli/src/bridge_server.py` or `debloat_engine.py --bridge`) listens only on 127.0.0.1 (port 53123 by default) and only accepts browser requests from https://debloater.rovoxia.com, a localhost origin, or origins passed with `--allow-origin`. It operates locally on your machine via ADB commands issued to your own Android device.
+AI-Phone-Debloater does not expose network services by default. The optional local WebApp bridge (`python cli/src/bridge_server.py` or `debloat_engine.py --bridge`) listens only on 127.0.0.1 (port 53123 by default) and only accepts browser requests from https://debloater.rovoxia.com or origins you pass with `--allow-origin` (localhost origins are not trusted by default). It operates locally on your machine via ADB commands issued to your own Android device.
 
 If you believe you've found a security issue (for example, a rules-file injection risk, unsafe package-removal bypass, or hard-coded credential exposure), please:
 

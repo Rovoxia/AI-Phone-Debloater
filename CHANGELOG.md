@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Security
 
 - Local bridge no longer loses its Tier 4 guard in the one-liner install layout: rules are resolved relative to the script, and the bridge refuses to start if the critical list is empty
-- Local bridge now rejects requests from unknown origins. `Access-Control-Allow-Origin: *` is replaced by an allowlist (`https://debloater.rovoxia.com`, `http://localhost:*`, `http://127.0.0.1:*`, plus `--allow-origin URL`), the `Host` header must be loopback (blocks DNS rebinding), and `POST` requires `Content-Type: application/json`
+- Local bridge now rejects requests from unknown origins. `Access-Control-Allow-Origin: *` is replaced by an allowlist (`https://debloater.rovoxia.com`, plus origins opted into with `--allow-origin URL`, for example `http://localhost:4321` for local web development), the `Host` header must be loopback (blocks DNS rebinding), and `POST` requires `Content-Type: application/json`
 - Package-name validation in the engine and bridge uses `fullmatch`, so a name with a trailing newline can no longer bypass the critical list
 - Removed the unauthenticated bridge `POST /shutdown` route and the `--host` flag; the bridge always binds `127.0.0.1`
 - Web app derives its Tier 4 set from `rules-dataset.json` instead of a hand-copied list that had drifted from `critical-do-not-touch.json` by 44 packages in each direction
