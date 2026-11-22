@@ -589,6 +589,142 @@ class TestQrPairingManager(unittest.TestCase):
             mgr.execute_qr_pairing_flow(session=session, timeout=60.0)
         wireless.verify_and_get_info.assert_not_called()
 
+    # -- Phase 3: finding the connect port after a successful pairing --------
+
+    PHONE_IP = "192.168.0.48"
+    LEGACY = DiscoveredService("adb-R58M123ABC", "_adb._tcp", PHONE_IP, 5555)
+    TLS = DiscoveredService("adb-R58M123ABC-xYz12", "_adb-tls-connect._tcp", PHONE_IP, 37215)
+
+    def _paired_flow(self, devices=(), **flow_kwargs):
+        """Pair with PHONE_IP, with adb and mDNS mocked. Returns (mgr, session, wireless, mdns, clock, run).
+
+        The clock only moves when the code sleeps, so nothing really waits.
+        """
+        client = MagicMock()
+        client.list_devices.return_value = list(devices)
+        client.getprop.return_value = "x"
+        mdns = MagicMock()
+        wireless = MagicMock()
+        wireless.pair_with_code.return_value = (True, "Successfully paired")
+        wireless.connect.return_value = (True, "Connected")
+        mgr = QrPairingManager(client, wireless_handler=wireless, mdns_discovery=mdns)
+        session = mgr.create_pairing_session(ttl_seconds=60.0)
+        mdns.get_pairing_services.return_value = [
+            DiscoveredService(session.service_name, "_adb-tls-pairing._tcp", self.PHONE_IP, 41235)
+        ]
+        clock = MagicMock()
+        clock.now = 0.0
+        clock.time.side_effect = lambda: clock.now
+        clock.sleep.side_effect = lambda seconds: setattr(clock, "now", clock.now + seconds)
+
+        def run():
+            with patch("connection.qr_pairing.time", clock):
+                return mgr.execute_qr_pairing_flow(session=session, timeout=60.0, **flow_kwargs)
+
+        return mgr, session, wireless, mdns, clock, run
+
+    def test_connects_to_tls_port_not_legacy_5555(self):
+        """A legacy _adb._tcp entry on 5555, listed first, must not be the connect target."""
+        _, session, wireless, mdns, _, run = self._paired_flow()
+        mdns.get_connect_services.return_value = [self.LEGACY, self.TLS]
+        run()
+        self.assertEqual([c.args[0] for c in wireless.connect.call_args_list], ["192.168.0.48:37215"])
+        wireless.verify_and_get_info.assert_called_once_with("192.168.0.48:37215")
+        self.assertEqual(session.status, "connected")
+
+    def test_auto_connected_under_mdns_serial(self):
+        """adb lists the paired phone as <instance>.<service type>: use that serial, do not connect again."""
+        other = DiscoveredService("adb-OTHER-aaaaaa", "_adb-tls-connect._tcp", "192.168.0.99", 40000)
+        devices = [
+            {"serial": "adb-OTHER-aaaaaa._adb-tls-connect._tcp", "state": "device"},
+            {"serial": "adb-R58M123ABC-xYz12._adb-tls-connect._tcp", "state": "device"},
+        ]
+        _, session, wireless, mdns, _, run = self._paired_flow(devices)
+        mdns.get_connect_services.return_value = [other, self.LEGACY, self.TLS]
+        info = run()
+        wireless.connect.assert_not_called()
+        self.assertEqual(info.serial, "adb-R58M123ABC-xYz12._adb-tls-connect._tcp")
+        self.assertEqual(info.endpoint, "192.168.0.48:37215")
+        self.assertEqual((info.state, info.transport_type), ("device", "wireless"))
+        self.assertEqual(session.status, "connected")
+
+    def test_connect_retried_until_it_succeeds(self):
+        """The port can show up late or change: a refused connect is retried on a later poll."""
+        moved = DiscoveredService(self.TLS.name, self.TLS.service_type, self.PHONE_IP, 40001)
+        _, _, wireless, mdns, clock, run = self._paired_flow()
+        mdns.get_connect_services.side_effect = [[self.LEGACY], [self.LEGACY, self.TLS], [moved]]
+        wireless.connect.side_effect = [(False, "connection refused"), (True, "Connected")]
+        run()
+        self.assertEqual(
+            [c.args[0] for c in wireless.connect.call_args_list],
+            ["192.168.0.48:37215", "192.168.0.48:40001"],
+        )
+        wireless.verify_and_get_info.assert_called_once_with("192.168.0.48:40001")
+        self.assertEqual(clock.sleep.call_count, 2)
+
+    def test_only_legacy_service_gives_clear_error(self):
+        """No TLS connect service: no guess at 5555, a bounded wait and an error both front ends can show."""
+        _, session, wireless, mdns, clock, run = self._paired_flow()
+        mdns.get_connect_services.return_value = [self.LEGACY]
+        with self.assertRaises(PairingError) as ctx:
+            run()
+        wireless.connect.assert_not_called()
+        wireless.verify_and_get_info.assert_not_called()
+        msg = str(ctx.exception)
+        self.assertIn("connect port was not announced", msg)
+        self.assertIn("Turn Wireless debugging off and on", msg)
+        self.assertIn("--wireless IP:PORT", msg)
+        self.assertNotIn("option 2", msg)
+        self.assertEqual(clock.now, 30.0)
+        self.assertEqual(session.status, "paired")
+
+    def test_connect_never_succeeds_reports_last_error(self):
+        _, _, wireless, mdns, clock, run = self._paired_flow()
+        mdns.get_connect_services.return_value = [self.TLS]
+        wireless.connect.return_value = (False, "cannot connect to 192.168.0.48:37215: refused (10061)")
+        with self.assertRaises(PairingError) as ctx:
+            run()
+        msg = str(ctx.exception)
+        self.assertIn("connection to 192.168.0.48:37215 failed", msg)
+        self.assertIn("refused (10061)", msg)
+        self.assertIn("--wireless IP:PORT", msg)
+        self.assertEqual(wireless.connect.call_count, 30)
+        self.assertEqual(clock.now, 30.0)
+
+    def test_port_prompt_fallback(self):
+        """With no TLS connect service the caller's port prompt is still used."""
+        prompt = MagicMock(return_value=40123)
+        _, _, wireless, mdns, _, run = self._paired_flow(port_prompt_cb=prompt)
+        mdns.get_connect_services.return_value = [self.LEGACY]
+        run()
+        prompt.assert_called_once_with("192.168.0.48")
+        self.assertEqual([c.args[0] for c in wireless.connect.call_args_list], ["192.168.0.48:40123"])
+        wireless.verify_and_get_info.assert_called_once_with("192.168.0.48:40123")
+
+    def test_cancel_while_waiting_for_connect_port(self):
+        mgr, _, wireless, mdns, _, run = self._paired_flow()
+
+        def cancel_then_nothing():
+            mgr.cancel()
+            return []
+
+        mdns.get_connect_services.side_effect = cancel_then_nothing
+        with self.assertRaises(OperationCancelledError):
+            run()
+        self.assertEqual(mdns.get_connect_services.call_count, 1)
+        wireless.connect.assert_not_called()
+
+    def test_pairing_service_name_must_contain_session_name(self):
+        """A short or foreign pairing name is not ours; an mDNS rename suffix is still accepted."""
+        _, session, wireless, mdns, _, run = self._paired_flow()
+        mdns.get_pairing_services.return_value = [
+            DiscoveredService("AI", "_adb-tls-pairing._tcp", "192.168.0.99", 40000),
+            DiscoveredService(f"{session.service_name} (2)", "_adb-tls-pairing._tcp", self.PHONE_IP, 41235),
+        ]
+        mdns.get_connect_services.return_value = [self.TLS]
+        run()
+        self.assertEqual(wireless.pair_with_code.call_args.args[0], "192.168.0.48:41235")
+
 
 class TestDiscoveredServiceFlags(unittest.TestCase):
     """Regression: pairing port must never be used as connect port."""
