@@ -144,9 +144,9 @@ class TestBridgeHttpEndpoints(unittest.TestCase):
 
     def test_url_encoded_serial_decoded(self):
         """A Wi-Fi serial sent as ip%3Aport reaches adb as ip:port."""
-        with mock.patch.object(bridge_server, "run_adb", return_value=(0, "Pixel\n", "")) as run_adb:
-            with urllib.request.urlopen(f"http://127.0.0.1:{self.port}/device?serial=192.168.1.5%3A5555") as resp:
-                self.assertEqual(json.loads(resp.read())["serial"], "192.168.1.5:5555")
+        with mock.patch.object(bridge_server, "run_adb", return_value=(0, "Pixel\n", "")) as run_adb, \
+                urllib.request.urlopen(f"http://127.0.0.1:{self.port}/device?serial=192.168.1.5%3A5555") as resp:
+            self.assertEqual(json.loads(resp.read())["serial"], "192.168.1.5:5555")
         self.assertEqual(run_adb.call_args.kwargs["serial"], "192.168.1.5:5555")
 
     def test_non_dict_body_rejected(self):

@@ -37,7 +37,7 @@ PROJECT_ROOT = SCRIPT_DIR.parent.parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-if sys.version_info < (3, 11):
+if sys.version_info < (3, 11):  # noqa: UP036 - runtime guard for users on older Python, not dead code
     sys.exit(f"[ERR] AI-Phone-Debloater needs Python 3.11 or newer (found {sys.version.split()[0]}).")
 
 try:
@@ -607,9 +607,9 @@ class SnapshotManager:
                 seen.add(path.name)
                 try:
                     with path.open("r", encoding="utf-8") as fh: data = json.load(fh)
-                    if not isinstance(data, dict): raise ValueError("not a JSON object")
+                    if not isinstance(data, dict): raise TypeError("not a JSON object")
                     results.append({"path": str(path), "name": path.name, "created_at": data.get("created_at"), "device": data.get("device") or {}, "package_count": data.get("package_count")})
-                except (OSError, ValueError) as exc:
+                except (OSError, ValueError, TypeError) as exc:
                     self.logger.warning(f"Skipping unreadable snapshot {path.name}: {exc}")
         results.sort(key=lambda r: r.get("created_at") or "", reverse=True)
         return results

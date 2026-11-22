@@ -592,9 +592,8 @@ class TestQrPairingManager(unittest.TestCase):
         mdns.get_connect_services.return_value = []
         fake_time = MagicMock()
         fake_time.time.side_effect = [float(t) for t in range(0, 1000, 5)]
-        with patch("connection.qr_pairing.time", fake_time):
-            with self.assertRaises(PairingError):
-                mgr.execute_qr_pairing_flow(session=session, timeout=60.0)
+        with patch("connection.qr_pairing.time", fake_time), self.assertRaises(PairingError):
+            mgr.execute_qr_pairing_flow(session=session, timeout=60.0)
         wireless.verify_and_get_info.assert_not_called()
 
 
