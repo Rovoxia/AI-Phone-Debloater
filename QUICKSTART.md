@@ -47,7 +47,7 @@ irm https://debloater.rovoxia.com/run.ps1 | iex
 
 ### macOS / Linux (Bash / Zsh)
 ```bash
-curl -sSL https://debloater.rovoxia.com/run.sh | bash
+curl -fsSL https://debloater.rovoxia.com/run.sh | bash
 ```
 
 ---

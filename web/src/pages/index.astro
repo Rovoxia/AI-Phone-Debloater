@@ -52,9 +52,9 @@ const sampleRules = [
 ];
 
 const WIN_CMD = 'irm https://debloater.rovoxia.com/run.ps1 | iex';
-const UNIX_CMD = 'curl -sSL https://debloater.rovoxia.com/run.sh | bash';
+const UNIX_CMD = 'curl -fsSL https://debloater.rovoxia.com/run.sh | bash';
 const WIN_BRIDGE_CMD = 'irm https://debloater.rovoxia.com/bridge.ps1 | iex';
-const UNIX_BRIDGE_CMD = 'curl -sSL https://debloater.rovoxia.com/bridge.sh | bash';
+const UNIX_BRIDGE_CMD = 'curl -fsSL https://debloater.rovoxia.com/bridge.sh | bash';
 
 // Read master prompt content for AI Agent 1-click copy
 let masterPrompt = '';
@@ -251,7 +251,7 @@ try {
                 "name": "Will debloating affect OTA system software updates?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "No. Operates in User 0 without touching read-only system partitions (dm-verity intact). Official OTA updates install normally."
+                  "text": "No, with one exception. It operates in User 0 without touching read-only system partitions (dm-verity intact), so official OTA updates install normally. The exception is the single Tier 3 rule, the Transsion OTA updater: disabling it stops system updates until you enable it again."
                 }
               }
             ]
@@ -1079,7 +1079,7 @@ try {
                 <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
               </summary>
               <p class="mt-4 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                No. Operates in User 0 without touching read-only system partitions (dm-verity intact). Official OTA updates download and install normally.
+                No, with one exception. It operates in User 0 without touching read-only system partitions (dm-verity intact), so official OTA updates download and install normally. The exception is the single Tier 3 rule, the Transsion OTA updater: disabling it stops system updates until you enable it again.
               </p>
             </details>
 

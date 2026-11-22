@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Fixed
+
+- README and home page FAQ no longer say debloating never affects OTA updates: the Tier 3 Transsion updater rule stops them. The README CI badge now shows the real workflow status, and the documented one-liners use `curl -fsSL`
+
 ## [1.2.0] - 2026-11-22
 
 ### Added
