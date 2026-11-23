@@ -108,7 +108,16 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path === href
     z-index: 50;
     container: site-header / inline-size;
     border-bottom: 1px solid var(--color-line);
-    background-color: var(--color-canvas);
+    background-color: var(--color-surface);
+  }
+
+  /* Frosted glass where the browser can blur what is behind the header; solid otherwise. */
+  @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    .site-header {
+      background-color: var(--color-header);
+      -webkit-backdrop-filter: blur(20px) saturate(1.4);
+      backdrop-filter: blur(20px) saturate(1.4);
+    }
   }
 
   .bar {
@@ -128,17 +137,19 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path === href
     min-width: 0;
     min-height: 2.75rem;
     color: var(--color-ink);
-    font-size: 0.9375rem;
-    font-weight: 650;
+    font-size: 1rem;
+    font-weight: 800;
     line-height: 1.15;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
     overflow-wrap: anywhere;
   }
 
   .brand-mark {
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 2rem;
+    height: 2rem;
     flex-shrink: 0;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow-control);
   }
 
   .desktop-nav {
@@ -165,8 +176,25 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path === href
     transition: color 150ms ease;
   }
 
+  /* Hover: a soft rounded fill behind the label, drawn on a pseudo-element because the link
+     itself is as tall as the header. */
+  .nav-link::before {
+    content: "";
+    position: absolute;
+    inset: 0.875rem 0.125rem;
+    z-index: -1;
+    border-radius: 0.5rem;
+    background-color: var(--color-inset);
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+
   .nav-link:hover {
     color: var(--color-ink);
+  }
+
+  .nav-link:hover::before {
+    opacity: 1;
   }
 
   .nav-link[aria-current="page"] {
@@ -182,6 +210,8 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path === href
     bottom: -1px;
     left: 0.75rem;
     height: 2px;
+    border-radius: 2px 2px 0 0;
+    background-image: linear-gradient(to right, var(--color-gradient-from), var(--color-gradient-to));
     background-color: var(--color-accent);
   }
 
@@ -223,7 +253,8 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path === href
     max-height: calc(100dvh - var(--spacing-header));
     overflow-y: auto;
     border-bottom: 1px solid var(--color-line);
-    background-color: var(--color-canvas);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-raised);
   }
 
   .mobile-menu ul {

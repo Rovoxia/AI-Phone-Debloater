@@ -16,19 +16,21 @@
   --font-mono: var(--font-jetbrains-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
 
   /* Colour, light theme. The dark values are in the .dark block below. */
-  --color-canvas: #ffffff;        /* page background */
+  --color-canvas: #f8fafc;        /* page background */
   --color-surface: #ffffff;       /* cards, dialogs, inputs */
-  --color-subtle: #f8fafc;        /* alternate section band, table head */
-  --color-inset: #f1f5f9;         /* inline code, hover fill, pressed chip */
+  --color-band: #ffffff;          /* alternate section band (.section-alt), footer */
+  --color-subtle: #f1f5f9;        /* table head, tiles and other fills inside a card */
+  --color-inset: #e9eef4;         /* inline code, hover fill */
+  --color-header: rgb(255 255 255 / 0.85); /* sticky header, over a backdrop blur */
   --color-line: #e2e8f0;          /* default 1px border */
   --color-line-strong: #cbd5e1;   /* hover border, dividers that must read */
   --color-line-control: #8492a6;  /* form control border, 3:1 on canvas */
   --color-ink: #0f172a;           /* headings and body text */
   --color-muted: #475569;         /* secondary text */
-  --color-faint: #5b6779;         /* meta text; still 4.5:1 on canvas, subtle and inset */
+  --color-faint: #556072;         /* meta text; still 4.5:1 on canvas, subtle and inset */
   --color-accent: #047857;        /* links, eyebrow, accent text and icons */
   --color-accent-hover: #065f46;
-  --color-accent-solid: #047857;  /* primary button fill */
+  --color-accent-solid: #047857;  /* primary button fill; white on it is 5.4:1 (emerald-600 would be 3.7:1) */
   --color-accent-solid-hover: #065f46;
   --color-on-accent: #ffffff;     /* label on the primary button */
   --color-accent-soft: #ecfdf5;   /* accent tint background */
@@ -52,8 +54,15 @@
   --color-info-soft: #f0f9ff;
   --color-info-line: #bae6fd;
 
+  /* Gradient text (.text-gradient) and the closing band (.cta-band). Every stop keeps 4.5:1:
+     the text stops against canvas and band, the band stops against white. */
+  --color-gradient-from: #047857;
+  --color-gradient-to: #0f766e;
+  --color-cta-from: #047857;
+  --color-cta-to: #0f766e;
+
   /* Code blocks are dark in both themes. */
-  --color-code: #0f172a;
+  --color-code: #0b0f17;
   --color-code-ink: #e2e8f0;
   --color-code-muted: #94a3b8;
   --color-code-accent: #6ee7b7;
@@ -100,10 +109,18 @@
   --container-page: 80rem;
   --container-measure: 70ch;
 
-  /* Radius: rounded-box, rounded-control, rounded-tag. */
-  --radius-box: 0.75rem;
-  --radius-control: 0.5rem;
+  /* Radius: rounded-box, rounded-control, rounded-tag. Badges and chips are full pills. */
+  --radius-box: 1rem;
+  --radius-control: 0.75rem;
   --radius-tag: 0.375rem;
+
+  /* Depth: shadow-card on cards and tables, shadow-raised on feature blocks and dialogs,
+     shadow-accent under the primary button. */
+  --shadow-control: 0 1px 2px 0 rgb(15 23 42 / 0.06);
+  --shadow-card: 0 1px 3px 0 rgb(15 23 42 / 0.08), 0 1px 2px -1px rgb(15 23 42 / 0.08);
+  --shadow-lift: 0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.08);
+  --shadow-raised: 0 20px 25px -5px rgb(15 23 42 / 0.1), 0 8px 10px -6px rgb(15 23 42 / 0.08);
+  --shadow-accent: 0 10px 15px -3px rgb(5 150 105 / 0.25), 0 4px 6px -4px rgb(5 150 105 / 0.25);
 }
 
 @layer base {
@@ -113,10 +130,12 @@
 
   .dark {
     color-scheme: dark;
-    --color-canvas: #0b1120;
-    --color-surface: #111a2e;
-    --color-subtle: #0f172a;
-    --color-inset: #1e293b;
+    --color-canvas: #0b0f17;
+    --color-surface: #12161f;
+    --color-band: #090d14;
+    --color-subtle: #181c24;
+    --color-inset: #1f2531;
+    --color-header: rgb(11 15 23 / 0.8);
     --color-line: #1e293b;
     --color-line-strong: #334155;
     --color-line-control: #64748b;
@@ -125,15 +144,17 @@
     --color-faint: #94a3b8;
     --color-accent: #34d399;
     --color-accent-hover: #6ee7b7;
-    --color-accent-solid: #34d399;
-    --color-accent-solid-hover: #6ee7b7;
-    --color-on-accent: #022c22;
-    --color-accent-soft: #062a21;
-    --color-accent-line: #065f46;
+    --color-accent-solid: #047857;
+    --color-accent-solid-hover: #065f46;
+    --color-on-accent: #ffffff;
+    --color-accent-soft: #0e2a24;
+    --color-accent-line: #11473c;
     --color-focus: #34d399;
+    --color-gradient-from: #10b981;
+    --color-gradient-to: #2dd4bf;
     --color-ok: #6ee7b7;
-    --color-ok-soft: #062a21;
-    --color-ok-line: #065f46;
+    --color-ok-soft: #0e2a24;
+    --color-ok-line: #11473c;
     --color-warn: #fcd34d;
     --color-warn-soft: #2a1c05;
     --color-warn-line: #78350f;
@@ -147,7 +168,12 @@
     --color-info-soft: #0b2337;
     --color-info-line: #075985;
     /* One step below the canvas, so a code block still reads as a panel. */
-    --color-code: #070c17;
+    --color-code: #070a10;
+    --shadow-control: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.35), 0 1px 2px -1px rgb(0 0 0 / 0.35);
+    --shadow-lift: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+    --shadow-raised: 0 20px 25px -5px rgb(0 0 0 / 0.45), 0 8px 10px -6px rgb(0 0 0 / 0.4);
+    --shadow-accent: 0 10px 15px -3px rgb(5 150 105 / 0.3), 0 4px 6px -4px rgb(5 150 105 / 0.3);
   }
 
   html {
@@ -231,10 +257,91 @@
     padding-block: var(--spacing-section-sm);
   }
 
-  /* A section on the subtle band, ruled off above and below. */
+  /* A section on the alternate band, ruled off above and below. */
   .section-alt {
-    background-color: var(--color-subtle);
+    background-color: var(--color-band);
     border-block: 1px solid var(--color-line);
+  }
+
+  /* Home hero backdrop: a faint engineering grid that fades out towards the edges, and an accent
+     glow behind the heading. Both are decoration on pseudo-elements, below the content. */
+  .hero {
+    position: relative;
+    isolation: isolate;
+    overflow: clip;
+  }
+
+  .hero::before,
+  .hero::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .hero::before {
+    inset: 0;
+    background-image:
+      linear-gradient(to right, color-mix(in srgb, var(--color-ink) 4%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in srgb, var(--color-ink) 4%, transparent) 1px, transparent 1px);
+    background-size: 2rem 2rem;
+    -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 40%, #000 70%, transparent 100%);
+    mask-image: radial-gradient(ellipse 60% 50% at 50% 40%, #000 70%, transparent 100%);
+  }
+
+  .hero::after {
+    top: 0;
+    left: 50%;
+    width: min(100%, 60rem);
+    height: 26rem;
+    transform: translateX(-50%);
+    background-image: radial-gradient(50% 50% at 50% 35%, rgb(16 185 129 / 0.11), transparent 100%);
+  }
+
+  /* Closing call to action: the accent gradient band with white text. The buttons are restyled
+     for the coloured ground, and the focus ring turns white through --color-focus. */
+  .cta-band {
+    --color-focus: #ffffff;
+    background-image: linear-gradient(to bottom right, var(--color-cta-from), var(--color-cta-to));
+    background-color: var(--color-cta-from);
+    color: #ffffff;
+  }
+
+  .cta-band :is(.h2, .h3) {
+    color: #ffffff;
+  }
+
+  .cta-band .lead {
+    color: #ecfdf5;
+  }
+
+  .cta-band .btn-primary,
+  .cta-band .btn-primary:hover:not(:disabled, [aria-disabled="true"]) {
+    background-color: #ffffff;
+    color: #065f46;
+    box-shadow: var(--shadow-lift);
+  }
+
+  .cta-band .btn-primary:hover:not(:disabled, [aria-disabled="true"]) {
+    background-color: #ecfdf5;
+  }
+
+  .cta-band :is(.btn-secondary, .btn-ghost),
+  .cta-band :is(.btn-secondary, .btn-ghost):hover:not(:disabled, [aria-disabled="true"]) {
+    border-color: rgb(255 255 255 / 0.45);
+    background-color: rgb(255 255 255 / 0.1);
+    color: #ffffff;
+    box-shadow: none;
+  }
+
+  .cta-band .btn-ghost,
+  .cta-band .btn-ghost:hover:not(:disabled, [aria-disabled="true"]) {
+    border-color: transparent;
+    background-color: transparent;
+  }
+
+  .cta-band :is(.btn-secondary, .btn-ghost):hover:not(:disabled, [aria-disabled="true"]) {
+    background-color: rgb(255 255 255 / 0.2);
   }
 
   /* Eyebrow + heading + lead at the top of a section. Children keep their own width and sit at
@@ -247,6 +354,13 @@
     gap: var(--spacing-stack-sm);
     max-width: var(--container-measure);
     margin-bottom: var(--spacing-stack-lg);
+  }
+
+  /* Centred variant, for a heading block that sits alone above full-width content. */
+  .section-head-center {
+    justify-items: center;
+    margin-inline: auto;
+    text-align: center;
   }
 
   /* Card grid with no breakpoints: as many equal columns as fit. */
@@ -272,14 +386,38 @@
 
   /* ---- Type ------------------------------------------------------------ */
 
+  /* A small accent pill above a heading. */
   .eyebrow {
-    font-family: var(--font-mono);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.1875rem 0.75rem;
+    border: 1px solid var(--color-accent-line);
+    border-radius: 999px;
+    background-color: var(--color-accent-soft);
+    color: var(--color-accent);
     font-size: var(--text-xs);
     line-height: var(--text-xs--line-height);
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--color-accent);
+    font-weight: 600;
+  }
+
+  /* Accent gradient clipped to the text, for part of a heading. The plain accent colour is the
+     base; the gradient replaces it only where background-clip: text works. Each line of a wrapped
+     phrase gets the whole gradient. In forced-colors mode it is ordinary text again (see the
+     rule at the end of this file). */
+  .text-gradient {
+    color: var(--color-gradient-from);
+  }
+
+  @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+    .text-gradient {
+      background-image: linear-gradient(to right, var(--color-gradient-from), var(--color-gradient-to));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-box-decoration-break: clone;
+      box-decoration-break: clone;
+      -webkit-text-fill-color: transparent;
+    }
   }
 
   /* A word longer than the line (large text on a narrow screen) breaks instead of sticking out. */
@@ -289,23 +427,23 @@
   .h3,
   .h4 {
     color: var(--color-ink);
-    font-weight: 650;
+    font-weight: 700;
     overflow-wrap: break-word;
   }
 
   /* Home hero only. */
   .display {
-    font-size: var(--text-6xl);
-    line-height: var(--text-6xl--line-height);
-    font-weight: 700;
+    font-size: var(--text-5xl);
+    line-height: 1.12;
+    font-weight: 800;
     letter-spacing: -0.035em;
   }
 
   /* Page title. */
   .h1 {
-    font-size: var(--text-5xl);
-    line-height: var(--text-5xl--line-height);
-    font-weight: 700;
+    font-size: var(--text-4xl);
+    line-height: var(--text-4xl--line-height);
+    font-weight: 800;
     letter-spacing: -0.03em;
   }
 
@@ -313,7 +451,8 @@
   .h2 {
     font-size: var(--text-3xl);
     line-height: var(--text-3xl--line-height);
-    letter-spacing: -0.022em;
+    font-weight: 800;
+    letter-spacing: -0.025em;
   }
 
   /* Card or subsection heading. */
@@ -326,7 +465,6 @@
   .h4 {
     font-size: var(--text-base);
     line-height: 1.45;
-    font-weight: 600;
   }
 
   /* Intro paragraph under a heading. */
@@ -434,7 +572,8 @@
     text-align: center;
     text-decoration: none;
     cursor: pointer;
-    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, opacity 150ms ease;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, opacity 150ms ease,
+      box-shadow 150ms ease;
   }
 
   .btn:disabled,
@@ -446,6 +585,12 @@
   .btn-primary {
     background-color: var(--color-accent-solid);
     color: var(--color-on-accent);
+    box-shadow: var(--shadow-accent);
+  }
+
+  .btn-primary:disabled,
+  .btn-primary[aria-disabled="true"] {
+    box-shadow: none;
   }
 
   .btn-primary:hover:not(:disabled, [aria-disabled="true"]) {
@@ -456,6 +601,7 @@
     border-color: var(--color-line-strong);
     background-color: var(--color-surface);
     color: var(--color-ink);
+    box-shadow: var(--shadow-control);
   }
 
   .btn-secondary:hover:not(:disabled, [aria-disabled="true"]) {
@@ -492,6 +638,7 @@
   .btn-sm {
     min-height: 2.25rem;
     padding: 0.375rem 0.75rem;
+    border-radius: 0.5rem;
   }
 
   .btn-sm::after {
@@ -539,7 +686,7 @@
     background-color: var(--color-surface);
     color: var(--color-muted);
     font-size: var(--text-sm);
-    font-weight: 500;
+    font-weight: 600;
     line-height: 1.25;
     white-space: nowrap;
     cursor: pointer;
@@ -559,9 +706,10 @@
 
   .chip[aria-pressed="true"],
   .chip[aria-current] {
-    border-color: var(--color-ink);
-    background-color: var(--color-ink);
-    color: var(--color-canvas);
+    border-color: var(--color-accent-solid);
+    background-color: var(--color-accent-solid);
+    color: var(--color-on-accent);
+    box-shadow: var(--shadow-control);
   }
 
   /* ---- Cards ----------------------------------------------------------- */
@@ -572,6 +720,7 @@
     border: 1px solid var(--color-line);
     border-radius: var(--radius-box);
     background-color: var(--color-surface);
+    box-shadow: var(--shadow-card);
   }
 
   /* No padding and clipped corners: for a table or code block that fills the card. */
@@ -580,22 +729,27 @@
     overflow: hidden;
   }
 
+  /* A feature block that stands off the page: the hero panel. */
+  .card-raised {
+    box-shadow: var(--shadow-raised);
+  }
+
   a.card,
   .card-hover {
-    transition: border-color 150ms ease, background-color 150ms ease;
+    transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
   }
 
   a.card:hover,
   .card-hover:hover {
     border-color: var(--color-line-control);
+    box-shadow: var(--shadow-lift);
   }
 
   /* Number + label, for counts read from the dataset. */
   .stat-value {
-    font-family: var(--font-mono);
     font-size: var(--text-4xl);
     line-height: var(--text-4xl--line-height);
-    font-weight: 600;
+    font-weight: 800;
     letter-spacing: -0.03em;
     font-variant-numeric: tabular-nums;
     color: var(--color-ink);
@@ -615,9 +769,9 @@
     display: inline-flex;
     align-items: center;
     gap: 0.375em;
-    padding: 0.1875rem 0.5rem;
+    padding: 0.1875rem 0.625rem;
     border: 1px solid var(--color-line-strong);
-    border-radius: var(--radius-tag);
+    border-radius: 999px;
     background-color: var(--color-subtle);
     color: var(--color-muted);
     font-size: var(--text-xs);
@@ -703,6 +857,7 @@
     border: 1px solid var(--color-line);
     border-radius: var(--radius-box);
     background-color: var(--color-surface);
+    box-shadow: var(--shadow-card);
   }
 
   .table {
@@ -973,6 +1128,7 @@
     border: 1px solid var(--color-code-line);
     border-radius: var(--radius-box);
     background-color: var(--color-code);
+    box-shadow: var(--shadow-lift);
   }
 
   .code-figure .code-block {
@@ -986,7 +1142,6 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
     gap: 0 0.75rem;
     min-height: 2.75rem;
     padding: 0.25rem 0.5rem 0.25rem 1.25rem;
@@ -999,6 +1154,43 @@
   .code-caption > :first-child {
     min-width: 0;
     overflow-wrap: anywhere;
+  }
+
+  /* Window chrome: three dots before the label of a code figure, and before the title of a
+     panel header that carries .window-bar. One pseudo-element; the second and third dots are its
+     shadows, and the margin reserves their room. Decoration only.
+     A code caption shows them only when it is at least 28rem wide (a container query on the
+     caption itself): in a narrower one they would push the label or the copy button onto
+     another line. */
+  .code-caption {
+    container-type: inline-size;
+  }
+
+  .window-bar::before {
+    content: "";
+  }
+
+  @container (min-width: 28rem) {
+    .code-caption::before {
+      content: "";
+    }
+  }
+
+  .code-caption::before,
+  .window-bar::before {
+    flex: none;
+    width: 0.75rem;
+    height: 0.75rem;
+    margin-right: 2.5rem;
+    border-radius: 999px;
+    background-color: #ff5f56;
+    box-shadow: 1.25rem 0 0 #ffbd2e, 2.5rem 0 0 #27c93f;
+  }
+
+  .window-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
   }
 
   .code-caption .btn {
@@ -1124,11 +1316,14 @@
   /* <details class="disclosure"><summary><h3>Question</h3><Icon name="chevron-down" /></summary>
      <div class="disclosure-body prose">answer</div></details> */
   .disclosure {
-    border-bottom: 1px solid var(--color-line);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-control);
   }
 
-  .disclosure:first-of-type {
-    border-top: 1px solid var(--color-line);
+  .disclosure + .disclosure {
+    margin-top: 0.625rem;
   }
 
   .disclosure > summary {
@@ -1137,7 +1332,8 @@
     justify-content: space-between;
     gap: 1rem;
     min-height: 3.5rem;
-    padding-block: 1rem;
+    padding: 0.875rem 1.125rem;
+    border-radius: var(--radius-control);
     color: var(--color-ink);
     font-size: var(--text-base);
     font-weight: 600;
@@ -1160,8 +1356,8 @@
   }
 
   .disclosure-body {
-    max-width: var(--container-measure);
-    padding-bottom: 1.25rem;
+    max-width: calc(var(--container-measure) + 2.25rem);
+    padding: 0 1.125rem 1.25rem;
     color: var(--color-muted);
   }
 
@@ -1191,12 +1387,12 @@
     justify-content: center;
     width: 2rem;
     height: 2rem;
-    border: 1px solid var(--color-line-strong);
+    border: 1px solid var(--color-accent-line);
     border-radius: 999px;
+    background-color: var(--color-accent-soft);
     color: var(--color-accent);
-    font-family: var(--font-mono);
     font-size: var(--text-sm);
-    font-weight: 600;
+    font-weight: 700;
   }
 
   /* ---- Forms ----------------------------------------------------------- */
@@ -1287,6 +1483,7 @@
     border-radius: var(--radius-box);
     background-color: var(--color-surface);
     color: var(--color-ink);
+    box-shadow: var(--shadow-raised);
   }
 
   .dialog::backdrop {
@@ -1334,14 +1531,15 @@
 
   .prose :where(h2, h3, h4) {
     color: var(--color-ink);
-    font-weight: 650;
+    font-weight: 700;
   }
 
   .prose h2 {
     margin-top: 2.25em;
     font-size: var(--text-2xl);
     line-height: var(--text-2xl--line-height);
-    letter-spacing: -0.018em;
+    font-weight: 800;
+    letter-spacing: -0.025em;
   }
 
   .prose h3 {
@@ -1562,6 +1760,15 @@
 
 main:focus-visible {
   outline: none;
+}
+
+/* Forced colours (Windows high contrast): gradient text is ordinary text in the system colour. */
+@media (forced-colors: active) {
+  .text-gradient {
+    background-image: none;
+    color: CanvasText;
+    -webkit-text-fill-color: currentColor;
+  }
 }
 
 /* Reduced motion: keyframe animations end at once and nothing transitions.

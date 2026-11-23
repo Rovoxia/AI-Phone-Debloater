@@ -224,19 +224,20 @@ const guides: { href: string; icon: IconName; title: string; text: string }[] = 
   <!-- The hero fills the first screen below the sticky header, up to a cap so that it is not a
        mostly empty band on tall or ultra-wide screens. svh, not vh: the mobile URL bar does not
        shift it. -->
-  <section class="section grid min-h-[min(calc(100svh_-_var(--spacing-header)),50rem)] content-center">
-    <div class="container-page grid items-center gap-stack-lg lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-      <div class="min-w-0">
-        <p class="flex flex-wrap gap-2">
+  <section class="hero section grid min-h-[min(calc(100svh_-_var(--spacing-header)),50rem)] content-center">
+    <div class="container-page grid justify-items-center gap-stack-lg">
+      <div class="min-w-0 max-w-4xl text-center">
+        <p class="flex flex-wrap justify-center gap-2">
           <span class="badge badge-accent">No root</span>
           <span class="badge">MIT License</span>
           <span class="badge badge-mono">v{SITE_VERSION}</span>
         </p>
         <h1 class="display mt-stack">
-          The <span class="inline-block max-w-full">open-source</span> Android debloater that works without root
+          The <span class="inline-block max-w-full">open-source</span> Android debloater
+          <span class="text-gradient">that works without root</span>
         </h1>
-        <p class="lead mt-stack">{DEFINITION}</p>
-        <div class="mt-stack-lg flex flex-wrap gap-3">
+        <p class="lead mx-auto mt-stack">{DEFINITION}</p>
+        <div class="mt-stack-lg flex flex-wrap justify-center gap-3">
           <a href="/app" class="btn btn-primary btn-lg">
             <Icon name="monitor" />
             Open the web app
@@ -253,8 +254,8 @@ const guides: { href: string; icon: IconName; title: string; text: string }[] = 
         </p>
       </div>
 
-      <figure class="card card-flush min-w-0">
-        <figcaption class="border-b border-line bg-subtle px-5 py-3 text-sm font-semibold text-ink">
+      <figure class="card card-flush card-raised w-full max-w-3xl min-w-0">
+        <figcaption class="window-bar border-b border-line bg-subtle px-5 py-3 text-sm font-semibold text-ink">
           One rule from each safety tier
         </figcaption>
         <ul class="divide-y divide-line">
@@ -281,7 +282,7 @@ const guides: { href: string; icon: IconName; title: string; text: string }[] = 
 
   <section class="section-sm section-alt" aria-label="The rule set in numbers">
     <div class="container-page">
-      <ul class="grid-auto-sm">
+      <ul class="grid-auto-sm text-center">
         {
           stats.map((stat) => (
             <li>
@@ -805,16 +806,16 @@ const guides: { href: string; icon: IconName; title: string; text: string }[] = 
   </section>
 
   <!-- Closing call to action -->
-  <section class="section">
+  <section class="section cta-band">
     <div class="container-page">
-      <div class="section-head">
+      <div class="section-head section-head-center">
         <h2 class="h2">Start with Tier 1</h2>
         <p class="lead">
           Whichever way you choose, review the plan before you confirm and keep the snapshot. AI Phone Debloater is free
           and open source under the MIT License.
         </p>
       </div>
-      <div class="flex flex-wrap gap-3">
+      <div class="flex flex-wrap justify-center gap-3">
         <a href="/app" class="btn btn-primary btn-lg">
           <Icon name="monitor" />
           Open the web app

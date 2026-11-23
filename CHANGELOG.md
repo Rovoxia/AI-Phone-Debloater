@@ -19,7 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 
-- Site redesigned on one shared layout and design system: flat, typography-led, fluid type and spacing from 320px to 2560px, light and dark, self-hosted Inter and JetBrains Mono (no request to Google Fonts)
+- Site redesigned on one shared layout and design system that keeps the earlier look (deep navy dark theme, emerald gradient headline, rounded cards with soft shadows, glass navbar, window-style code blocks): fluid type and spacing from 320px to 2560px, light and dark, self-hosted Inter and JetBrains Mono (no request to Google Fonts)
 - Home page rebuilt: new heading and product definition, five-step "How it works", three ways to use it with copy buttons, per-brand rule table, "How to undo a change"; FAQ and its structured data come from one source
 - Guides are Markdown files in a content collection; tables, lists and code render as real HTML, and tier counts and package tables are generated from the rule set
 - All ten guides rewritten against the rule set

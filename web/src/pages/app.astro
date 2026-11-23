@@ -1909,6 +1909,7 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
   .stat-tile {
     min-width: 0;
     padding: 0.625rem 0.75rem;
+    border: 1px solid var(--color-line);
     border-radius: var(--radius-control);
     background-color: var(--color-subtle);
   }
@@ -1919,7 +1920,7 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
     line-height: var(--text-xs--line-height);
   }
 
-  /* Not .stat-value: that is the contract's big mono number. */
+  /* Not .stat-value: that is the contract's big number. */
   .tile-value {
     margin-top: 0.125rem;
     color: var(--color-ink);
@@ -2307,7 +2308,8 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
     margin-top: auto;
     padding-bottom: env(safe-area-inset-bottom);
     border-top: 1px solid var(--color-line-strong);
-    background-color: var(--color-subtle);
+    background-color: var(--color-surface);
+    box-shadow: 0 -8px 20px -12px rgb(15 23 42 / 0.25);
   }
 
   .dock-bar {
