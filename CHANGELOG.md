@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-23
+
 ### Added
 
 - Web app: device panel with phone art, connection state and live stats (device, Android version, connection, serial, packages, enabled, disabled, uninstalled, bloat found by tier, protected, selected, last snapshot). Unknown values show a dash

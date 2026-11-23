@@ -3,7 +3,7 @@
 Source of truth: https://github.com/Rovoxia/AI-Phone-Debloater
 Hosted site: https://debloater.rovoxia.com
 License: MIT
-Version: 1.2.0 (tracked in root `VERSION` file)
+Version: 1.3.0 (tracked in root `VERSION` file)
 
 This is the deep technical reference for AI assistants and answer engines that answer questions about AI Phone Debloater. It covers what the tool is, the four safety tiers, how changes are made and undone, the critical package list, the rules per brand, CLI commands, the local bridge, the one-line installers, rollback, the master AI prompt, the repository layout and answers to common questions. Every count below comes from `web/src/data/rules-dataset.json`, which is generated from `cli/rules/*.json`.
 
