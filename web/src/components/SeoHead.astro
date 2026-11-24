@@ -1,0 +1,147 @@
+---
+// Everything that goes in <head>. Used by src/layouts/Base.astro; pages do not use it directly.
+//
+// CSP (astro.config.mjs, hashes only):
+// - JSON-LD is written with set:html from a serialised object. Never write it as literal text
+//   under `is:inline`: expressions are not interpolated there and the block ends up invalid.
+// - The theme bootstrap at the bottom is the only inline script. Its opening tag must carry
+//   `is:inline` and nothing else: inlineScriptHashes() in astro.config.mjs hashes exactly that
+//   form, and any other attribute on the tag would drop the hash and block the script.
+// - That function finds the tag with a regex over every .astro file, so never write the opening
+//   tag anywhere else in src/, not even inside a comment.
+import Fonts from './Fonts.astro';
+import {
+  DEFAULT_OG_IMAGE,
+  FEED_PATH,
+  FEED_TITLE,
+  SITE_NAME,
+  abs,
+  breadcrumbNode,
+  isoDateTime,
+  organizationNode,
+  serializeJsonLd,
+  webPageNode,
+  websiteNode,
+  type Crumb,
+  type JsonLdNode,
+  type OgImage,
+} from '../lib/seo';
+
+export interface Props {
+  /** Page part only, e.g. "Android Bloatware Package List by OEM". */
+  title: string;
+  /** Default "%s | AI Phone Debloater". `false` uses `title` verbatim (home page). */
+  titleTemplate?: string | false;
+  /** 110 to 160 characters. */
+  description: string;
+  /** Canonical path without trailing slash: "/", "/app", "/blog/<slug>". */
+  path: string;
+  /** 404 and other pages that must stay out of the index: robots noindex, no canonical, no Open Graph, no JSON-LD. */
+  noindex?: boolean;
+  ogType?: 'website' | 'article';
+  /** Site-relative image. Default /og-image.png, 1200x630. */
+  ogImage?: OgImage;
+  /** Dates as "YYYY-MM-DD" or full ISO date-time. */
+  article?: { publishedTime: string; modifiedTime?: string; section?: string; tags?: string[] };
+  /** Home to current page. Emits BreadcrumbList; give the same array to <Breadcrumbs />. */
+  breadcrumbs?: Crumb[];
+  /** Extra @graph nodes for this page, from the builders in src/lib/seo.ts. */
+  jsonLd?: JsonLdNode[];
+  /** Default true: Organization, WebSite and WebPage nodes come first in the graph. */
+  siteGraph?: boolean;
+  /** schema.org type of the WebPage node, e.g. "CollectionPage". Default "WebPage". */
+  pageType?: string;
+}
+
+const {
+  title,
+  titleTemplate = `%s | ${SITE_NAME}`,
+  description,
+  path,
+  noindex = false,
+  ogType = 'website',
+  ogImage = DEFAULT_OG_IMAGE,
+  article,
+  breadcrumbs,
+  jsonLd = [],
+  siteGraph = true,
+  pageType,
+} = Astro.props;
+
+const fullTitle = titleTemplate === false ? title : titleTemplate.replace('%s', title);
+const canonical = abs(path);
+const imageUrl = abs(ogImage.src);
+
+const graph: JsonLdNode[] = noindex
+  ? []
+  : [
+      ...(siteGraph
+        ? [organizationNode(), websiteNode(), webPageNode({ path, title: fullTitle, description, breadcrumbs, type: pageType })]
+        : []),
+      ...(breadcrumbs?.length ? [breadcrumbNode(breadcrumbs)] : []),
+      ...jsonLd,
+    ];
+---
+
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{fullTitle}</title>
+<meta name="description" content={description} />
+{noindex ? <meta name="robots" content="noindex, nofollow" /> : <link rel="canonical" href={canonical} />}
+
+<meta name="color-scheme" content="light dark" />
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#0b1120" media="(prefers-color-scheme: dark)" />
+<link rel="icon" href="/favicon.ico" sizes="48x48" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="sitemap" href="/sitemap-index.xml" />
+{!noindex && <link rel="alternate" type="application/rss+xml" title={FEED_TITLE} href={FEED_PATH} />}
+
+<Fonts />
+
+{
+  !noindex && (
+    <>
+      <meta property="og:type" content={ogType} />
+      <meta property="og:site_name" content={SITE_NAME} />
+      <meta property="og:locale" content="en_US" />
+      <meta property="og:title" content={fullTitle} />
+      <meta property="og:description" content={description} />
+      <meta property="og:url" content={canonical} />
+      <meta property="og:image" content={imageUrl} />
+      {ogImage.type && <meta property="og:image:type" content={ogImage.type} />}
+      {ogImage.width && <meta property="og:image:width" content={String(ogImage.width)} />}
+      {ogImage.height && <meta property="og:image:height" content={String(ogImage.height)} />}
+      <meta property="og:image:alt" content={ogImage.alt} />
+      {article && <meta property="article:published_time" content={isoDateTime(article.publishedTime)} />}
+      {article && <meta property="article:modified_time" content={isoDateTime(article.modifiedTime ?? article.publishedTime)} />}
+      {article?.section && <meta property="article:section" content={article.section} />}
+      {article?.tags?.map((tag) => <meta property="article:tag" content={tag} />)}
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={fullTitle} />
+      <meta name="twitter:description" content={description} />
+      <meta name="twitter:image" content={imageUrl} />
+      <meta name="twitter:image:alt" content={ogImage.alt} />
+    </>
+  )
+}
+
+{graph.length > 0 && <script type="application/ld+json" set:html={serializeJsonLd(graph)} />}
+
+<script is:inline>
+  // Theme bootstrap: runs before first paint so the page never flashes the wrong theme.
+  // A stored choice ("light" or "dark" under localStorage "theme", written by the header toggle)
+  // wins; otherwise the OS preference decides.
+  (function () {
+    var stored = null;
+    try {
+      stored = localStorage.getItem('theme');
+    } catch (e) {}
+    var dark = stored === 'dark' || (stored !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    var root = document.documentElement;
+    root.setAttribute('data-theme', dark ? 'dark' : 'light');
+    root.classList.toggle('dark', dark);
+  })();
+</script>

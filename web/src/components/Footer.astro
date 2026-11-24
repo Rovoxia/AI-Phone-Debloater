@@ -1,367 +1,244 @@
 ---
-// src/components/Footer.astro
+// Site footer. No JSON-LD here: structured data is emitted once per page by SeoHead.astro.
+// Column titles are <p> elements that label their lists, not headings, so the footer never adds
+// to a page's heading outline.
+import Icon from './Icon.astro';
+import { GITHUB_REPO, ORG_NAME, ORG_URL, SITE_NAME } from '../lib/seo';
 import { SITE_VERSION } from '../lib/version';
 
-const currentYear = new Date().getFullYear();
-const siteVersion = SITE_VERSION;
+const year = new Date().getFullYear();
+
+interface FooterLink {
+  name: string;
+  href: string;
+  external?: boolean;
+}
+
+// The home page keeps id="cli" and id="faq" for the two anchor links below.
+const columns: { id: string; title: string; links: FooterLink[] }[] = [
+  {
+    id: 'footer-product',
+    title: 'Product',
+    links: [
+      { name: 'Web app', href: '/app' },
+      { name: 'Package list by OEM', href: '/oems' },
+      { name: 'Install the CLI', href: '/#cli' },
+      { name: 'FAQ', href: '/#faq' },
+      { name: 'Releases', href: `${GITHUB_REPO}/releases`, external: true },
+    ],
+  },
+  {
+    id: 'footer-guides',
+    title: 'Guides',
+    links: [
+      { name: 'All guides', href: '/blog' },
+      { name: 'Samsung One UI', href: '/blog/samsung-galaxy-debloat-guide-one-ui-6' },
+      { name: 'Xiaomi HyperOS', href: '/blog/xiaomi-hyperos-debloat-guide' },
+      { name: 'Google Pixel', href: '/blog/pixel-debloat-guide-stock-android' },
+      { name: 'Safety tiers explained', href: '/blog/adb-debloat-safety-tiers-explained' },
+      { name: 'Wireless ADB setup', href: '/blog/wireless-adb-debloat-setup-android-11' },
+    ],
+  },
+  {
+    id: 'footer-project',
+    title: 'Project',
+    links: [
+      { name: 'GitHub repository', href: GITHUB_REPO, external: true },
+      { name: 'Report an issue', href: `${GITHUB_REPO}/issues`, external: true },
+      {
+        name: 'Request a rule',
+        href: `${GITHUB_REPO}/issues/new?template=package_rule_request.md`,
+        external: true,
+      },
+      { name: 'Changelog', href: `${GITHUB_REPO}/blob/main/CHANGELOG.md`, external: true },
+      { name: 'MIT License', href: `${GITHUB_REPO}/blob/main/LICENSE`, external: true },
+    ],
+  },
+  {
+    id: 'footer-agents',
+    title: 'For AI agents',
+    links: [
+      { name: 'llms.txt', href: '/llms.txt' },
+      { name: 'llms-full.txt', href: '/llms-full.txt' },
+      { name: 'Master prompt', href: '/prompt.md' },
+      { name: 'pricing.md', href: '/pricing.md' },
+    ],
+  },
+];
 ---
 
-<footer
-  class="border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-[#070a10] [--color-fg-muted:#64748b] [--color-fg-muted-dark:#94a3b8]"
->
-  <div
-    class="mx-auto max-w-[1440px] px-4 pt-[clamp(3rem,6vw,6rem)] pb-[clamp(2rem,4vw,4rem)]"
-  >
-    <!-- Five-column footer grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 lg:gap-6 mb-[clamp(3rem,6vw,5rem)]">
-
-      <!-- Column 1: Brand & Trust -->
-      <div class="space-y-4 lg:col-span-1">
-        <div>
-          <h3
-            class="text-[clamp(1rem,1.5vw,1.25rem)] font-bold tracking-tight text-slate-900 dark:text-white"
-          >
-            AI Phone Debloater
-          </h3>
-          <p
-            class="text-[clamp(0.82rem,1.4vw,0.95rem)] leading-relaxed text-slate-600 dark:text-slate-400 max-w-[300px] mt-1"
-          >
-            Rootless Android Debloater &amp; bloatware remover powered by ADB and AI. 100% reversible, zero-risk system optimization.
-          </p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <a
-            href="https://github.com/Rovoxia/AI-Phone-Debloater/stargazers"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-block rounded bg-emerald-500/10 px-3 py-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-tighter hover:bg-emerald-500/20 transition-colors"
-          >
-            Star on GitHub
-          </a>
-          <span
-            class="rounded bg-emerald-500/10 px-3 py-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-tighter"
-          >
-            MIT License
-          </span>
-          <span
-            class="rounded bg-emerald-500/10 px-3 py-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-tighter"
-          >
-            Rootless ADB
-          </span>
-        </div>
+<footer class="site-footer">
+  <div class="container-page">
+    <div class="top">
+      <div class="about">
+        <p class="name">{SITE_NAME}</p>
+        <p class="blurb">
+          Free, open-source Android debloater. It removes preinstalled apps over ADB without root and saves a
+          restore snapshot before every change.
+        </p>
+        <p class="tags">
+          <span class="badge badge-mono">v{SITE_VERSION}</span>
+          <span class="badge">MIT License</span>
+        </p>
       </div>
 
-      <!-- Column 2: Runners & Tools -->
-      <div class="space-y-3">
-        <h4
-          class="text-[clamp(0.7rem,1vw,0.85rem)] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3"
-        >
-          Runners &amp; Tools
-        </h4>
-        <ul class="space-y-2">
-          <li>
-            <a
-              href="/#windows-runner"
-              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-            >
-              Windows ADB Runner (.bat)
-            </a>
-          </li>
-          <li>
-            <a
-              href="/#unix-runner"
-              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-            >
-              Linux &amp; macOS Runner (.sh)
-            </a>
-          </li>
-          <li>
-            <a
-              href="/#master-prompt"
-              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-            >
-              AI Master Debloat Prompt
-            </a>
-          </li>
-          <li>
-            <a
-              href="/oems#rules-explorer"
-              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-            >
-              Interactive Package Analyzer
-            </a>
-          </li>
-          <li>
-            <a
-              href="https://github.com/Rovoxia/AI-Phone-Debloater/releases"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-            >
-              Latest Release (v{siteVersion})
-            </a>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Column 3: OEM Debloat Guides -->
-      <div class="space-y-3">
-        <h4
-          class="text-[clamp(0.7rem,1vw,0.85rem)] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3"
-        >
-          OEM Debloat Guides
-        </h4>
-        <ul class="space-y-2">
-          <li>
-            <a
-              href="/oems"
-              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-            >
-              All OEMs &amp; Rules Directory
-            </a>
-          </li>
-          <li>
-            <a
-              href="/oems#rules-explorer"
-              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-            >
-              Interactive Package Analyzer
-            </a>
-          </li>
-          <li>
-            <a
-              href="/oems#xiaomi-miui-hyperos"
-              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-            >
-              Xiaomi HyperOS &amp; MIUI
-            </a>
-          </li>
-          <li>
-            <a
-              href="/oems#samsung-oneui"
-              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-            >
-              Samsung Galaxy One UI
-            </a>
-          </li>
-          <li>
-            <a
-              href="/oems#coloros-oxygenos"
-              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-            >
-              OnePlus / Oppo / Realme (ColorOS)
-            </a>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Column 4: Safety & Documentation -->
-      <div class="space-y-3">
-        <h4
-          class="text-[clamp(0.7rem,1vw,0.85rem)] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3"
-        >
-          Safety &amp; Documentation
-        </h4>
-        <ul class="space-y-2">
-          <li>
-            <a
-              href="/#safety-tiers"
-              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-            >
-              Package Safety Tiers
-            </a>
-          </li>
-          <li>
-            <a
-              href="/#restore-apps"
-              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-            >
-              How to Restore Removed Apps
-            </a>
-          </li>
-          <li>
-            <a
-              href="/#adb-setup"
-              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-            >
-              Enable USB Debugging (ADB)
-            </a>
-          </li>
-          <li>
-            <a
-              href="/#faq"
-              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-            >
-              FAQ
-            </a>
-          </li>
-          <li>
-            <a
-              href="https://github.com/Rovoxia/AI-Phone-Debloater/commits/main"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-            >
-              Release Changelog
-            </a>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Column 5: Community & Open Source -->
-      <div class="space-y-3">
-        <h4
-          class="text-[clamp(0.7rem,1vw,0.85rem)] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3"
-        >
-          Community &amp; Open Source
-        </h4>
-        <ul class="space-y-2">
-          <li>
-            <a
-              href="https://github.com/Rovoxia/AI-Phone-Debloater"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-            >
-              GitHub Repository
-            </a>
-          </li>
-          <li>
-            <a
-              href="https://github.com/Rovoxia/AI-Phone-Debloater/issues/new?template=package_rule_request.md"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-            >
-              Submit Safe/Bloat Package
-            </a>
-          </li>
-          <li>
-            <a
-              href="https://github.com/Rovoxia/AI-Phone-Debloater/issues"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-            >
-              Report a Bug / Issue
-            </a>
-          </li>
-          <li>
-            <a
-              href="https://github.com/Rovoxia/AI-Phone-Debloater/discussions"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-            >
-              Discussions &amp; Support
-            </a>
-          </li>
-          <li>
-            <a
-              href="https://rovoxia.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-            >
-              Rovoxia Ecosystem
-            </a>
-          </li>
-        </ul>
-      </div>
-
+      <nav aria-label="Footer" class="columns">
+        {
+          columns.map((column) => (
+            <div>
+              <p id={column.id} class="title">
+                {column.title}
+              </p>
+              <ul aria-labelledby={column.id}>
+                {column.links.map((link) => (
+                  <li>
+                    {link.external ? (
+                      <a href={link.href} class="footer-link" target="_blank" rel="noopener noreferrer">
+                        {link.name}
+                        <Icon name="arrow-up-right" class="size-3.5" />
+                        <span class="sr-only">(opens in a new tab)</span>
+                      </a>
+                    ) : (
+                      <a href={link.href} class="footer-link">
+                        {link.name}
+                      </a>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </nav>
     </div>
 
-    <!-- Bottom bar -->
-    <div
-      class="border-t border-slate-200 dark:border-slate-800 pt-[clamp(2rem,4vw,3rem)] flex flex-col sm:flex-row items-center justify-between gap-4 text-[clamp(0.7rem,1vw,0.8rem)] leading-relaxed text-slate-500 dark:text-slate-400"
-    >
-      <div class="flex items-center gap-1.5 shrink-0">
-        <span>© {currentYear}</span>
-        <a
-          href="https://rovoxia.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="font-semibold text-slate-700 hover:text-emerald-600 dark:text-slate-300 dark:hover:text-emerald-400 underline decoration-slate-300 dark:decoration-slate-700 underline-offset-4 transition-colors"
-        >
-          Rovoxia
-        </a>
-        <span>&bull; Released under MIT License.</span>
-      </div>
-
-      <div class="flex items-center justify-center sm:justify-end gap-4 w-full sm:w-auto">
-        <p class="text-center sm:text-right max-w-[460px]">
-          Android is a trademark of Google LLC. OEM brand names are used for compatibility identification only.
-        </p>
-        <button
-          type="button"
-          data-back-to-top
-          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-800 dark:bg-[#151922] dark:text-slate-300 dark:hover:bg-slate-800 transition-colors shadow-sm cursor-pointer"
-          aria-label="Back to top"
-          title="Back to top"
-        >
-          <svg
-            class="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
-          </svg>
-        </button>
-      </div>
+    <div class="bottom">
+      <p>
+        &copy; {year}
+        <a href={ORG_URL} class="footer-link inline" target="_blank" rel="noopener noreferrer">{ORG_NAME}<span class="sr-only"> (opens in a new tab)</span></a>. Released under the MIT License.
+      </p>
+      <p class="legal">
+        Android is a trademark of Google LLC. Brand names are used only to identify compatible devices.
+      </p>
+      <a href="#top" class="footer-link to-top">
+        <Icon name="arrow-up" class="size-4" />
+        Back to top
+      </a>
     </div>
   </div>
 </footer>
 
 <style>
-  /* Back to top button focus visibility */
-  footer button:focus-visible {
-    outline: 2px solid #10b981;
-    outline-offset: 2px;
+  .site-footer {
+    border-top: 1px solid var(--color-line);
+    background-color: var(--color-band);
+    color: var(--color-muted);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
   }
-  /* Reduce motion for back-to-top scroll */
-  @media (prefers-reduced-motion: reduce) {
-    button[data-back-to-top] {
-      scroll-behavior: auto !important;
+
+  .top {
+    display: grid;
+    gap: var(--spacing-stack-lg);
+    padding-block: var(--spacing-section-sm);
+  }
+
+  .about {
+    max-width: 24rem;
+  }
+
+  .name {
+    color: var(--color-ink);
+    font-size: var(--text-lg);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .blurb {
+    margin-top: 0.5rem;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  /* As many link columns as fit: 2 on a phone, 4 on a desktop, no breakpoints. */
+  .columns {
+    display: grid;
+    gap: var(--spacing-stack-lg) var(--spacing-stack);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+  }
+
+  .title {
+    margin-bottom: 0.5rem;
+    color: var(--color-faint);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .footer-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 2rem;
+    color: var(--color-muted);
+    text-decoration-line: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 0.2em;
+    transition: color 150ms ease, text-decoration-color 150ms ease;
+  }
+
+  .footer-link:hover {
+    color: var(--color-ink);
+    text-decoration-color: currentColor;
+  }
+
+  .footer-link.inline {
+    min-height: 0;
+    color: var(--color-ink);
+    font-weight: 500;
+    text-decoration-color: var(--color-line-control);
+  }
+
+  .bottom {
+    display: grid;
+    gap: 0.75rem;
+    padding-block: 1.5rem;
+    border-top: 1px solid var(--color-line);
+    color: var(--color-faint);
+    font-size: var(--text-xs);
+    line-height: var(--text-xs--line-height);
+  }
+
+  .to-top {
+    justify-self: start;
+    color: var(--color-faint);
+  }
+
+  @media (pointer: coarse) {
+    .footer-link:not(.inline) {
+      min-height: 2.75rem;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .top {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 2.25fr);
+    }
+
+    .bottom {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      column-gap: 2rem;
+    }
+
+    .legal {
+      text-align: right;
     }
   }
 </style>
-
-<script>
-  // The site CSP has no 'unsafe-inline', so inline on* attributes do not run. Bind here instead.
-  document.querySelectorAll('[data-back-to-top]').forEach((button) => {
-    button.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
-  });
-
-  // Font stylesheets load with media="print" so they do not block rendering; switch them on once
-  // loaded (this replaces onload="this.media='all'"). `sheet` is set if the load already finished.
-  document.querySelectorAll<HTMLLinkElement>('link[data-async-css]').forEach((link) => {
-    const enable = () => { link.media = 'all'; };
-    link.addEventListener('load', enable);
-    if (link.sheet) enable();
-  });
-</script>
-
-<script type="application/ld+json" is:inline>
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "AI Phone Debloater",
-  "operatingSystem": "Windows, Linux, macOS, Android (ADB)",
-  "applicationCategory": "DeveloperApplication, UtilitiesApplication",
-  "url": "https://debloater.rovoxia.com",
-  "downloadUrl": "https://github.com/Rovoxia/AI-Phone-Debloater",
-  "author": {
-    "@type": "Organization",
-    "name": "Rovoxia",
-    "url": "https://github.com/Rovoxia"
-  },
-  "offers": {
-    "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "USD"
-  },
-  "description": "AI-powered rootless Android Debloater via ADB. Safely remove OEM bloatware, spyware, and telemetry on Xiaomi HyperOS, MIUI, Samsung OneUI, ColorOS & OxygenOS without root."
-}
-</script>

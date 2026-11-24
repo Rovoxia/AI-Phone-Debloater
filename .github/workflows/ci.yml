@@ -176,6 +176,33 @@ jobs:
           fi
         working-directory: web
 
+      # JSON-LD is a data block, so neither the build nor the browser reports one that does not
+      # parse; search engines just drop it. Parse every block in the built pages.
+      - name: Check that every JSON-LD block in built HTML parses
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, re, sys
+
+          pattern = re.compile(
+              r'<script\b[^>]*\btype=["\']?application/ld\+json["\']?[^>]*>(.*?)</script>',
+              re.S | re.I,
+          )
+          blocks = errors = 0
+          for path in sorted(pathlib.Path('dist').rglob('*.html')):
+              for body in pattern.findall(path.read_text(encoding='utf-8')):
+                  blocks += 1
+                  try:
+                      json.loads(body)
+                  except ValueError as exc:
+                      errors += 1
+                      print(f'::error file=web/{path.as_posix()}::Invalid JSON-LD: {exc}')
+          print(f'{blocks} JSON-LD block(s) checked, {errors} invalid')
+          if blocks == 0:
+              print('::error::No JSON-LD block found in web/dist; this check is not seeing the built pages.')
+          sys.exit(1 if errors or blocks == 0 else 0)
+          PY
+        working-directory: web
+
       - name: Smoke test web preview
         run: |
           cd web

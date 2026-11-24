@@ -1,6 +1,6 @@
 {
   "name": "Huawei & Carrier Debloat Rules",
-  "manufacturer": "huawei",
+  "manufacturer": "Huawei",
   "version": "1.0.0",
   "description": "Safe debloat rules for Huawei (EMUI) and telecom preloads.",
   "rule": "oem-rules",

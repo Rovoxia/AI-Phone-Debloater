@@ -1,0 +1,7 @@
+---
+// The tier icons as one hidden SVG sprite. Render it once on a page that uses
+// <TierBadge sprite />: each badge then references its icon instead of repeating the paths.
+import { tierSpriteHtml } from '../data/tiers';
+---
+
+<Fragment set:html={tierSpriteHtml()} />

@@ -24,7 +24,7 @@ OEM_MAP = {
     "BBK (Oppo, Vivo, Realme)": ("BBK", "bbk"),
     "Android (all OEMs)": ("Core System", "critical"),
     "Google": ("Google", "pixel"),
-    "huawei": ("Huawei", "huawei"),
+    "Huawei": ("Huawei", "huawei"),
     "Motorola": ("Motorola", "motorola"),
     "OnePlus": ("OnePlus", "oneplus"),
     "Samsung": ("Samsung", "samsung"),

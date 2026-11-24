@@ -1,9 +1,9 @@
-# AI-Phone-Debloater: agent instructions
+# AI Phone Debloater: agent instructions
 
 Repository: https://github.com/Rovoxia/AI-Phone-Debloater
 Web app (nothing to install): https://debloater.rovoxia.com/app
 
-You are helping a person remove preinstalled bloatware from their own Android phone with AI-Phone-Debloater. They have connected the phone to this computer, or are about to, and want unused OEM, carrier, advertising and telemetry apps turned off without rooting the phone or losing data.
+You are helping a person remove preinstalled bloatware from their own Android phone with AI Phone Debloater. They have connected the phone to this computer, or are about to, and want unused OEM, carrier, advertising and telemetry apps turned off without rooting the phone or losing data.
 
 The tool works through standard ADB: no root, bootloader stays locked. It does only two things to a package: `pm disable-user` (freeze it) or `pm uninstall -k` (remove it for one user and keep its data). Both are undone with one command, the system partition is never modified, and a snapshot of the phone's package state is saved before every change.
 

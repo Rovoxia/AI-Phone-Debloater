@@ -1,0 +1,29 @@
+---
+// Visible breadcrumb trail. Pass the same array you give to <Base breadcrumbs={...}>, so the
+// trail on the page and the BreadcrumbList in the JSON-LD cannot differ.
+import type { Crumb } from '../lib/seo';
+
+interface Props {
+  /** From the home page to the current page; the last item is the current page. */
+  items: Crumb[];
+  class?: string;
+}
+
+const { items, class: className } = Astro.props;
+---
+
+<nav aria-label="Breadcrumb" class:list={['breadcrumb', className]}>
+  <ol>
+    {
+      items.map((item, index) =>
+        index === items.length - 1 ? (
+          <li aria-current="page">{item.name}</li>
+        ) : (
+          <li>
+            <a href={item.path}>{item.name}</a>
+          </li>
+        ),
+      )
+    }
+  </ol>
+</nav>

@@ -1,345 +1,186 @@
 ---
-// src/pages/blog.astro
-// Blog index page for AI-Phone-Debloater
-import '../styles/global.css';
-import Navbar from '../components/Navbar.astro';
-import Footer from '../components/Footer.astro';
+// /blog: the guide index. The list comes from the `blog` content collection through
+// src/lib/blog.ts, the same source as /blog/<slug>, /rss.xml and the sitemap dates.
+// To add a guide, add a Markdown file to src/content/blog/. Nothing here needs editing.
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import Icon from '../components/Icon.astro';
+import { RULE_STATS } from '../data/tiers';
+import { abs, blogNode, formatDate, itemListNode, type Crumb } from '../lib/seo';
+import {
+  CATEGORY_INFO,
+  FEED_PATH,
+  getPosts,
+  postPath,
+  postWordCount,
+  readingMinutes,
+  ymd,
+} from '../lib/blog';
 
-const SITE_URL = 'https://debloater.rovoxia.com';
-const CANONICAL_URL = `${SITE_URL}/blog`;
-const TITLE = 'Blog & Guides | AI Phone Debloater';
-const DESCRIPTION = 'OEM-specific debloat guides, Android optimization tutorials, and safety deep-dives for Samsung, Xiaomi, Pixel, OnePlus, and more.';
-const KEYWORDS = 'Android debloat guide, Samsung One UI debloat, Xiaomi HyperOS bloatware removal, Pixel debloat tutorial, ADB debloat tutorial, bloatware removal guide';
+const TITLE = 'Android Debloat Guides by Phone Brand';
+const DESCRIPTION =
+  'Step-by-step Android debloat guides for Samsung, Xiaomi, Pixel, OnePlus, Oppo, Vivo, Motorola and Tecno/Infinix, plus ADB setup and safety tiers.';
 
-const posts = [
-  {
-    slug: 'samsung-galaxy-debloat-guide-one-ui-6',
-    title: 'Samsung Galaxy Debloat Guide (One UI 6.1+)',
-    excerpt: 'Step-by-step guide to safely removing Bixby, Samsung Pay bloatware, Galaxy Store trackers, and duplicate apps without tripping Knox (0x0). Covers S24, S23, Z Fold/Flip series.',
-    date: '2026-11-01',
-    category: 'OEM Guides',
-    readTime: '8 min',
-    tags: ['Samsung', 'One UI', 'Knox Safe', 'Bixby']
-  },
-  {
-    slug: 'xiaomi-hyperos-debloat-guide',
-    title: 'Xiaomi HyperOS / MIUI Debloat Guide',
-    excerpt: 'Remove MSA ad daemons, Joyose analytics, Mi Video/Music bloatware, and GetApps store safely. Covers HyperOS 2.0, MIUI 14, and POCO/Redmi variants.',
-    date: '2026-11-01',
-    category: 'OEM Guides',
-    readTime: '7 min',
-    tags: ['Xiaomi', 'HyperOS', 'MIUI', 'MSA', 'Joyose']
-  },
-  {
-    slug: 'pixel-debloat-guide-stock-android',
-    title: 'Google Pixel Debloat Guide (Stock Android / AOSP)',
-    excerpt: 'Clean carrier telemetry, unused Google ecosystem apps, Digital Wellbeing trackers, and setup daemons on Pixel 9, 8, 7 series and Nothing Phone.',
-    date: '2026-11-01',
-    category: 'OEM Guides',
-    readTime: '6 min',
-    tags: ['Pixel', 'Google', 'AOSP', 'Carrier Services']
-  },
-  {
-    slug: 'oneplus-oppo-realme-debloat-guide-coloros',
-    title: 'OnePlus / Oppo / Realme Debloat Guide (ColorOS & OxygenOS)',
-    excerpt: 'Disable HeyTap services, aggressive App Market notifications, background analytics, and carrier bloatware on OnePlus 12, Oppo Find X, Realme GT series.',
-    date: '2026-11-01',
-    category: 'OEM Guides',
-    readTime: '6 min',
-    tags: ['OnePlus', 'Oppo', 'Realme', 'ColorOS', 'OxygenOS', 'HeyTap']
-  },
-  {
-    slug: 'vivo-iqoo-debloat-guide-funtouchos',
-    title: 'Vivo & iQOO Debloat Guide (FuntouchOS & OriginOS)',
-    excerpt: 'Clean Jovi voice assistant, V-Appstore auto-installers, lockscreen poster services, and background telemetry on Vivo X100, iQOO 12 series.',
-    date: '2026-11-01',
-    category: 'OEM Guides',
-    readTime: '5 min',
-    tags: ['Vivo', 'iQOO', 'FuntouchOS', 'Jovi', 'V-Appstore']
-  },
-  {
-    slug: 'motorola-debloat-guide-myux',
-    title: 'Motorola Debloat Guide (My UX / Hello UI)',
-    excerpt: 'Eliminate Moto notifications, carrier partner daemons, preinstalled games, and background analytics on Edge, Razr, and G series.',
-    date: '2026-11-01',
-    category: 'OEM Guides',
-    readTime: '5 min',
-    tags: ['Motorola', 'My UX', 'Hello UI', 'Moto Suggestions']
-  },
-  {
-    slug: 'transsion-debloat-guide-hios-xos',
-    title: 'Tecno / Infinix / Itel Debloat Guide (HiOS / XOS)',
-    excerpt: 'Purge aggressive Palm Store ads, Phoenix browser, Aha Games recommendations, and system push notification services.',
-    date: '2026-11-01',
-    category: 'OEM Guides',
-    readTime: '5 min',
-    tags: ['Tecno', 'Infinix', 'Itel', 'HiOS', 'XOS', 'Palm Store']
-  },
-  {
-    slug: 'debloat-vs-factory-reset',
-    title: 'Debloat vs. Factory Reset: Which Actually Improves Android Performance?',
-    excerpt: 'Data-driven comparison: debloating reclaims 1.5–3GB RAM and 20–30% battery without data loss, while factory reset requires full re-setup. When to use each.',
-    date: '2026-11-01',
-    category: 'Comparisons',
-    readTime: '6 min',
-    tags: ['Factory Reset', 'Performance', 'Battery', 'RAM']
-  },
-  {
-    slug: 'adb-debloat-safety-tiers-explained',
-    title: 'ADB Debloat Safety Tiers Explained: Tier 1 Through Tier 4',
-    excerpt: 'Deep dive into the 4-tier safety model: Safe Bloat (Tier 1), Advanced Debloat (Tier 2), Extreme Debloat (Tier 3), and Critical Core Blacklist (Tier 4). Why Tier 4 packages are permanently hard-blocked.',
-    date: '2026-11-01',
-    category: 'Safety',
-    readTime: '7 min',
-    tags: ['Safety Tiers', 'Tier 4', 'Hard-Blocked', 'Architecture']
-  },
-  {
-    slug: 'wireless-adb-debloat-setup-android-11',
-    title: 'Wireless ADB Debloat Setup (Android 11+): No Cable Required',
-    excerpt: 'Step-by-step guide to enabling Wireless Debugging, QR code pairing, and running AI-Phone-Debloater over Wi-Fi with automated mDNS discovery.',
-    date: '2026-11-01',
-    category: 'Tutorials',
-    readTime: '5 min',
-    tags: ['Wireless ADB', 'Android 11', 'mDNS', 'No Cable']
-  },
+const posts = await getPosts();
+
+const groups = CATEGORY_INFO.map((category) => ({
+  ...category,
+  posts: posts.filter((post) => post.data.category === category.name),
+})).filter((group) => group.posts.length > 0);
+
+// The order on the page, which the Blog and ItemList nodes repeat.
+const ordered = groups.flatMap((group) => group.posts);
+
+const crumbs: Crumb[] = [
+  { name: 'Home', path: '/' },
+  { name: 'Guides', path: '/blog' },
 ];
-
-const categories = [...new Set(posts.map(p => p.category))].sort();
 ---
 
-<!doctype html>
-<html lang="en" class="scroll-smooth" prefix="og: https://ogp.me/ns#">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#ffffff" />
-    <title>{TITLE}</title>
-    <meta name="description" content={DESCRIPTION} />
-    <meta name="keywords" content={KEYWORDS} />
-    <meta name="author" content="Rovoxia" />
-    <meta name="robots" content="index, follow" />
-    <link rel="canonical" href={CANONICAL_URL} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<Base
+  title={TITLE}
+  description={DESCRIPTION}
+  path="/blog"
+  pageType="CollectionPage"
+  breadcrumbs={crumbs}
+  jsonLd={[
+    blogNode(DESCRIPTION, ordered.map(postPath)),
+    itemListNode(
+      `${abs('/blog')}#posts`,
+      'Android debloat guides',
+      ordered.map((post) => ({ name: post.data.title, path: postPath(post) })),
+    ),
+  ]}
+>
+  <section class="section">
+    <div class="container-page">
+      <Breadcrumbs items={crumbs} />
+      <p class="eyebrow mt-stack-lg">Guides</p>
+      <h1 class="h1 mt-3 text-balance">Android debloat guides by phone brand</h1>
+      <p class="lead mt-stack">
+        These guides show how to turn off preinstalled apps on an Android phone over ADB, without root, using AI Phone
+        Debloater. Pick your brand to see which packages the rule set covers and in which safety tier, what you may
+        notice afterwards, and how to undo it. Every count and package table in them is generated from the
+        {RULE_STATS.total} rules the tool itself uses.
+      </p>
 
-    <!-- Open Graph -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content={CANONICAL_URL} />
-    <meta property="og:title" content={TITLE} />
-    <meta property="og:description" content={DESCRIPTION} />
-    <meta property="og:site_name" content="AI Phone Debloater" />
-    <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
-    <meta property="og:image:secure_url" content={`${SITE_URL}/og-image.png`} />
-    <meta property="og:image:type" content="image/png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="AI Phone Debloater Guides & Android Optimization Blog" />
-    <meta property="og:image" content={`${SITE_URL}/og-image.jpg`} />
-    <meta property="og:image:secure_url" content={`${SITE_URL}/og-image.jpg`} />
-    <meta property="og:image:type" content="image/jpeg" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="AI Phone Debloater Guides & Android Optimization Blog" />
-
-    <!-- Twitter Card (X) -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta name="twitter:domain" content="debloater.rovoxia.com" />
-    <meta property="twitter:domain" content="debloater.rovoxia.com" />
-    <meta name="twitter:url" content={CANONICAL_URL} />
-    <meta property="twitter:url" content={CANONICAL_URL} />
-    <meta name="twitter:title" content={TITLE} />
-    <meta property="twitter:title" content={TITLE} />
-    <meta name="twitter:description" content={DESCRIPTION} />
-    <meta property="twitter:description" content={DESCRIPTION} />
-    <meta name="twitter:image" content={`${SITE_URL}/og-image.png`} />
-    <meta name="twitter:image:src" content={`${SITE_URL}/og-image.png`} />
-    <meta property="twitter:image" content={`${SITE_URL}/og-image.png`} />
-    <meta name="twitter:image:alt" content="AI Phone Debloater Guides & Android Optimization Blog" />
-    <meta property="twitter:image:alt" content="AI Phone Debloater Guides & Android Optimization Blog" />
-
-    <!-- JSON-LD Blog Structured Data -->
-    <script type="application/ld+json" set:html={JSON.stringify({
-      "@context": "https://schema.org",
-      "@graph": [
-        {
-          "@type": "BreadcrumbList",
-          "itemListElement": [
-            {
-              "@type": "ListItem",
-              "position": 1,
-              "name": "Home",
-              "item": "https://debloater.rovoxia.com/"
-            },
-            {
-              "@type": "ListItem",
-              "position": 2,
-              "name": "Blog & Guides",
-              "item": "https://debloater.rovoxia.com/blog"
-            }
-          ]
-        },
-        {
-          "@type": "Blog",
-          "name": "AI Phone Debloater Blog & Guides",
-          "description": "OEM-specific debloat guides, Android optimization tutorials, and safety deep-dives",
-          "url": "https://debloater.rovoxia.com/blog",
-          "inLanguage": "en-US",
-          "isPartOf": {
-            "@type": "WebSite",
-            "@id": "https://debloater.rovoxia.com/#website",
-            "name": "AI Phone Debloater"
-          },
-          "publisher": {
-            "@type": "Organization",
-            "name": "Rovoxia",
-            "url": "https://rovoxia.com"
-          },
-          "blogPosts": posts.map(post => ({
-            "@type": "BlogPosting",
-            "headline": post.title,
-            "description": post.excerpt,
-            "datePublished": post.date,
-            "url": `https://debloater.rovoxia.com/blog/${post.slug}`,
-            "author": { "@type": "Organization", "name": "Rovoxia" },
-            "keywords": post.tags.join(", ")
-          }))
-        }
-      ]
-    })} />
-
-    <script is:inline>
-      (function() {
-        try {
-          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          const stored = localStorage.getItem('theme');
-          const theme = stored || (prefersDark ? 'dark' : 'light');
-          document.documentElement.setAttribute('data-theme', theme);
-          if (theme === 'dark') document.documentElement.classList.add('dark');
-        } catch (e) {}
-      })();
-    </script>
-  </head>
-  <body class="bg-slate-50 text-slate-900 dark:bg-[#0b0f17] dark:text-slate-100 font-sans antialiased min-h-screen selection:bg-emerald-500 selection:text-white">
-
-    <Navbar />
-
-    <main>
-      <!-- Blog Hero -->
-      <section class="py-16 md:py-24 relative">
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 text-xs font-semibold mb-4">
-            Latest Guides & Tutorials
-          </div>
-          <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-4">
-            Debloat Guides & <br class="hidden sm:inline" />
-            <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">Android Optimization</span>
-          </h1>
-          <p class="text-slate-600 dark:text-slate-300 text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
-            OEM-specific debloat guides, safety deep-dives, and step-by-step tutorials. Every guide is tested against real devices and our 352 curated safety rules.
-          </p>
-        </div>
-      </section>
-
-      <!-- Category Filter -->
-      <section class="py-8 bg-white/50 dark:bg-[#0c1017]/50 border-y border-slate-200/80 dark:border-slate-800/80">
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex flex-wrap items-center justify-center gap-2">
-            <span class="text-xs font-medium text-slate-500 dark:text-slate-400 mr-2">Filter:</span>
-            <button class="category-btn active px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-600 text-white" data-category="all">All Posts</button>
-            {categories.map(cat => (
-              <button class="category-btn px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition" data-category={cat}>{cat}</button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <!-- Posts Grid -->
-      <section class="py-16 md:py-20">
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3" id="posts-grid">
-            {posts.map(post => (
-              <article class="post-card group rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#121620] p-6 shadow-xs hover:border-emerald-500/40 hover:shadow-md transition-all duration-200" data-category={post.category}>
-                <div class="flex items-center gap-2 mb-3">
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 dark:bg-emerald-500/20">
-                    {post.category}
-                  </span>
-                  <time class="text-[11px] text-slate-500 dark:text-slate-400 font-mono" datetime={post.date}>
-                    {new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </time>
-                </div>
-                <h2 class="text-lg font-bold text-slate-900 dark:text-white mb-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                  {post.title}
-                </h2>
-                <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-4 line-clamp-3">
-                  {post.excerpt}
-                </p>
-                <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 mb-4">
-                  <span class="flex items-center gap-1">
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    {post.readTime}
-                  </span>
-                </div>
-                <div class="flex flex-wrap gap-1.5 mb-4">
-                  {post.tags.map(tag => (
-                    <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                <a href={`/blog/${post.slug}`} class="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-300 transition">
-                  Read Guide
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+      <nav class="mt-stack-lg" aria-label="Guide categories">
+        <ul class="flex flex-wrap gap-2">
+          {
+            groups.map((group) => (
+              <li>
+                <a class="chip" href={`#${group.id}`}>
+                  {group.name}
+                  <span class="font-mono text-xs">{group.posts.length}</span>
+                  <span class="sr-only">{group.posts.length === 1 ? 'guide' : 'guides'}</span>
                 </a>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-    </main>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+    </div>
+  </section>
 
-    <Footer />
-
-    <script>
-      // Category filter
-      const buttons = document.querySelectorAll('.category-btn');
-      const cards = document.querySelectorAll('.post-card');
-
-      buttons.forEach(btn => {
-        btn.addEventListener('click', () => {
-          const category = btn.dataset.category;
-
-          // Update active button
-          buttons.forEach(b => {
-            b.classList.remove('active', 'bg-emerald-600', 'text-white');
-            b.classList.add('bg-slate-100', 'text-slate-700', 'dark:bg-slate-800', 'dark:text-slate-300');
-          });
-          btn.classList.add('active', 'bg-emerald-600', 'text-white');
-          btn.classList.remove('bg-slate-100', 'text-slate-700', 'dark:bg-slate-800', 'dark:text-slate-300');
-
-          // Filter cards
-          cards.forEach(card => {
-            if (category === 'all' || card.dataset.category === category) {
-              card.style.display = 'block';
-              card.style.animation = 'fadeIn 0.3s ease';
-            } else {
-              card.style.display = 'none';
-            }
-          });
-        });
-      });
-    </script>
-
-    <style>
-      @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
+  <div class="section section-alt">
+    <div class="container-page">
+      {
+        groups.map((group) => (
+          <section class="guide-group" id={group.id} aria-labelledby={`${group.id}-title`}>
+            <div class="section-head">
+              <h2 class="h2" id={`${group.id}-title`}>
+                {group.name}
+              </h2>
+              <p class="lead">{group.description}</p>
+            </div>
+            <ul class="grid-auto">
+              {group.posts.map((post) => {
+                const published = ymd(post.data.pubDate);
+                const updated = ymd(post.data.updatedDate);
+                return (
+                  <li class="card card-hover guide-card">
+                    <h3 class="h3">
+                      <a class="guide-card-link" href={postPath(post)}>
+                        {post.data.title}
+                      </a>
+                    </h3>
+                    <p class="mt-3 text-sm text-muted">{post.data.description}</p>
+                    <ul class="guide-card-meta meta">
+                      <li>
+                        Published <time datetime={published}>{formatDate(published)}</time>
+                      </li>
+                      {updated !== published && (
+                        <li>
+                          Updated <time datetime={updated}>{formatDate(updated)}</time>
+                        </li>
+                      )}
+                      <li>{readingMinutes(postWordCount(post))} min read</li>
+                    </ul>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))
       }
-      .line-clamp-3 {
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-      }
-    </style>
-  </body>
-</html>
+    </div>
+  </div>
+
+  <section class="section" aria-labelledby="more-title">
+    <div class="container-page">
+      <div class="section-head">
+        <p class="eyebrow">Beyond the guides</p>
+        <h2 class="h2" id="more-title">Look up a package or follow new guides</h2>
+        <p class="lead">
+          The package list shows every rule with its brand, tier and action. The feed carries each guide when it is
+          published.
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <a class="btn btn-primary" href="/oems">Browse the package list</a>
+        <a class="btn btn-secondary" href="/app">Open the web app</a>
+        <a class="btn btn-ghost" href={FEED_PATH}>
+          <Icon name="rss" />
+          RSS feed
+        </a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .guide-group + .guide-group {
+    margin-top: var(--spacing-section-sm);
+  }
+
+  /* Cards in a row share a height; the dates sit on the bottom edge. */
+  .guide-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .guide-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    margin-top: auto;
+    padding-top: 1.25rem;
+  }
+
+  /* The title is the link, and it covers the whole card. */
+  .guide-card-link {
+    transition: color 150ms ease;
+  }
+
+  .guide-card-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-box);
+  }
+
+  .guide-card-link:hover {
+    color: var(--color-accent);
+  }
+</style>

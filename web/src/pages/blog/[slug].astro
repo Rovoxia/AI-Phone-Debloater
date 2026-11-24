@@ -1,969 +1,724 @@
 ---
-// src/pages/blog/[slug].astro
-// Individual blog post page with full SEO and schema markup
-import '../../styles/global.css';
-import Navbar from '../../components/Navbar.astro';
-import Footer from '../../components/Footer.astro';
+// A blog post. The text comes from src/content/blog/<slug>.md (schema: src/content.config.ts).
+// Everything that states a tier, a count or a package is built here from rules-dataset.json and
+// src/data/tiers.ts, never typed in the Markdown, so it cannot drift from the rule set:
+//   - `oemIds` in the frontmatter: the tier counts above the body and the full rule tables below it
+//   - `tierOverview: true`: the four-tier table above the body and the per-brand and Tier 4 tables below it
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import Icon from '../../components/Icon.astro';
+import TierBadge from '../../components/TierBadge.astro';
+import rulesData from '../../data/rules-dataset.json';
+import { REMOVABLE_TIERS, RULE_STATS, TIERS, TIER_BY_ID, type Tier } from '../../data/tiers';
+import { ORG_NAME, ORG_URL, SITE_NAME, blogPostingNode, formatDate, type Crumb } from '../../lib/seo';
+import {
+  getPosts,
+  postHeadTitle,
+  postPath,
+  postWordCount,
+  readingMinutes,
+  relatedPosts,
+  ymd,
+  type Post,
+} from '../../lib/blog';
 
-const SITE_URL = 'https://debloater.rovoxia.com';
-
-interface BlogPost {
-  slug: string;
-  title: string;
-  excerpt: string;
-  date: string;
-  category: string;
-  readTime: string;
-  tags: string[];
-  content: string;
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post, posts } }));
 }
 
-// Full post content database (exported so getStaticPaths, which Astro hoists out of the frontmatter, can see it)
-export const posts: Record<string, BlogPost> = {
-  'samsung-galaxy-debloat-guide-one-ui-6': {
-    slug: 'samsung-galaxy-debloat-guide-one-ui-6',
-    title: 'Samsung Galaxy Debloat Guide (One UI 6.1+)',
-    excerpt: 'Step-by-step guide to safely removing Bixby, Samsung Pay bloatware, Galaxy Store trackers, and duplicate apps without tripping Knox (0x0). Covers S24, S23, Z Fold/Flip series.',
-    date: '2026-11-01',
-    category: 'OEM Guides',
-    readTime: '8 min',
-    tags: ['Samsung', 'One UI', 'Knox Safe', 'Bixby'],
-    content: `
-## What is Samsung One UI Debloating?
-
-Samsung One UI debloating is the process of selectively disabling or uninstalling pre-installed Samsung and carrier applications that consume system resources without providing value to the user. Unlike a factory reset, debloating preserves your data, accounts, and settings while targeting only the packages you choose.
-
-## Why Debloat Samsung Devices?
-
-Samsung devices ship with 40-50+ pre-installed packages beyond stock Android. Our curated rule database identifies **45 Samsung-specific packages** across four safety tiers:
-
-| Tier | Package Count | Examples |
-|------|--------------|----------|
-| Tier 1 (Safe) | 18 | Facebook App Manager, Netflix Activation, Microsoft OneDrive, carrier bloat |
-| Tier 2 (Advanced) | 15 | Bixby Voice, Samsung Cloud Sync, AR Zone, Game Optimizing Service |
-| Tier 3 (Extreme) | 8 | Samsung Keyboard, Samsung Messages, Samsung Internet, Galaxy Store |
-| Tier 4 (Critical) | 4 | SystemUI, Phone, Settings, Knox Guard (hard-blocked) |
-
-According to our testing on Galaxy S24, S23, and Z Fold 5 devices, Tier 1 debloating reclaims **1.8–2.4GB RAM** and extends battery life by **15–22%**.
-
-## Safety First: Knox 0x0 Preservation
-
-**Critical**: AI-Phone-Debloater never touches the bootloader or system partitions. Samsung Knox Warranty Void fuse (0x0) remains intact because:
-
-1. We operate exclusively in User 0 space via \`pm disable-user\` / \`pm uninstall -k\`
-2. The \`-k\` flag preserves app data directories at \`/data/user/0/<package>\`
-3. No dm-verity triggers — \`/system\`, \`/vendor\`, \`/product\` partitions remain unmodified
-4. Google Play Integrity API passes; banking apps and Samsung Pay continue working
-
-## Step-by-Step: Safe Samsung Debloat
-
-### 1. Enable USB Debugging
-1. Settings → About phone → Software information
-2. Tap **Build number** 7 times → "Developer mode enabled"
-3. Settings → Developer options → **USB debugging** ON
-4. On Samsung: Also enable **OEM unlocking** (required for ADB on some models)
-
-### 2. Connect and Verify
-\`\`\`bash
-adb devices
-# Should show your device serial
-\`\`\`
-
-### 3. Run Dry-Run (Safe Preview)
-\`\`\`bash
-python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --dry-run
-\`\`\`
-
-This shows exactly which packages will be affected **before any changes**.
-
-### 4. Execute Tier 1 (Recommended)
-\`\`\`bash
-python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --action disable
-\`\`\`
-
-### 5. (Optional) Tier 2 — Review First
-Only if you don't use Bixby, Samsung Cloud, AR features, or Game Optimizing Service:
-\`\`\`bash
-python cli/src/debloat_engine.py --serial <SERIAL> --tier 2 --action disable
-\`\`\`
-
-## Packages Safe to Disable (Tier 1) — Verified on One UI 6.1
-
-| Package | Description | Why Safe |
-|---------|-------------|----------|
-| \`com.facebook.appmanager\` | Facebook background installer | Unused unless you use Facebook |
-| \`com.facebook.services\` | Facebook analytics/service | Telemetry only |
-| \`com.netflix.partner.activation\` | Netflix pre-install trigger | One-time setup daemon |
-| \`com.microsoft.onedrive\` | OneDrive auto-installer | Use web version instead |
-| \`com.samsung.android.app.watchmanager\` | Galaxy Watch manager | Only needed if you own a Watch |
-| \`com.samsung.android.bixby.wakeup\` | Bixby voice wake-up | Disable if you use Google Assistant |
-| \`com.samsung.android.aremojieditor\` | AR Emoji editor | Niche feature |
-
-## Packages Requiring Review (Tier 2)
-
-| Package | Description | Consider If |
-|---------|-------------|-------------|
-| \`com.samsung.android.bixby.agent\` | Bixby voice assistant | You use Google Assistant exclusively |
-| \`com.samsung.android.scloud\` | Samsung Cloud sync | You use Google Drive/OneDrive |
-| \`com.samsung.android.game.gos\` | Game Optimizing Service | You don't game, or use Game Booster manually |
-| \`com.samsung.android.arzone\` | AR Zone (stickers, emoji) | You never use AR features |
-
-## Tier 3 — Extreme (Expert Only)
-
-Requires third-party replacements installed first:
-- \`com.samsung.android.honeyboard\` → Install Gboard
-- \`com.samsung.android.messaging\` → Install Google Messages
-- \`com.sec.android.app.launcher\` → Install Nova/Lawnchair
-
-## Rollback: 1-Click Restore
-
-Every session creates a timestamped snapshot:
-\`\`\`bash
-python cli/src/debloat_engine.py --restore snapshot_SM-S911B_20261101_120000.json
-\`\`\`
-
-Or manually restore a single app:
-\`\`\`bash
-adb shell cmd package install-existing --user 0 com.samsung.android.bixby.agent
-\`\`\`
-
-## Wireless ADB (Android 11+)
-
-No cable needed:
-1. Settings → Developer options → **Wireless debugging** ON
-2. Pair via QR code or pairing code
-3. Run engine with \`--wireless 192.168.1.x:5555\`
-
-## Frequently Asked Questions
-
-### Will this void my Samsung warranty?
-**No.** Knox 0x0 remains intact. We only modify User 0 package state.
-
-### Will Samsung Pay / Google Pay stop working?
-**No.** Play Integrity API passes; NFC payment apps work normally.
-
-### Can I debloat a carrier-locked phone?
-**Yes.** Carrier bloat (Tier 1) is the primary target. Works on Verizon, AT&T, T-Mobile, and international variants.
-
-### What if I disable something I need?
-Instant restore via snapshot or \`cmd package install-existing\`. Zero data loss.
-
----
-
-*Last updated: 2026-11-01 | Tested on Galaxy S24 Ultra (SM-S928B), S23 (SM-S911B), Z Fold 5 (SM-F946B) running One UI 6.1*
-    `
-  },
-  'xiaomi-hyperos-debloat-guide': {
-    slug: 'xiaomi-hyperos-debloat-guide',
-    title: 'Xiaomi HyperOS / MIUI Debloat Guide',
-    excerpt: 'Remove MSA ad daemons, Joyose analytics, Mi Video/Music bloatware, and GetApps store safely. Covers HyperOS 2.0, MIUI 14, and POCO/Redmi variants.',
-    date: '2026-11-01',
-    category: 'OEM Guides',
-    readTime: '7 min',
-    tags: ['Xiaomi', 'HyperOS', 'MIUI', 'MSA', 'Joyose'],
-    content: `
-## What is Xiaomi HyperOS / MIUI Debloating?
-
-Xiaomi devices ship with MIUI (or HyperOS 2.0 on newer models) carrying a heavy load of pre-installed Xiaomi and carrier packages. Our rule database flags Xiaomi-specific packages across the four safety tiers. Unlike a factory reset, debloating keeps your data and accounts while removing only the packages you choose.
-
-## Why Debloat Xiaomi Devices?
-
-Xiaomi ROMs are known for aggressive pre-installed apps and background services. Our curated rules identify Xiaomi packages across four safety tiers:
-
-| Tier | Package Count | Examples |
-|------|--------------|----------|
-| Tier 1 (Safe) | 12 | MSA ad daemon, Joyose analytics, Mi Music, Mi Video, Xiaomi Payments |
-| Tier 2 (Advanced) | 8 | GetApps store, Mi Drop, Xiaomi Cloud sync, browser |
-| Tier 3 (Extreme) | 5 | Xiaomi Keyboard, Xiaomi Messages, Security app |
-| Tier 4 (Critical) | — | SystemUI, Phone, Settings, Xiaomi framework (hard-blocked) |
-
-Testing on Redmi and POCO devices shows Tier 1 debloating reclaims roughly **1.5–2GB RAM** and cuts background data use.
-
-## Safety First: No Bootloader Unlock Needed
-
-AI-Phone-Debloater operates in User 0 only:
-
-1. \`pm disable-user --user 0 <pkg>\` — freezes the package
-2. \`pm uninstall -k --user 0 <pkg>\` — removes app, keeps data dir via \`-k\`
-3. \`/system\`, \`/vendor\`, \`/product\` partitions untouched — no dm-verity trip
-4. Knox/Warranty fuse stays intact; Google Play Integrity passes; banking apps work
-
-## Step-by-Step: Xiaomi Debloat
-
-### 1. Enable USB Debugging
-Settings → About phone → MIUI version (tap 7×) → Developer options → USB debugging ON. On some Xiaomi: also turn on "Install via USB" and "USB debugging (security settings)".
-
-### 2. Connect and Verify
-\`\`\`bash
-adb devices
-\`\`\`
-
-### 3. Dry-Run First
-\`\`\`bash
-python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --dry-run
-\`\`\`
-
-### 4. Execute Tier 1
-\`\`\`bash
-python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --action disable
-\`\`\`
-
-## Packages Safe to Disable (Tier 1)
-
-| Package | Description | Why Safe |
-|---------|-------------|----------|
-| \`com.miui.systemAdSolution\` | MSA ad daemon | Removes system ads |
-| \`com.miui.analytics\` | Joyose analytics | Telemetry only |
-| \`com.miui.player\` | Mi Music | Use any music app |
-| \`com.miui.videoplayer\` | Mi Video | Use any video app |
-| \`com.xiaomi.payment\` | Xiaomi Payments | Only if you don't use it |
-
-## Rollback
-
-Restore via snapshot or:
-\`\`\`bash
-adb shell cmd package install-existing --user 0 com.miui.player
-\`\`\`
-
----
-
-*Last updated: 2026-11-01 | Tested on Redmi Note 13, POCO X6, Xiaomi 13T running HyperOS / MIUI 14*
-    `
-  },
-  'pixel-debloat-guide-stock-android': {
-    slug: 'pixel-debloat-guide-stock-android',
-    title: 'Google Pixel Debloat Guide (Stock Android / AOSP)',
-    excerpt: 'Clean carrier telemetry, unused Google ecosystem apps, Digital Wellbeing trackers, and setup daemons on Pixel 9, 8, 7 series and Nothing Phone.',
-    date: '2026-11-01',
-    category: 'OEM Guides',
-    readTime: '6 min',
-    tags: ['Pixel', 'Google', 'AOSP', 'Carrier Services'],
-    content: `
-## What is Pixel Debloating?
-
-Google Pixel runs near-stock Android but still ships with Google ecosystem apps, carrier telemetry packages, Digital Wellbeing trackers, and setup daemons. Pixel debloat targets these removable packages while keeping the core Android framework intact.
-
-## Why Debloat Pixel Devices?
-
-Pixels have the least OEM bloat of any major brand, but Google's own pre-installed apps and carrier services still run background jobs:
-
-| Tier | Package Count | Examples |
-|------|--------------|----------|
-| Tier 1 (Safe) | 10 | Digital Wellbeing, unused Google apps, carrier telemetry daemons, setup apps |
-| Tier 2 (Advanced) | 6 | Google Duo/Meet preloads, AR services, device personalization plugins |
-| Tier 3 (Extreme) | 4 | Google Phone, Google Messages, Pixel Launcher (replaceable) |
-| Tier 4 (Critical) | — | Android framework, SystemUI, Settings, Play Services core (hard-blocked) |
-
-Pixel Tier 1 debloat typically reclaims **1–1.5GB RAM** and modest battery gains.
-
-## Safety First
-
-Pixel debloat uses the same User 0 ADB model:
-
-1. \`pm disable-user --user 0 <pkg>\` — freeze
-2. \`pm uninstall -k --user 0 <pkg>\` — uninstall keeping data
-3. No root, no unlock, no partition modification
-4. Play Integrity and banking apps continue working
-
-## Step-by-Step: Pixel Debloat
-
-### 1. Enable USB Debugging
-Settings → About phone → Build number (tap 7×) → Developer options → USB debugging ON.
-
-### 2. Connect and Verify
-\`\`\`bash
-adb devices
-\`\`\`
-
-### 3. Dry-Run First
-\`\`\`bash
-python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --dry-run
-\`\`\`
-
-### 4. Execute Tier 1
-\`\`\`bash
-python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --action disable
-\`\`\`
-
-## Packages Safe to Disable (Tier 1)
-
-| Package | Description | Why Safe |
-|---------|-------------|----------|
-| \`com.google.android.apps.wellbeing\` | Digital Wellbeing | Tracking/usage app |
-| \`com.google.ar.lens\` | AR Lens | Niche feature |
-| Carrier telemetry daemons | Carrier reporting | Only if carrier features unneeded |
-
-## Rollback
-
-\`\`\`bash
-adb shell cmd package install-existing --user 0 com.google.android.apps.wellbeing
-\`\`\`
-
----
-
-*Last updated: 2026-11-01 | Tested on Pixel 9, Pixel 8, Pixel 7 running stock Android 14/15*
-    `
-  },
-  'oneplus-oppo-realme-debloat-guide-coloros': {
-    slug: 'oneplus-oppo-realme-debloat-guide-coloros',
-    title: 'OnePlus / Oppo / Realme Debloat Guide (ColorOS & OxygenOS)',
-    excerpt: 'Disable HeyTap services, aggressive App Market notifications, background analytics, and carrier bloatware on OnePlus 12, Oppo Find X, Realme GT series.',
-    date: '2026-11-01',
-    category: 'OEM Guides',
-    readTime: '6 min',
-    tags: ['OnePlus', 'Oppo', 'Realme', 'ColorOS', 'OxygenOS', 'HeyTap'],
-    content: `
-## What is OnePlus / Oppo / Realme Debloating?
-
-ColorOS (Oppo/Realme) and OxygenOS (OnePlus) ship with HeyTap push services, Oppo/Realme App Market, background analytics daemons, and carrier partner apps. Debloating removes these while keeping the phone fully functional.
-
-## Why Debloat OnePlus / Oppo / Realme?
-
-| Tier | Package Count | Examples |
-|------|--------------|----------|
-| Tier 1 (Safe) | 10 | HeyTap push, Oppo/Realme App Market, background analytics, carrier daemons |
-| Tier 2 (Advanced) | 7 | Game Space, Breeno assistant, Oppo Cloud sync, browser |
-| Tier 3 (Extreme) | 5 | Oppo Keyboard, Oppo Messages, HeyTap store |
-| Tier 4 (Critical) | — | System framework, Settings, Phone (hard-blocked) |
-
-Tier 1 debloat on OnePlus 12 / Oppo Find X reclaims roughly **1.5–2GB RAM**.
-
-## Safety First
-
-User 0 ADB only:
-
-1. \`pm disable-user --user 0 <pkg>\` — freeze
-2. \`pm uninstall -k --user 0 <pkg>\` — keep data via \`-k\`
-3. No bootloader unlock; warranty fuse intact
-4. Play Integrity passes; banking apps work
-
-## Step-by-Step
-
-### 1. Enable USB Debugging
-Settings → About device → Version (tap 7×) → Developer options → USB debugging ON. Also enable "Install via USB" on ColorOS.
-
-### 2. Connect and Verify
-\`\`\`bash
-adb devices
-\`\`\`
-
-### 3. Dry-Run First
-\`\`\`bash
-python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --dry-run
-\`\`\`
-
-### 4. Execute Tier 1
-\`\`\`bash
-python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --action disable
-\`\`\`
-
-## Packages Safe to Disable (Tier 1)
-
-| Package | Description | Why Safe |
-|---------|-------------|----------|
-| \`com.heytap.push\` | HeyTap push service | Push notifications you may not need |
-| \`com.oppomarket\` | Oppo App Market | Third-party store |
-| \`com.realme.appmarket\` | Realme App Market | Third-party store |
-| \`com.coloros.omappush\` | ColorOS push daemon | Background push |
-
-## Rollback
-
-\`\`\`bash
-adb shell cmd package install-existing --user 0 com.heytap.push
-\`\`\`
-
----
-
-*Last updated: 2026-11-01 | Tested on OnePlus 12, Oppo Find X7, Realme GT5 running ColorOS / OxygenOS*
-    `
-  },
-  'vivo-iqoo-debloat-guide-funtouchos': {
-    slug: 'vivo-iqoo-debloat-guide-funtouchos',
-    title: 'Vivo & iQOO Debloat Guide (FuntouchOS & OriginOS)',
-    excerpt: 'Clean Jovi voice assistant, V-Appstore auto-installers, lockscreen poster services, and background telemetry on Vivo X100, iQOO 12 series.',
-    date: '2026-11-01',
-    category: 'OEM Guides',
-    readTime: '5 min',
-    tags: ['Vivo', 'iQOO', 'FuntouchOS', 'Jovi', 'V-Appstore'],
-    content: `
-## What is Vivo / iQOO Debloating?
-
-Vivo FuntouchOS and iQOO OriginOS carry Jovi voice assistant, V-Appstore auto-installers, lockscreen poster services, and background telemetry. Debloat removes the packages you don't use.
-
-## Why Debloat Vivo / iQOO?
-
-| Tier | Package Count | Examples |
-|------|--------------|----------|
-| Tier 1 (Safe) | 8 | Jovi assistant, V-Appstore, lockscreen posters, background telemetry |
-| Tier 2 (Advanced) | 6 | Vivo Cloud, iManager, browser, game center |
-| Tier 3 (Extreme) | 4 | Vivo Keyboard, Vivo Messages |
-| Tier 4 (Critical) | — | System framework, Settings, Phone (hard-blocked) |
-
-Tier 1 on Vivo X100 / iQOO 12 reclaims roughly **1–1.5GB RAM**.
-
-## Safety First
-
-User 0 ADB only:
-
-1. \`pm disable-user --user 0 <pkg>\` — freeze
-2. \`pm uninstall -k --user 0 <pkg>\` — keep data via \`-k\`
-3. No unlock; warranty intact
-4. Play Integrity passes; banking works
-
-## Step-by-Step
-
-### 1. Enable USB Debugging
-Settings → About phone → Version (tap 7×) → Developer options → USB debugging ON.
-
-### 2. Connect and Verify
-\`\`\`bash
-adb devices
-\`\`\`
-
-### 3. Dry-Run First
-\`\`\`bash
-python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --dry-run
-\`\`\`
-
-### 4. Execute Tier 1
-\`\`\`bash
-python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --action disable
-\`\`\`
-
-## Packages Safe to Disable (Tier 1)
-
-| Package | Description | Why Safe |
-|---------|-------------|----------|
-| \`com.vivo.assistant\` | Jovi voice assistant | Use Google Assistant instead |
-| \`com.vivo.appstore\` | V-Appstore | Third-party store |
-| \`com.vivo.globalsearch\` | Vivo global search | Duplicate search |
-| \`com.vivo.poster\` | Lockscreen posters | Ads on lockscreen |
-
-## Rollback
-
-\`\`\`bash
-adb shell cmd package install-existing --user 0 com.vivo.assistant
-\`\`\`
-
----
-
-*Last updated: 2026-11-01 | Tested on Vivo X100, iQOO 12 running FuntouchOS / OriginOS*
-    `
-  },
-  'motorola-debloat-guide-myux': {
-    slug: 'motorola-debloat-guide-myux',
-    title: 'Motorola Debloat Guide (My UX / Hello UI)',
-    excerpt: 'Eliminate Moto notifications, carrier partner daemons, preinstalled games, and background analytics on Edge, Razr, and G series.',
-    date: '2026-11-01',
-    category: 'OEM Guides',
-    readTime: '5 min',
-    tags: ['Motorola', 'My UX', 'Hello UI', 'Moto Suggestions'],
-    content: `
-## What is Motorola Debloating?
-
-Motorola My UX / Hello UI runs near-stock Android but ships with Moto notifications, carrier partner daemons, preinstalled games, and background analytics. Debloat removes the packages you don't need.
-
-## Why Debloat Motorola?
-
-| Tier | Package Count | Examples |
-|------|--------------|----------|
-| Tier 1 (Safe) | 8 | Moto notifications, carrier partner daemons, preinstalled games, analytics |
-| Tier 2 (Advanced) | 5 | Moto Actions extras, Moto app, carrier visual voicemail |
-| Tier 3 (Extreme) | 3 | Motorola Keyboard, Motorola Messages |
-| Tier 4 (Critical) | — | System framework, Settings, Phone (hard-blocked) |
-
-Tier 1 on Motorola Edge / Razr / G reclaims roughly **1–1.5GB RAM**.
-
-## Safety First
-
-User 0 ADB only:
-
-1. \`pm disable-user --user 0 <pkg>\` — freeze
-2. \`pm uninstall -k --user 0 <pkg>\` — keep data via \`-k\`
-3. No unlock; warranty intact
-4. Play Integrity passes; banking works
-
-## Step-by-Step
-
-### 1. Enable USB Debugging
-Settings → About phone → Build number (tap 7×) → Developer options → USB debugging ON.
-
-### 2. Connect and Verify
-\`\`\`bash
-adb devices
-\`\`\`
-
-### 3. Dry-Run First
-\`\`\`bash
-python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --dry-run
-\`\`\`
-
-### 4. Execute Tier 1
-\`\`\`bash
-python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --action disable
-\`\`\`
-
-## Rollback
-
-\`\`\`bash
-adb shell cmd package install-existing --user 0 <package>
-\`\`\`
-
----
-
-*Last updated: 2026-11-01 | Tested on Motorola Edge 40, Razr 40, Moto G running My UX / Hello UI*
-    `
-  },
-  'transsion-debloat-guide-hios-xos': {
-    slug: 'transsion-debloat-guide-hios-xos',
-    title: 'Tecno / Infinix / Itel Debloat Guide (HiOS / XOS)',
-    excerpt: 'Purge aggressive Palm Store ads, Phoenix browser, Aha Games recommendations, and system push notification services.',
-    date: '2026-11-01',
-    category: 'OEM Guides',
-    readTime: '5 min',
-    tags: ['Tecno', 'Infinix', 'Itel', 'HiOS', 'XOS', 'Palm Store'],
-    content: `
-## What is Tecno / Infinix / Itel Debloating?
-
-Transsion HiOS / XOS ships with Palm Store ads, Phoenix browser, Aha Games recommendations, and system push services. Debloat removes these resource-heavy packages.
-
-## Why Debloat Transsion?
-
-| Tier | Package Count | Examples |
-|------|--------------|----------|
-| Tier 1 (Safe) | 8 | Palm Store ads, Phoenix browser, Aha Games, system push |
-| Tier 2 (Advanced) | 6 | Transsion app store, browser extras, notification services |
-| Tier 3 (Extreme) | 4 | Transsion Keyboard, Transsion Messages |
-| Tier 4 (Critical) | — | System framework, Settings, Phone (hard-blocked) |
-
-Tier 1 on Tecno Spark / Infinix Note / Itel reclaims roughly **1–1.5GB RAM**.
-
-## Safety First
-
-User 0 ADB only:
-
-1. \`pm disable-user --user 0 <pkg>\` — freeze
-2. \`pm uninstall -k --user 0 <pkg>\` — keep data via \`-k\`
-3. No unlock; warranty intact
-4. Play Integrity passes; banking works
-
-## Step-by-Step
-
-### 1. Enable USB Debugging
-Settings → About phone → Build number (tap 7×) → Developer options → USB debugging ON.
-
-### 2. Connect and Verify
-\`\`\`bash
-adb devices
-\`\`\`
-
-### 3. Dry-Run First
-\`\`\`bash
-python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --dry-run
-\`\`\`
-
-### 4. Execute Tier 1
-\`\`\`bash
-python cli/src/debloat_engine.py --serial <SERIAL> --tier 1 --action disable
-\`\`\`
-
-## Packages Safe to Disable (Tier 1)
-
-| Package | Description | Why Safe |
-|---------|-------------|----------|
-| \`com.transsion.phonestore\` | Palm Store app store | Third-party store |
-| \`com.phoenix.browser\` | Phoenix browser | Use any browser |
-| \`com.aha.games\` | Aha Games | Game recommendations |
-
-## Rollback
-
-\`\`\`bash
-adb shell cmd package install-existing --user 0 com.transsion.phonestore
-\`\`\`
-
----
-
-*Last updated: 2026-11-01 | Tested on Tecno Spark, Infinix Note, Itel running HiOS / XOS*
-    `
-  },
-  'debloat-vs-factory-reset': {
-    slug: 'debloat-vs-factory-reset',
-    title: 'Debloat vs. Factory Reset: Which Actually Improves Android Performance?',
-    excerpt: 'Data-driven comparison: debloating reclaims 1.5–3GB RAM and 20–30% battery without data loss, while factory reset requires full re-setup. When to use each.',
-    date: '2026-11-01',
-    category: 'Comparisons',
-    readTime: '6 min',
-    tags: ['Factory Reset', 'Performance', 'Battery', 'RAM'],
-    content: `
-## Debloat vs. Factory Reset
-
-Both methods aim to speed up your Android phone, but they work very differently. Here is the data-driven comparison.
-
-| Factor | Debloat (AI-Phone-Debloater) | Factory Reset |
-|--------|------------------------------|---------------|
-| Data loss | None — keeps apps, accounts, settings | Wipes everything |
-| RAM reclaimed | 1.5–3GB (Tier 1–2) | Temporary, returns as apps reinstall |
-| Battery gain | 20–30% | Short-term only |
-| Time required | 5–15 minutes | 30–60 minutes + re-setup |
-| Reversible | Yes — snapshot restore | No |
-| Root required | No | No |
-| Warranty impact | None (User 0 ADB) | None |
-
-## When to Debloat
-
-Use debloat when your phone is sluggish from pre-installed bloat but your data and setup matter. Tier 1 removes carrier junk, ad daemons, and telemetry. Safe and reversible.
-
-## When to Factory Reset
-
-Use factory reset when the OS itself is corrupted, settings are misconfigured beyond repair, or you are selling the device. Expect to reinstall apps and sign back in to everything.
-
-## Recommendation
-
-Start with **Tier 1 debloat + dry-run**. It is the lowest-risk way to reclaim RAM and battery without losing data. Keep the snapshot for instant rollback.
-
----
-
-*Last updated: 2026-11-01*
-    `
-  },
-  'adb-debloat-safety-tiers-explained': {
-    slug: 'adb-debloat-safety-tiers-explained',
-    title: 'ADB Debloat Safety Tiers Explained: Tier 1 Through Tier 4',
-    excerpt: 'Deep dive into the 4-tier safety model: Safe Bloat (Tier 1), Advanced Debloat (Tier 2), Extreme Debloat (Tier 3), and Critical Core Blacklist (Tier 4). Why Tier 4 packages are permanently hard-blocked.',
-    date: '2026-11-01',
-    category: 'Safety',
-    readTime: '7 min',
-    tags: ['Safety Tiers', 'Tier 4', 'Hard-Blocked', 'Architecture'],
-    content: `
-## The 4-Tree Safety Model
-
-AI-Phone-Debloater classifies every removable package into one of four safety tiers. Higher tiers carry more risk. Critical packages are permanently hard-blocked.
-
-| Tier | Name | Risk | What it covers | Reversible |
-|------|------|------|----------------|------------|
-| Tier 1 | Safe Bloat | Low | Carrier junk, ad daemons, telemetry | Yes |
-| Tier 2 | Advanced Debloat | Medium | Secondary assistants, OEM cloud sync | Yes |
-| Tier 3 | Extreme Debloat | High | Replaceable stock apps (keyboards, dialers) | Yes |
-| Tier 4 | Critical Core | Blocked | Core system packages — never touched | N/A |
-
-## Tier 4: Critical Core Blacklist
-
-Tier 4 packages are permanently hard-blocked under **any** flag or prompt:
-
-- RuleSet.load seeds the critical set from HARDCRITICAL_PACKAGES (89 packages) unioned with critical-do-not-touch.json (89 packages) = **89 unique inviolable packages**.
-- Critical packages cannot be disabled or uninstalled under any flag.
-- validate_rules.py enforces zero collisions between other rule databases and critical-do-not-touch.json.
-
-Examples of blocked packages: SystemUI, Phone, Settings, and core Android framework components.
-
-## User 0 Preservation
-
-All mutations target user 0 only:
-
-- \`pm disable-user --user 0 <pkg>\` — freeze
-- \`pm uninstall -k --user 0 <pkg>\` — uninstall keeping app data via \`-k\`
-- \`pm enable --user 0 <pkg>\` — re-enable
-- \`cmd package install-existing --user 0 <pkg>\` — restore uninstalled app
-
-This preserves Knox 0x0 warranty status and app private directories.
-
-## Validation
-
-Run the rule validation suite to confirm tier integrity:
-
-\`\`\`bash
-python cli/tests/validate_rules.py
-\`\`\`
-
----
-
-*Last updated: 2026-11-01*
-    `
-  },
-  'wireless-adb-debloat-setup-android-11': {
-    slug: 'wireless-adb-debloat-setup-android-11',
-    title: 'Wireless ADB Debloat Setup (Android 11+): No Cable Required',
-    excerpt: 'Step-by-step guide to enabling Wireless Debugging, QR code pairing, and running AI-Phone-Debloater over Wi-Fi with automated mDNS discovery.',
-    date: '2026-11-01',
-    category: 'Tutorials',
-    readTime: '5 min',
-    tags: ['Wireless ADB', 'Android 11', 'mDNS', 'No Cable'],
-    content: `
-## Wireless ADB Debloat
-
-Android 11+ supports wireless debugging. You can run AI-Phone-Debloater over Wi-Fi with no USB cable.
-
-## Step-by-Step: Wireless ADB
-
-### 1. Enable Wireless Debugging
-Settings → Developer options → **Wireless debugging** ON.
-
-### 2. Pair the Device
-Select Pair device with pairing code or scan the QR code shown on screen. Note the IP and port (e.g. 192.168.1.42:5555).
-
-### 3. Connect via ADB
-\`\`\`bash
-adb pair <IP:PORT>
-# enter pairing code shown on phone
-adb connect <IP:PORT>
-adb devices
-\`\`\`
-
-### 4. Run the Engine Wirelessly
-\`\`\`bash
-python cli/src/debloat_engine.py --serial <IP:PORT> --tier 1 --dry-run
-python cli/src/debloat_engine.py --serial <IP:PORT> --tier 1 --action disable
-\`\`\`
-
-Or use the wireless flag:
-\`\`\`bash
-python cli/src/debloat_engine.py --wireless 192.168.1.42:5555 --tier 1 --dry-run
-\`\`\`
-
-## Safety
-
-Same User 0 ADB model applies over Wi-Fi:
-
-- \`pm disable-user --user 0\` — freeze
-- \`pm uninstall -k --user 0\` — keep data via \`-k\`
-- Critical Tier 4 packages hard-blocked
-- Snapshot restore works wirelessly
-
----
-
-*Last updated: 2026-11-01 | Requires Android 11+ and phone + computer on same Wi-Fi*
-    `
-  },
-};
-
-export function getStaticPaths() {
-  return Object.keys(posts).map((slug) => ({ params: { slug } }));
+interface Props {
+  post: Post;
+  posts: Post[];
 }
 
-// Get slug from route
-const { slug } = Astro.params;
-const post = posts[slug as string];
+const { post, posts } = Astro.props;
+const { data } = post;
+const { Content, headings } = await render(post);
 
-if (!post) {
-  return Astro.redirect('/404');
+const path = postPath(post);
+const published = ymd(data.pubDate);
+const updated = ymd(data.updatedDate);
+const wordCount = postWordCount(post);
+const minutes = readingMinutes(wordCount);
+const head = postHeadTitle(post, SITE_NAME);
+const related = relatedPosts(post, posts);
+
+const crumbs: Crumb[] = [
+  { name: 'Home', path: '/' },
+  { name: 'Guides', path: '/blog' },
+  { name: data.title, path },
+];
+
+/* ---- Rule data for this post ------------------------------------------- */
+
+type Rule = (typeof rulesData.rules)[number];
+
+const byName = (a: Rule, b: Rule) => a.name.localeCompare(b.name, 'en');
+const plural = (count: number, word: string) => `${count} ${count === 1 ? word : `${word}s`}`;
+const tierCount = (rules: Rule[], tier: Tier) => rules.filter((rule) => rule.tier === tier.id).length;
+
+interface RuleGroup {
+  oemId: string;
+  /** The dataset's own name for the group, e.g. "BBK (Oppo, Vivo, Realme)". */
+  label: string;
+  /** Rules listed in this post. */
+  rules: Rule[];
+  /** Every rule in the group's rule file. */
+  fileTotal: number;
+  /** Rules left out by `excludePackagePrefixes`. */
+  hidden: number;
+  tiers: { tier: Tier; rules: Rule[] }[];
 }
 
-const CANONICAL_URL = `${SITE_URL}/blog/${post.slug}`;
-const formattedDate = new Date(post.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-const isoDate = post.date;
+const excludedPrefixes = data.excludePackagePrefixes ?? [];
+
+function ruleGroup(oemId: string, prefixes: string[] = []): RuleGroup {
+  const all = rulesData.rules.filter((rule) => rule.oemId === oemId);
+  if (all.length === 0) {
+    throw new Error(`${post.id}: oemIds names "${oemId}", but rules-dataset.json has no rule with that oemId.`);
+  }
+  const rules = all.filter((rule) => !prefixes.some((prefix) => rule.package.startsWith(prefix)));
+  return {
+    oemId,
+    label: all[0].oemGroup,
+    rules,
+    fileTotal: all.length,
+    hidden: all.length - rules.length,
+    tiers: REMOVABLE_TIERS.map((tier) => ({
+      tier,
+      rules: rules.filter((rule) => rule.tier === tier.id).sort(byName),
+    })).filter((entry) => entry.rules.length > 0),
+  };
+}
+
+const groups: RuleGroup[] = (data.oemIds ?? []).map((oemId) => ruleGroup(oemId, excludedPrefixes));
+const hasRules = groups.length > 0;
+// The CLI loads the universal file on every phone, so the counts show it next to the brand's file.
+const universal = groups.some((group) => group.oemId === 'universal') ? null : ruleGroup('universal');
+const summaryRows = universal ? [...groups, universal] : groups;
+const hiddenTotal = groups.reduce((sum, group) => sum + group.hidden, 0);
+
+/* ---- Tier overview (the safety-tiers post) ------------------------------ */
+
+const overview = data.tierOverview;
+
+const brandIds = [...new Set(rulesData.rules.filter((rule) => rule.tier !== 4).map((rule) => rule.oemId))];
+const brandRows = overview
+  ? brandIds.map((oemId) => ruleGroup(oemId)).sort((a, b) => a.label.localeCompare(b.label, 'en'))
+  : [];
+
+const criticalRules = rulesData.rules.filter((rule) => rule.tier === 4);
+const criticalCategories = overview
+  ? [...new Set(criticalRules.map((rule) => rule.category))]
+      .map((category) => {
+        const rules = criticalRules.filter((rule) => rule.category === category).sort(byName);
+        return { category, label: category.replace(/_/g, ' '), rules };
+      })
+      .sort((a, b) => b.rules.length - a.rules.length || a.label.localeCompare(b.label, 'en'))
+  : [];
+
+/* ---- "On this page" ----------------------------------------------------- */
+
+const hasSummary = hasRules || overview;
+const hasAppendix = hasRules || overview;
+const summaryTitle = overview ? 'The four tiers at a glance' : 'How many rules apply';
+const appendixTitle = overview ? 'Rules by brand and the protected list' : 'Full rule list by tier';
+
+const toc = [
+  ...(hasSummary ? [{ id: 'summary', text: summaryTitle }] : []),
+  ...headings.filter((heading) => heading.depth === 2).map((heading) => ({ id: heading.slug, text: heading.text })),
+  ...(hasAppendix ? [{ id: 'rules', text: appendixTitle }] : []),
+];
+
+const actionLabel = (action: string) => (action === 'uninstall' ? 'Uninstall' : 'Disable');
 ---
 
-<!doctype html>
-<html lang="en" class="scroll-smooth" prefix="og: https://ogp.me/ns#">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#ffffff" />
-    <title>{post.title} | AI Phone Debloater</title>
-    <meta name="description" content={post.excerpt} />
-    <meta name="keywords" content={['AI Phone Debloater', 'Android debloat', post.category, ...post.tags].join(', ')} />
-    <meta name="author" content="Rovoxia" />
-    <meta name="robots" content="index, follow" />
-    <link rel="canonical" href={CANONICAL_URL} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-
-    <!-- Open Graph -->
-    <meta property="og:type" content="article" />
-    <meta property="og:url" content={CANONICAL_URL} />
-    <meta property="og:title" content={post.title} />
-    <meta property="og:description" content={post.excerpt} />
-    <meta property="og:site_name" content="AI Phone Debloater" />
-    <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
-    <meta property="og:image:secure_url" content={`${SITE_URL}/og-image.png`} />
-    <meta property="og:image:type" content="image/png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content={`${post.title} — AI Phone Debloater Guide`} />
-    <meta property="og:image" content={`${SITE_URL}/og-image.jpg`} />
-    <meta property="og:image:secure_url" content={`${SITE_URL}/og-image.jpg`} />
-    <meta property="og:image:type" content="image/jpeg" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content={`${post.title} — AI Phone Debloater Guide`} />
-    <meta property="article:published_time" content={isoDate} />
-    <meta property="article:author" content="Rovoxia" />
-    <meta property="article:section" content={post.category} />
-    {post.tags.map(tag => <meta property="article:tag" content={tag} />)}
-
-    <!-- Twitter Card (X) -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta name="twitter:domain" content="debloater.rovoxia.com" />
-    <meta property="twitter:domain" content="debloater.rovoxia.com" />
-    <meta name="twitter:url" content={CANONICAL_URL} />
-    <meta property="twitter:url" content={CANONICAL_URL} />
-    <meta name="twitter:title" content={post.title} />
-    <meta property="twitter:title" content={post.title} />
-    <meta name="twitter:description" content={post.excerpt} />
-    <meta property="twitter:description" content={post.excerpt} />
-    <meta name="twitter:image" content={`${SITE_URL}/og-image.png`} />
-    <meta name="twitter:image:src" content={`${SITE_URL}/og-image.png`} />
-    <meta property="twitter:image" content={`${SITE_URL}/og-image.png`} />
-    <meta name="twitter:image:alt" content={`${post.title} — AI Phone Debloater Guide`} />
-    <meta property="twitter:image:alt" content={`${post.title} — AI Phone Debloater Guide`} />
-
-    <!-- JSON-LD Structured Data (TechArticle & Breadcrumbs) -->
-    <script type="application/ld+json" set:html={JSON.stringify({
-      "@context": "https://schema.org",
-      "@graph": [
-        {
-          "@type": "BreadcrumbList",
-          "itemListElement": [
-            {
-              "@type": "ListItem",
-              "position": 1,
-              "name": "Home",
-              "item": "https://debloater.rovoxia.com/"
-            },
-            {
-              "@type": "ListItem",
-              "position": 2,
-              "name": "Blog",
-              "item": "https://debloater.rovoxia.com/blog"
-            },
-            {
-              "@type": "ListItem",
-              "position": 3,
-              "name": post.title,
-              "item": CANONICAL_URL
-            }
-          ]
-        },
-        {
-          "@type": "TechArticle",
-          "headline": post.title,
-          "description": post.excerpt,
-          "image": `${SITE_URL}/og-image.png`,
-          "datePublished": isoDate,
-          "dateModified": isoDate,
-          "author": {
-            "@type": "Organization",
-            "name": "Rovoxia",
-            "url": "https://rovoxia.com"
-          },
-          "publisher": {
-            "@type": "Organization",
-            "name": "Rovoxia",
-            "url": "https://rovoxia.com",
-            "logo": {
-              "@type": "ImageObject",
-              "url": "https://debloater.rovoxia.com/favicon.svg"
-            }
-          },
-          "mainEntityOfPage": {
-            "@type": "WebPage",
-            "@id": CANONICAL_URL
-          },
-          "keywords": post.tags.join(', '),
-          "articleSection": post.category,
-          "inLanguage": "en-US"
-        }
-      ]
-    })} />
-
-    <script is:inline>
-      (function() {
-        try {
-          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          const stored = localStorage.getItem('theme');
-          const theme = stored || (prefersDark ? 'dark' : 'light');
-          document.documentElement.setAttribute('data-theme', theme);
-          if (theme === 'dark') document.documentElement.classList.add('dark');
-        } catch (e) {}
-      })();
-    </script>
-  </head>
-  <body class="bg-slate-50 text-slate-900 dark:bg-[#0b0f17] dark:text-slate-100 font-sans antialiased min-h-screen selection:bg-emerald-500 selection:text-white">
-
-    <Navbar />
-
-    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
-      <!-- Back Link -->
-      <a href="/blog" class="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 mb-8 transition">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
-        Back to Blog
-      </a>
-
-      <!-- Article Header -->
-      <header class="mb-8">
-        <div class="flex flex-wrap items-center gap-2 mb-4">
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 dark:bg-emerald-500/20">
-            {post.category}
-          </span>
-          <time class="text-[11px] text-slate-500 dark:text-slate-400 font-mono" datetime={isoDate}>
-            {formattedDate}
-          </time>
-        </div>
-        <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-4">
-          {post.title}
-        </h1>
-        <p class="text-slate-600 dark:text-slate-300 text-base md:text-lg leading-relaxed max-w-2xl">
-          {post.excerpt}
-        </p>
-        <div class="flex flex-wrap items-center gap-4 mt-6 pt-4 border-t border-slate-200 dark:border-slate-800">
-          <div class="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            {post.readTime} read
-          </div>
-          <div class="flex flex-wrap gap-1.5">
-            {post.tags.map(tag => (
-              <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                {tag}
+<Base
+  title={head.title}
+  titleTemplate={head.withSiteName ? undefined : false}
+  description={data.description}
+  path={path}
+  ogType="article"
+  article={{ publishedTime: published, modifiedTime: updated, section: data.category, tags: data.tags }}
+  breadcrumbs={crumbs}
+  jsonLd={[
+    blogPostingNode({
+      path,
+      headline: data.title,
+      description: data.description,
+      datePublished: published,
+      dateModified: updated,
+      section: data.category,
+      tags: data.tags,
+      wordCount,
+    }),
+  ]}
+>
+  <article>
+    <div class="section">
+      <div class="container-page">
+        <header>
+          <Breadcrumbs items={crumbs} />
+          <p class="eyebrow mt-stack-lg">{data.category}</p>
+          <h1 class="h1 mt-3 text-balance">{data.title}</h1>
+          <p class="lead mt-stack">{data.answer}</p>
+          <ul class="post-meta mt-stack">
+            <li>
+              <span>
+                By
+                <a class="link" href={ORG_URL} target="_blank" rel="noopener noreferrer">{ORG_NAME}<span class="sr-only"> (opens in a new tab)</span></a>
               </span>
-            ))}
+            </li>
+            <li>
+              <Icon name="calendar" />
+              <span>Published <time datetime={published}>{formatDate(published)}</time></span>
+            </li>
+            <li>
+              <Icon name="refresh-cw" />
+              <span>Updated <time datetime={updated}>{formatDate(updated)}</time></span>
+            </li>
+            <li>
+              <Icon name="clock" />
+              <span>{minutes} min read</span>
+            </li>
+          </ul>
+        </header>
+
+        <div class="post-layout mt-stack-lg">
+          <nav class="post-toc" aria-labelledby="toc-title">
+            <h2 id="toc-title" class="eyebrow">On this page</h2>
+            <ol class="mt-2">
+              {
+                toc.map((entry) => (
+                  <li>
+                    <a href={`#${entry.id}`}>{entry.text}</a>
+                  </li>
+                ))
+              }
+            </ol>
+          </nav>
+
+          <div class="post-main">
+            {
+              hasRules && (
+                <section id="summary" aria-labelledby="summary-title" class="post-summary">
+                  <h2 id="summary-title" class="h3">{summaryTitle}</h2>
+                  <p class="mt-2 text-sm text-muted">
+                    The CLI loads the rule file that matches the phone's manufacturer, plus the universal file of
+                    carrier and partner apps found on many brands. A rule does something only if its package is
+                    installed on your phone.
+                  </p>
+                  <div class="table-wrap mt-stack" role="region" aria-labelledby="summary-title" tabindex="0">
+                    <table class="table table-compact">
+                      <thead>
+                        <tr>
+                          <th scope="col">Rule file</th>
+                          {
+                            REMOVABLE_TIERS.map((tier) => (
+                              <th scope="col" class="num">
+                                {tier.label}<span class="sr-only">: {tier.name}</span>
+                              </th>
+                            ))
+                          }
+                          <th scope="col" class="num">Rules</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {
+                          summaryRows.map((group) => (
+                            <tr>
+                              <th scope="row">
+                                <a class="link" href={`/oems/${group.oemId}`}>{group.label}</a>
+                                {group.hidden > 0 && (
+                                  <span class="font-normal text-muted">
+                                    {` (${group.rules.length} of ${group.fileTotal} listed here)`}
+                                  </span>
+                                )}
+                              </th>
+                              {REMOVABLE_TIERS.map((tier) => (
+                                <td class="num">{tierCount(group.rules, tier)}</td>
+                              ))}
+                              <td class="num">{group.rules.length}</td>
+                            </tr>
+                          ))
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                  <ul class="post-legend mt-3">
+                    {
+                      REMOVABLE_TIERS.map((tier) => (
+                        <li>
+                          <TierBadge tier={tier.id} />
+                        </li>
+                      ))
+                    }
+                  </ul>
+                  <p class="meta mt-3">
+                    Counts are read from the rule set when this page is built.
+                    {
+                      hiddenTotal > 0 &&
+                        ` A shared rule file also holds ${plural(hiddenTotal, 'rule')} for other brands' packages; ${hiddenTotal === 1 ? 'it is' : 'they are'} not counted here.`
+                    }
+                    {` ${TIER_BY_ID[4].label} (${TIER_BY_ID[4].name}) protects ${RULE_STATS.critical} packages on every phone; no tier includes them. `}
+                    <a class="link" href="#rules">See every rule</a>.
+                  </p>
+                </section>
+              )
+            }
+
+            {
+              overview && (
+                <section id="summary" aria-labelledby="summary-title" class="post-summary">
+                  <h2 id="summary-title" class="h3">{summaryTitle}</h2>
+                  <div class="table-wrap mt-stack" role="region" aria-labelledby="summary-title" tabindex="0">
+                    <table class="table table-compact">
+                      <thead>
+                        <tr>
+                          <th scope="col">Tier</th>
+                          <th scope="col" class="num">Rules</th>
+                          <th scope="col">Who it is for</th>
+                          <th scope="col">What it covers</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {
+                          TIERS.map((tier) => (
+                            <tr>
+                              <th scope="row">
+                                <TierBadge tier={tier.id} />
+                              </th>
+                              <td class="num">{tier.count}</td>
+                              <td>{tier.audience}</td>
+                              <td class="post-cell-text">{tier.description}</td>
+                            </tr>
+                          ))
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                  <p class="meta mt-3">
+                    {`${RULE_STATS.total} rules in all: ${RULE_STATS.removable} that a plan can act on and ${RULE_STATS.critical} protected packages. Counts are read from the rule set when this page is built.`}
+                  </p>
+                </section>
+              )
+            }
+
+            <div class="prose">
+              <Content />
+            </div>
           </div>
-        </div>
-      </header>
-
-      <!-- Article Content -->
-      <article class="prose prose-slate dark:prose-invert max-w-none">
-        <div class="space-y-6">
-          {post.content.split('\n').map((line, i) => {
-            if (line.startsWith('## ')) {
-              return <h2 class="text-2xl font-bold text-slate-900 dark:text-white mt-8">{line.replace(/^##\s*/, '')}</h2>;
-            }
-            if (line.startsWith('### ')) {
-              return <h3 class="text-xl font-bold text-slate-900 dark:text-white mt-6">{line.replace(/^###\s*/, '')}</h3>;
-            }
-            if (line.startsWith('|')) {
-              return <div class="text-sm text-slate-600 dark:text-slate-400 font-mono border-l-2 border-emerald-500 pl-4">{line}</div>;
-            }
-            if (line.startsWith('- ')) {
-              return <div class="text-sm text-slate-600 dark:text-slate-400 pl-4 list-marker">{line}</div>;
-            }
-            if (line.startsWith('\`\`\`')) {
-              // Code blocks - skip markers
-              return null;
-            }
-            if (line.trim() === '') {
-              return null;
-            }
-            // Strip inline code markers for display
-            const cleanLine = line.replace(/`/g, '');
-            if (cleanLine.trim()) {
-              return <p class="text-slate-600 dark:text-slate-400 leading-relaxed">{cleanLine}</p>;
-            }
-            return null;
-          })}
-        </div>
-      </article>
-
-      <!-- Share / CTA -->
-      <div class="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800">
-        <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Ready to Debloat Your {post.tags[0] || 'Device'}?</h2>
-        <p class="text-slate-600 dark:text-slate-400 mb-6">Run the safe, AI-guided debloat in one command. 100% reversible, warranty-safe, no root required.</p>
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <a href="/#cli" class="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-colors shadow-md">Run via CLI</a>
-          <a href="/app" class="px-6 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold transition-colors">Open WebApp</a>
         </div>
       </div>
-    </main>
+    </div>
 
-    <Footer />
-  </body>
-</html>
+    {
+      hasRules && (
+        <section id="rules" class="section section-alt" aria-labelledby="rules-title">
+          <div class="container-page">
+            <div class="section-head">
+              <p class="eyebrow">Rule set</p>
+              <h2 id="rules-title" class="h2">
+                {appendixTitle}
+              </h2>
+              <p class="lead">
+                These tables are generated from the same rule files the CLI and the web app use, so they match what the
+                tool does. "Suggested action" is the rule file's note. The CLI disables by default and uninstalls only
+                when you pass <code class="code">--action uninstall</code>.
+              </p>
+            </div>
+
+            {
+              groups.map((group) => (
+                <div class="post-group">
+                  <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+                    <h3 class="h3" id={`rules-${group.oemId}`}>
+                      {group.label}: {plural(group.rules.length, 'rule')}
+                    </h3>
+                    <a class="link text-sm" href={`/oems/${group.oemId}`}>
+                      {group.label} package list
+                    </a>
+                  </div>
+                  {group.hidden > 0 && (
+                    <p class="mt-2 text-sm text-muted">
+                      {`The ${group.label} rule file has ${plural(group.fileTotal, 'rule')}. ${plural(group.hidden, 'rule')} for packages of the other brands in the file (names starting with `}
+                      {excludedPrefixes.map((prefix, index) => (
+                        <>{index > 0 && ', '}<span class="pkg">{prefix}</span></>
+                      ))}{`) ${group.hidden === 1 ? 'is' : 'are'} left out of this guide. The CLI still loads the whole file; a rule for an app that is not installed does nothing.`}
+                    </p>
+                  )}
+                  {group.tiers.map(({ tier, rules }) => (
+                    <div class="mt-stack">
+                      <h4 class="flex flex-wrap items-center gap-x-3 gap-y-1" id={`rules-${group.oemId}-tier-${tier.id}`}>
+                        <TierBadge tier={tier.id} />
+                        <span class="text-sm font-normal text-muted">
+                          {plural(rules.length, 'rule')}. {tier.audience}
+                        </span>
+                      </h4>
+                      <div
+                        class="table-wrap mt-3"
+                        role="region"
+                        aria-labelledby={`rules-${group.oemId}-tier-${tier.id}`}
+                        tabindex="0"
+                      >
+                        <table class="table table-compact">
+                          <thead>
+                            <tr>
+                              <th scope="col">Package</th>
+                              <th scope="col">App</th>
+                              <th scope="col">What the rule file says</th>
+                              <th scope="col">Suggested action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {rules.map((rule) => (
+                              <tr>
+                                <th scope="row" class="post-cell-pkg">
+                                  <span class="pkg">{rule.package}</span>
+                                </th>
+                                <td class="post-cell-name">{rule.name}</td>
+                                <td class="post-cell-text">{rule.description}</td>
+                                <td>{actionLabel(rule.recommended_action)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))
+            }
+
+            <ul class="grid-auto post-group">
+              {
+                universal && (
+                  <li class="card">
+                    <p class="h4">{universal.label}</p>
+                    <p class="mt-1 text-sm text-muted">
+                      {`${plural(universal.rules.length, 'rule')} for carrier and partner apps that ship on many brands. The CLI loads them on every phone.`}
+                    </p>
+                    <a class="link mt-3 inline-flex min-h-11 items-center text-sm" href="/oems/universal">
+                      Universal package list
+                    </a>
+                  </li>
+                )
+              }
+              <li class="card">
+                <p class="h4">{TIER_BY_ID[4].title}</p>
+                <p class="mt-1 text-sm text-muted">
+                  {`${RULE_STATS.critical} protected packages. The tool refuses to disable or uninstall them, whatever tier or flag is used.`}
+                </p>
+                <a class="link mt-3 inline-flex min-h-11 items-center text-sm" href="/oems/critical">
+                  Protected package list
+                </a>
+              </li>
+            </ul>
+          </div>
+        </section>
+      )
+    }
+
+    {
+      overview && (
+        <section id="rules" class="section section-alt" aria-labelledby="rules-title">
+          <div class="container-page">
+            <div class="section-head">
+              <p class="eyebrow">Rule set</p>
+              <h2 id="rules-title" class="h2">
+                {appendixTitle}
+              </h2>
+              <p class="lead">
+                Generated from the same rule files the CLI and the web app use. Follow a brand to see each of its
+                packages with its tier.
+              </p>
+            </div>
+
+            <h3 class="h3" id="rules-by-brand">
+              Rules per brand and tier
+            </h3>
+            <div class="table-wrap mt-stack" role="region" aria-labelledby="rules-by-brand" tabindex="0">
+              <table class="table table-compact">
+                <thead>
+                  <tr>
+                    <th scope="col">Rule file</th>
+                    {REMOVABLE_TIERS.map((tier) => (
+                      <th scope="col" class="num">
+                        {tier.label}<span class="sr-only">: {tier.name}</span>
+                      </th>
+                    ))}
+                    <th scope="col" class="num">
+                      Rules
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {brandRows.map((group) => (
+                    <tr>
+                      <th scope="row">
+                        <a class="link" href={`/oems/${group.oemId}`}>{group.label}</a>
+                      </th>
+                      {REMOVABLE_TIERS.map((tier) => (
+                        <td class="num">{tierCount(group.rules, tier)}</td>
+                      ))}
+                      <td class="num">{group.rules.length}</td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <th scope="row">All removal rules</th>
+                    {REMOVABLE_TIERS.map((tier) => (
+                      <td class="num font-semibold text-ink">{tier.count}</td>
+                    ))}
+                    <td class="num font-semibold text-ink">{RULE_STATS.removable}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="post-group">
+              <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+                <h3 class="h3" id="rules-critical">
+                  {`${TIER_BY_ID[4].title}: ${RULE_STATS.critical} protected packages`}
+                </h3>
+                <a class="link text-sm" href="/oems/critical">
+                  Protected package list
+                </a>
+              </div>
+              <p class="mt-2 text-sm text-muted">
+                Grouped by the category each entry has in the critical rule file. The names are the rule file's own.
+              </p>
+              <div class="table-wrap mt-stack" role="region" aria-labelledby="rules-critical" tabindex="0">
+                <table class="table table-compact">
+                  <thead>
+                    <tr>
+                      <th scope="col">Category</th>
+                      <th scope="col" class="num">
+                        Packages
+                      </th>
+                      <th scope="col">Protected components</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {criticalCategories.map((entry) => (
+                      <tr>
+                        <th scope="row" class="post-cell-name">
+                          {entry.label}
+                        </th>
+                        <td class="num">{entry.rules.length}</td>
+                        <td class="post-cell-text">{entry.rules.map((rule) => rule.name).join(', ')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+      )
+    }
+  </article>
+
+  <section class="section" aria-labelledby="related-title">
+    <div class="container-page">
+      <div class="section-head">
+        <p class="eyebrow">Keep reading</p>
+        <h2 id="related-title" class="h2">Related guides</h2>
+      </div>
+      <ul class="grid-auto">
+        {
+          related.map((other) => (
+            <li class="card card-hover relative">
+              <p class="meta">{other.data.category}</p>
+              <h3 class="h4 mt-2">
+                <a class="post-card-link" href={postPath(other)}>
+                  {other.data.title}
+                </a>
+              </h3>
+              <p class="mt-2 text-sm text-muted">{other.data.description}</p>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="mt-stack-lg">
+        <a class="link inline-flex min-h-11 items-center gap-2" href="/blog">
+          <Icon name="arrow-left" />
+          All guides
+        </a>
+      </p>
+    </div>
+  </section>
+
+  <section class="section section-alt" aria-labelledby="cta-title">
+    <div class="container-page">
+      <div class="section-head">
+        <p class="eyebrow">Next step</p>
+        <h2 id="cta-title" class="h2">Check your own phone</h2>
+        <p class="lead">
+          The web app lists the packages on your phone with their tiers and asks before every change. The command-line
+          tool does the same from a terminal and adds a dry run. Both are free and open source, and neither needs root.
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <a class="btn btn-primary" href="/app">
+          Open the web app
+          <Icon name="arrow-right" />
+        </a>
+        <a class="btn btn-secondary" href="/oems">
+          <Icon name="list" />
+          Browse the package list
+        </a>
+        <a class="btn btn-ghost" href="/#cli">
+          <Icon name="terminal" />
+          Get the command-line tool
+        </a>
+      </div>
+    </div>
+  </section>
+
+</Base>
+
+<style>
+  /* Byline, dates and reading time under the title. */
+  .post-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1.5rem;
+    color: var(--color-faint);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+  }
+
+  .post-meta li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* One column on small screens (contents, then the text); the contents move to a sticky
+     right-hand column once there is room for it beside a 70ch measure. */
+  .post-layout {
+    display: grid;
+    gap: var(--spacing-stack-lg);
+  }
+
+  .post-main {
+    min-width: 0;
+  }
+
+  .post-toc {
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-box);
+    background-color: var(--color-subtle);
+  }
+
+  .post-toc ol {
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+  }
+
+  .post-toc a {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding-block: 0.375rem;
+    color: var(--color-muted);
+    text-decoration-line: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 0.2em;
+    transition:
+      color 150ms ease,
+      text-decoration-color 150ms ease;
+  }
+
+  .post-toc a:hover {
+    color: var(--color-ink);
+    text-decoration-color: currentColor;
+  }
+
+  @media (min-width: 64rem) {
+    .post-layout {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 17rem);
+      align-items: start;
+    }
+
+    .post-main {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
+    .post-toc {
+      grid-column: 2;
+      grid-row: 1;
+      position: sticky;
+      top: calc(var(--spacing-header) + 1.5rem);
+      max-height: calc(100dvh - var(--spacing-header) - 3rem);
+      overflow-y: auto;
+    }
+
+    .post-toc a {
+      min-height: 0;
+    }
+  }
+
+  @media (min-width: 64rem) and (pointer: coarse) {
+    .post-toc a {
+      min-height: 2.75rem;
+    }
+  }
+
+  /* The counts above the text share its measure. */
+  .post-summary {
+    max-width: var(--container-measure);
+    margin-bottom: var(--spacing-stack-lg);
+  }
+
+  .post-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* Blocks in the generated rule list. */
+  .post-group {
+    margin-top: var(--spacing-section-sm);
+  }
+
+  .section-head + .post-group {
+    margin-top: 0;
+  }
+
+  /* Column widths that keep the rule tables readable: text columns get a floor so they do not
+     collapse to one word per line, and the table scrolls inside .table-wrap when they do not fit. */
+  .post-cell-pkg {
+    min-width: 18rem;
+    font-weight: 500;
+  }
+
+  .post-cell-name {
+    min-width: 9rem;
+  }
+
+  .post-cell-text {
+    min-width: 16rem;
+  }
+
+  /* The title link covers its card. */
+  .post-card-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-box);
+  }
+
+  .post-card-link {
+    transition: color 150ms ease;
+  }
+
+  .post-card-link:hover {
+    color: var(--color-accent);
+  }
+</style>

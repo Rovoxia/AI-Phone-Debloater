@@ -9,7 +9,7 @@
       "name": "MIUI System Ads (MSA Global)",
       "tier": 1,
       "category": "adware",
-      "description": "Core ad-serving background daemon responsible for displaying popups and banners inside System Apps (Themes, Security, File Manager). Disabling this eliminates most system ads.",
+      "description": "Core ad-serving background daemon responsible for displaying popups and banners inside System Apps (Themes, Security, File Manager). Disabling it stops this ad service.",
       "safe_to_remove": true,
       "recommended_action": "disable"
     },
@@ -36,7 +36,7 @@
       "name": "Joyose Performance Service",
       "tier": 1,
       "category": "telemetry",
-      "description": "Aggressive background performance throttling engine. Disabling often improves game frame-rates, reduces stutter, and stops telemetry reports.",
+      "description": "Background performance throttling engine. Disabling stops its app throttling and its telemetry reports.",
       "safe_to_remove": true,
       "recommended_action": "disable"
     },

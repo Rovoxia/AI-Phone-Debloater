@@ -1,433 +1,404 @@
 ---
-// src/components/Navbar.astro
-// Single-row sticky header, ultra-clean, pixel-perfect across all viewports.
-// Zero-JS interactivity: CSS group-hover/focus-within popovers + native <details> drawer with click-outside backdrop.
-import { SITE_VERSION } from '../lib/version';
+// Site header: brand, primary navigation, theme toggle and the mobile menu.
+// The script at the bottom is bundled and hashed by Astro, so it is CSP-safe.
+import Icon from './Icon.astro';
+import { GITHUB_REPO, SITE_NAME, currentPath } from '../lib/seo';
 
-const GITHUB_REPO = 'https://github.com/Rovoxia/AI-Phone-Debloater';
-const siteVersion = SITE_VERSION;
+const path = currentPath(Astro.url);
 
-const oems = [
-  {
-    name: 'Xiaomi HyperOS & MIUI',
-    sub: 'Redmi, Poco & Mi ad-daemon stripping',
-    href: '/oems#hyperos-debloat',
-    badge: 'HyperOS',
-  },
-  {
-    name: 'Samsung Galaxy One UI',
-    sub: 'Knox-safe Galaxy bloatware removal',
-    href: '/oems#samsung-oneui',
-    badge: 'One UI',
-  },
-  {
-    name: 'OnePlus / Oppo / Realme',
-    sub: 'ColorOS & OxygenOS telemetry rules',
-    href: '/oems#coloros-oxygenos',
-    badge: 'ColorOS',
-  },
-  {
-    name: 'Vivo & iQOO (FuntouchOS)',
-    sub: 'FuntouchOS & OriginOS service cleaning',
-    href: '/oems#vivo-funtouch',
-    badge: 'Funtouch',
-  },
-  {
-    name: 'Nothing OS & Google Pixel',
-    sub: 'Stock AOSP & carrier telemetry purging',
-    href: '/oems#pixel-nothing',
-    badge: 'Pixel / AOSP',
-  },
+const links = [
+  { name: 'Home', href: '/' },
+  { name: 'Web app', href: '/app' },
+  { name: 'OEM list', href: '/oems' },
+  { name: 'Guides', href: '/blog' },
 ];
 
-const tools = [
-  {
-    name: 'WebApp Workspace',
-    sub: 'In-browser WebUSB & Local ADB package manager',
-    badge: 'WebADB',
-    href: '/app',
-  },
-  {
-    name: 'AI Master Debloat Prompt',
-    sub: 'LLM prompt for deep forensic app auditing',
-    badge: 'Prompt',
-    href: '/#master-prompt',
-  },
-  {
-    name: 'Windows ADB Runner',
-    sub: 'Zero-install PowerShell execution script',
-    badge: '.bat',
-    href: '/#windows-runner',
-  },
-  {
-    name: 'Linux & macOS Runner',
-    sub: 'One-line Bash runner with auto-detect',
-    badge: '.sh',
-    href: '/#unix-runner',
-  },
-  {
-    name: 'Interactive Package Analyzer',
-    sub: 'Search & filter 352 categorized rules',
-    badge: 'Rules',
-    href: '/oems#rules-explorer',
-  },
-];
-
-const directLinks = [
-  { name: 'WebApp', href: '/app' },
-  { name: 'Safety', href: '/#safety-tiers' },
-  { name: 'FAQ', href: '/#faq' },
-  { name: 'Blog', href: '/blog' },
-  { name: 'Releases', href: 'https://github.com/Rovoxia/AI-Phone-Debloater/releases', external: true },
-];
+// "/" matches only the home page; the others also match their sub-pages (/blog/<slug>).
+const isCurrent = (href: string) => (href === '/' ? path === '/' : path === href || path.startsWith(`${href}/`));
 ---
 
-<!--
-  The frosted background and bottom border live on ::before, not on <header>: a backdrop-filter on
-  <header> would make it the containing block for the fixed drawer backdrop below, shrinking that
-  backdrop to the header's box.
--->
-<header
-  class="h-16 sticky top-0 z-50 before:absolute before:inset-0 before:-z-10 before:border-b before:border-slate-200/80 before:bg-white/85 before:backdrop-blur-xl"
->
-  <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 flex-nowrap">
+<header class="site-header" data-site-header>
+  <div class="container-page bar">
+    <a href="/" class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect width="32" height="32" rx="8" fill="#059669"></rect>
+        <rect x="8" y="5" width="16" height="22" rx="3.5" stroke="#ffffff" stroke-width="1.75" fill="none"></rect>
+        <line x1="13.5" y1="8" x2="18.5" y2="8" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"></line>
+        <path d="M16 11.5c0 2.2-1.6 3.8-3.8 3.8 2.2 0 3.8 1.6 3.8 3.8 0-2.2 1.6-3.8 3.8-3.8-2.2 0-3.8-1.6-3.8-3.8z" fill="#ffffff"></path>
+        <line x1="13" y1="23.5" x2="19" y2="23.5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"></line>
+      </svg>
+      <span>{SITE_NAME}</span>
+    </a>
 
-    <!-- Left Zone: Brand + version badge -->
-    <div class="flex items-center gap-2.5 shrink-0">
-      <a href="/" class="flex items-center gap-2.5 shrink-0 group" aria-label="AI Phone Debloater home">
-        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-xs transition-transform group-hover:scale-105">
-          <svg class="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="5.5" y="2" width="13" height="20" rx="3" />
-            <line x1="10" y1="5" x2="14" y2="5" />
-            <path d="M12 9c0 1.8-1.3 3-3 3 1.7 0 3 1.2 3 3 0-1.8 1.3-3 3-3-1.7 0-3-1.2-3-3z" fill="currentColor" stroke="none" />
-            <line x1="10.5" y1="18.5" x2="13.5" y2="18.5" />
-          </svg>
-        </div>
-        <span class="text-[15px] font-semibold tracking-tight text-slate-900 whitespace-nowrap">AI Phone Debloater</span>
-        <span class="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700 whitespace-nowrap">v{siteVersion}</span>
-      </a>
-    </div>
-
-    <!-- Center Zone: Primary Desktop Navigation (single-word links, 1024px+) -->
-    <nav aria-label="Primary Navigation" itemscope itemtype="https://schema.org/SiteNavigationElement" class="hidden lg:flex items-center gap-1 shrink-0">
-      <ul class="flex items-center gap-1 flex-nowrap">
-
-        <!-- Dropdown 1: OEMs (5 clean OEM guides) -->
-        <li class="group relative">
-          <a
-            href="/oems"
-            class="flex h-9 items-center justify-center gap-1.5 rounded-lg border border-transparent bg-transparent px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-slate-950 hover:border-slate-200 hover:bg-slate-50 transition-colors duration-150 ease-out cursor-outline whitespace-nowrap shrink-0"
-            aria-label="OEM Debloat Guides"
-          >
-            <span>OEMs</span>
-            <svg class="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-focus-within:rotate-180 group-hover:rotate-180 text-slate-400 group-hover:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M6 9l6 6 6-6" />
-            </svg>
+    <nav aria-label="Primary" class="desktop-nav">
+      <ul>
+        {
+          links.map((link) => (
+            <li>
+              <a href={link.href} class="nav-link" aria-current={isCurrent(link.href) ? 'page' : undefined}>
+                {link.name}
+              </a>
+            </li>
+          ))
+        }
+        <li>
+          <a href={GITHUB_REPO} class="nav-link" target="_blank" rel="noopener noreferrer">
+            <Icon name="github" class="size-4" />
+            GitHub
+            <span class="sr-only">(opens in a new tab)</span>
           </a>
-          <!-- Hover bridge wrapper: pt-2 keeps mouse inside group during transit -->
-          <div class="absolute left-0 top-full pt-2 w-[390px] opacity-0 translate-y-1 invisible pointer-events-none group-focus-within:opacity-100 group-focus-within:translate-y-0 group-focus-within:visible group-focus-within:pointer-events-auto group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible group-hover:pointer-events-auto transition-all duration-150 ease-out z-50">
-            <div class="rounded-xl border border-slate-200/80 bg-white/95 backdrop-blur-2xl p-2.5 shadow-xl shadow-slate-900/10 space-y-1">
-              <div class="flex items-center justify-between px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200/60 mb-1">
-                <span>OEM Debloat Guides</span>
-                <span class="text-emerald-600 font-mono font-medium">5 Rulebases</span>
-              </div>
-              {oems.map((oem) => (
-                <a
-                  href={oem.href}
-                  class="group/item flex items-center justify-between rounded-lg px-2.5 py-2 border border-transparent hover:border-slate-200/60 hover:bg-slate-50/80 transition-colors duration-150 ease-out"
-                  itemprop="url"
-                >
-                  <div class="flex items-center gap-3 min-w-0">
-                    <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-50/80 border border-slate-200/60 text-slate-400 group-hover/item:text-emerald-600 group-hover/item:border-emerald-500/30 group-hover/item:bg-emerald-500/10 transition-colors">
-                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="5" y="2" width="14" height="20" rx="2" />
-                        <path d="M12 18h.01" />
-                      </svg>
-                    </div>
-                    <div class="min-w-0">
-                      <div class="text-[13px] font-medium text-slate-800 group-hover/item:text-slate-950 truncate" itemprop="name">
-                        {oem.name}
-                      </div>
-                      <div class="text-[11px] text-slate-500 group-hover/item:text-slate-600 truncate">
-                        {oem.sub}
-                      </div>
-                    </div>
-                  </div>
-                  <span class="text-[10px] font-mono font-medium text-slate-400 bg-slate-50 border border-slate-200/60 px-1.5 py-0.5 rounded shrink-0 ml-2 group-hover/item:text-emerald-600 group-hover/item:border-emerald-500/30 transition-colors">
-                    {oem.badge}
-                  </span>
-                </a>
-              ))}
-              <div class="border-t border-slate-200/60 mt-1.5 pt-2 px-2.5 pb-0.5 flex items-center justify-between text-[11px] text-slate-500">
-                <span>Safe for Android 8&ndash;15</span>
-                <a href="/oems" class="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-700 font-medium transition-colors">
-                  All 352 Rules &rarr;
-                </a>
-              </div>
-            </div>
-          </div>
         </li>
-
-        <!-- Dropdown 2: Tools (runners and CLI) -->
-        <li class="group relative">
-          <button
-            type="button"
-            class="flex h-9 items-center justify-center gap-1.5 rounded-lg border border-transparent bg-transparent px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-slate-950 hover:border-slate-200 hover:bg-slate-50 transition-colors duration-150 ease-out cursor-pointer outline-none whitespace-nowrap shrink-0"
-            aria-haspopup="true"
-            aria-expanded="false"
-          >
-            <span>Tools</span>
-            <svg class="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-focus-within:rotate-180 group-hover:rotate-180 text-slate-400 group-hover:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M6 9l6 6 6-6" />
-            </svg>
-          </button>
-          <!-- Hover bridge wrapper: pt-2 keeps mouse inside group during transit -->
-          <div class="absolute left-0 top-full pt-2 w-[340px] opacity-0 translate-y-1 invisible pointer-events-none group-focus-within:opacity-100 group-focus-within:translate-y-0 group-focus-within:visible group-focus-within:pointer-events-auto group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible group-hover:pointer-events-auto transition-all duration-150 ease-out z-50">
-            <div class="rounded-xl border border-slate-200/80 bg-white/95 backdrop-blur-2xl p-2.5 shadow-xl shadow-slate-900/10 space-y-1">
-              <div class="flex items-center justify-between px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200/60 mb-1">
-                <span>Runners & Prompts</span>
-                <span class="text-emerald-600 font-mono font-medium">Zero-Install</span>
-              </div>
-              {tools.map((tool) => (
-                <a
-                  href={tool.href}
-                  class="group/item flex items-center justify-between rounded-lg px-2.5 py-2 border border-transparent hover:border-slate-200/60 hover:bg-slate-50/80 transition-colors duration-150 ease-out"
-                  itemprop="url"
-                >
-                  <div class="min-w-0 pr-2">
-                    <div class="text-[13px] font-medium text-slate-800 group-hover/item:text-slate-950 truncate" itemprop="name">
-                      {tool.name}
-                    </div>
-                    <div class="text-[11px] text-slate-500 group-hover/item:text-slate-600 truncate">
-                      {tool.sub}
-                    </div>
-                  </div>
-                  <span class="text-[10px] font-mono font-bold text-slate-400 bg-slate-50 border border-slate-200/60 px-1.5 py-0.5 rounded shrink-0 group-hover/item:text-emerald-600 group-hover/item:border-emerald-500/30 transition-colors">
-                    {tool.badge}
-                  </span>
-                </a>
-              ))}
-              <div class="border-t border-slate-200/60 mt-1.5 pt-2 px-2.5 pb-0.5 flex items-center justify-between text-[11px] text-slate-500">
-                <span>Rootless ADB execution</span>
-                <a href="/#get-started" class="text-emerald-600 hover:text-emerald-700 font-medium transition-colors">
-                  Setup Guide &rarr;
-                </a>
-              </div>
-            </div>
-          </div>
-        </li>
-
-        <!-- Direct links (single word) -->
-        {directLinks.map((link) => (
-          <li>
-            <a
-              href={link.href}
-              target={link.external ? '_blank' : undefined}
-              rel={link.external ? 'noopener noreferrer' : undefined}
-              class="flex h-9 items-center justify-center rounded-lg border border-transparent bg-transparent px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-slate-950 hover:border-slate-200 hover:bg-slate-50 transition-colors duration-150 ease-out cursor-pointer outline-none whitespace-nowrap shrink-0"
-              itemprop="url"
-            >
-              <span itemprop="name">{link.name}</span>
-            </a>
-          </li>
-        ))}
-
       </ul>
     </nav>
 
-    <!-- Right Zone: GitHub + CTA + Mobile menu -->
-    <div class="flex items-center gap-2 sm:gap-2.5 shrink-0">
-
-      <!-- GitHub button -->
-      <a
-        href={GITHUB_REPO}
-        target="_blank"
-        rel="noopener noreferrer"
-        class="flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-slate-200/80 bg-white/80 px-2.5 sm:px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50 hover:text-slate-950 transition-colors duration-150 ease-out cursor-pointer whitespace-nowrap"
-        aria-label="View repository on GitHub"
+    <div class="actions">
+      <button type="button" class="icon-btn" data-theme-toggle aria-pressed="false" aria-label="Dark theme">
+        <Icon name="moon" class="when-light" />
+        <Icon name="sun" class="when-dark" />
+      </button>
+      <button
+        type="button"
+        class="icon-btn menu-toggle"
+        data-menu-toggle
+        aria-expanded="false"
+        aria-controls="mobile-menu"
+        aria-label="Menu"
       >
-        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path
-            fill-rule="evenodd"
-            clip-rule="evenodd"
-            d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
-          />
-        </svg>
-        <span class="hidden sm:inline">GitHub</span>
-      </a>
-
-      <!-- Primary CTA button -->
-      <a
-        href="/#cli"
-        class="hidden lg:flex h-9 shrink-0 items-center justify-center rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-3 sm:px-3.5 py-1.5 shadow-sm shadow-emerald-600/20 transition-colors duration-150 ease-out cursor-pointer whitespace-nowrap"
-      >
-        <span>Start Debloating &rarr;</span>
-      </a>
-
-      <!-- Mobile & Tablet Menu Trigger (visible below 1024px) -->
-      <details class="lg:hidden relative">
-        <summary
-          class="list-none [&::-webkit-details-marker]:hidden flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200/80 bg-white/80 text-slate-600 hover:text-slate-950 hover:bg-slate-50 cursor-pointer outline-none transition-colors"
-          aria-label="Toggle navigation menu"
-        >
-          <!-- Hamburger icon (closed state) -->
-          <svg class="icon-open w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-          <!-- X icon (opened state) -->
-          <svg class="icon-close w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </summary>
-
-        <!-- Click-outside backdrop overlay to dismiss drawer -->
-        <div
-          class="fixed inset-0 top-16 bg-slate-900/60 backdrop-blur-xs z-40 lg:hidden cursor-pointer"
-          data-drawer-backdrop
-          aria-hidden="true"
-        ></div>
-
-        <!-- Drawer Panel: phone full-width, tablet compact right-docked card -->
-        <div class="fixed inset-x-3 sm:inset-x-auto sm:right-6 sm:w-[390px] top-20 z-50 rounded-2xl border border-slate-200/80 bg-white/95 p-4 sm:p-5 shadow-xl shadow-slate-900/10 space-y-4 text-sm max-h-[calc(100vh-6rem)] overflow-y-auto">
-
-          <!-- Section 1: OEM Debloat Guides (all 5 matching footer) -->
-          <div class="space-y-1.5">
-            <div class="flex items-center justify-between px-1">
-              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">OEM Debloat Guides</span>
-              <span class="text-[10px] text-emerald-600 font-mono">5 Brands</span>
-            </div>
-            <div class="space-y-1">
-              {oems.map((oem) => (
-                <a
-                  href={oem.href}
-                  class="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-slate-600 hover:text-slate-950 hover:bg-slate-50 transition-colors duration-150 ease-out"
-                >
-                  <span class="text-xs font-medium">{oem.name}</span>
-                  <span class="text-[10px] font-mono text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200/60">{oem.badge}</span>
-                </a>
-              ))}
-            </div>
-          </div>
-
-          <!-- Section 2: Tools & Automation -->
-          <div class="space-y-1.5 pt-2 border-t border-slate-200/60">
-            <div class="flex items-center justify-between px-1">
-              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tools & Runners</span>
-              <span class="text-[10px] text-slate-400 font-mono">CLI & AI</span>
-            </div>
-            <div class="space-y-1">
-              {tools.map((tool) => (
-                <a
-                  href={tool.href}
-                  class="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-slate-600 hover:text-slate-950 hover:bg-slate-50 transition-colors duration-150 ease-out"
-                >
-                  <span class="text-xs font-medium">{tool.name}</span>
-                  <span class="text-[10px] font-mono font-bold text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200/60">{tool.badge}</span>
-                </a>
-              ))}
-            </div>
-          </div>
-
-          <!-- Section 3: Safety & Guides -->
-          <div class="space-y-1.5 pt-2 border-t border-slate-200/60">
-            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1 block">Safety & Docs</span>
-            <div class="grid grid-cols-2 gap-1.5">
-              {directLinks.map((link) => (
-                <a
-                  href={link.href}
-                  target={link.external ? '_blank' : undefined}
-                  rel={link.external ? 'noopener noreferrer' : undefined}
-                  class="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-slate-600 hover:text-slate-950 hover:bg-slate-50 transition-colors duration-150 ease-out bg-slate-50/50"
-                >
-                  <span>{link.name}</span>
-                  <span class="text-slate-400">&rarr;</span>
-                </a>
-              ))}
-              <a
-                href="/blog"
-                class="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10 transition-colors duration-150 ease-out bg-emerald-500/5"
-              >
-                <span>Blog</span>
-                <span>&rarr;</span>
-              </a>
-              <a
-                href="/oems"
-                class="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10 transition-colors duration-150 ease-out bg-emerald-500/5"
-              >
-                <span>352 Rules</span>
-                <span>&rarr;</span>
-              </a>
-            </div>
-          </div>
-
-          <!-- Section 4: Quick Actions -->
-          <div class="space-y-2 pt-2 border-t border-slate-200/80">
-            <a
-              href={GITHUB_REPO}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="flex items-center justify-between rounded-lg px-3 py-2 border border-slate-200/80 bg-white/80 text-slate-600 hover:text-slate-950 hover:bg-slate-50 transition-colors duration-150 ease-out text-xs"
-            >
-              <div class="flex items-center gap-2">
-                <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="currentColor">
-                  <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
-                </svg>
-                <span>GitHub Repository</span>
-              </div>
-              <span class="text-[10px] text-slate-400">Star &star;</span>
-            </a>
-            <a
-              href="/#cli"
-              class="flex h-9 items-center justify-center rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-3.5 py-1.5 shadow-sm shadow-emerald-600/20 transition-colors duration-150 ease-out"
-            >
-              Start Debloating &rarr;
-            </a>
-          </div>
-        </div>
-      </details>
-
+        <Icon name="menu" class="when-closed" />
+        <Icon name="x" class="when-open" />
+      </button>
     </div>
+  </div>
+
+  <div id="mobile-menu" class="mobile-menu" data-mobile-menu hidden>
+    <nav aria-label="Mobile" class="container-page">
+      <ul>
+        {
+          links.map((link) => (
+            <li>
+              <a href={link.href} class="mobile-link" aria-current={isCurrent(link.href) ? 'page' : undefined}>
+                {link.name}
+              </a>
+            </li>
+          ))
+        }
+        <li>
+          <a href={GITHUB_REPO} class="mobile-link" target="_blank" rel="noopener noreferrer">
+            <span class="mobile-link-label">
+              <Icon name="github" class="size-4" />
+              GitHub
+              <span class="sr-only">(opens in a new tab)</span>
+            </span>
+            <Icon name="arrow-up-right" class="size-4" />
+          </a>
+        </li>
+      </ul>
+    </nav>
   </div>
 </header>
 
 <style>
-  /* Ensure details content only displays when open */
-  details > div {
-    display: none;
+  /* The header is a query container: the switch from the menu button to the full navigation
+     (below) is a container query in rem. Unlike a media query in rem, it follows the root font
+     size, so the navigation still fits when the text is enlarged without the layout viewport
+     changing (text-only zoom, a larger root font size). */
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    container: site-header / inline-size;
+    border-bottom: 1px solid var(--color-line);
+    background-color: var(--color-surface);
   }
-  details[open] > div {
-    display: block;
-    animation: drawerFade 160ms cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  @keyframes drawerFade {
-    from {
-      opacity: 0;
-      transform: translateY(-6px) scale(0.98);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
+
+  /* Frosted glass where the browser can blur what is behind the header; solid otherwise. */
+  @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    .site-header {
+      background-color: var(--color-header);
+      -webkit-backdrop-filter: blur(20px) saturate(1.4);
+      backdrop-filter: blur(20px) saturate(1.4);
     }
   }
 
-  /* Toggle between hamburger icon and X icon cleanly */
-  details summary .icon-close {
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    height: var(--spacing-header);
+  }
+
+  /* The name stays on one line while there is room. On a narrow screen with enlarged text it
+     wraps, at any character if it must, so the buttons beside it stay on screen. */
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    min-width: 0;
+    min-height: 2.75rem;
+    color: var(--color-ink);
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+  }
+
+  .brand-mark {
+    width: 2rem;
+    height: 2rem;
+    flex-shrink: 0;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow-control);
+  }
+
+  .desktop-nav {
+    display: none;
+    margin-left: auto;
+  }
+
+  .desktop-nav ul {
+    display: flex;
+    align-items: center;
+  }
+
+  .nav-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    height: var(--spacing-header);
+    padding-inline: 0.75rem;
+    color: var(--color-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: color 150ms ease;
+  }
+
+  /* Hover: a soft rounded fill behind the label, drawn on a pseudo-element because the link
+     itself is as tall as the header. */
+  .nav-link::before {
+    content: "";
+    position: absolute;
+    inset: 0.875rem 0.125rem;
+    z-index: -1;
+    border-radius: 0.5rem;
+    background-color: var(--color-inset);
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+
+  .nav-link:hover {
+    color: var(--color-ink);
+  }
+
+  .nav-link:hover::before {
+    opacity: 1;
+  }
+
+  .nav-link[aria-current="page"] {
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+
+  /* Active page: a 2px bar on the header's bottom edge, so the cue is not colour alone. */
+  .nav-link[aria-current="page"]::after {
+    content: "";
+    position: absolute;
+    right: 0.75rem;
+    bottom: -1px;
+    left: 0.75rem;
+    height: 2px;
+    border-radius: 2px 2px 0 0;
+    background-image: linear-gradient(to right, var(--color-gradient-from), var(--color-gradient-to));
+    background-color: var(--color-accent);
+  }
+
+  .nav-link:focus-visible {
+    outline-offset: -4px;
+  }
+
+  .actions {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.25rem;
+    margin-right: -0.5rem;
+  }
+
+  .when-dark,
+  :global(.dark) .when-light {
     display: none;
   }
-  details summary .icon-open {
+
+  :global(.dark) .when-dark {
     display: block;
   }
-  details[open] summary .icon-close {
-    display: block;
-  }
-  details[open] summary .icon-open {
+
+  .when-open,
+  .menu-toggle[aria-expanded="true"] .when-closed {
     display: none;
+  }
+
+  .menu-toggle[aria-expanded="true"] .when-open {
+    display: block;
+  }
+
+  .mobile-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    left: 0;
+    max-height: calc(100dvh - var(--spacing-header));
+    overflow-y: auto;
+    border-bottom: 1px solid var(--color-line);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-raised);
+  }
+
+  .mobile-menu ul {
+    padding-block: 0.5rem 1rem;
+  }
+
+  .mobile-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-height: 3rem;
+    border-bottom: 1px solid var(--color-line);
+    color: var(--color-muted);
+    font-size: 1rem;
+    font-weight: 500;
+  }
+
+  .mobile-menu li:last-child .mobile-link {
+    border-bottom: 0;
+  }
+
+  .mobile-link:hover {
+    color: var(--color-ink);
+  }
+
+  .mobile-link-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* Active page: an accent bar before the label, so the cue is not colour alone. */
+  .mobile-link[aria-current="page"] {
+    justify-content: flex-start;
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+
+  .mobile-link[aria-current="page"]::before {
+    content: "";
+    width: 2px;
+    height: 1.25rem;
+    background-color: var(--color-accent);
+  }
+
+  @container site-header (min-width: 48rem) {
+    .desktop-nav {
+      display: block;
+    }
+
+    .actions {
+      margin-left: 0.25rem;
+    }
+
+    .menu-toggle,
+    .mobile-menu {
+      display: none;
+    }
   }
 </style>
 
 <script>
-  // The site CSP has no 'unsafe-inline', so inline on* attributes do not run. Bind here instead.
-  document.querySelectorAll('[data-drawer-backdrop]').forEach((backdrop) => {
-    backdrop.addEventListener('click', () => backdrop.closest('details')?.removeAttribute('open'));
+  // Theme toggle. The bootstrap script in SeoHead.astro reads localStorage "theme" ("light" or
+  // "dark") before first paint; this writes the same key.
+  const root = document.documentElement;
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+  const storedTheme = (): string | null => {
+    try {
+      return localStorage.getItem('theme');
+    } catch {
+      return null;
+    }
+  };
+
+  function applyTheme(dark: boolean): void {
+    root.classList.toggle('dark', dark);
+    root.setAttribute('data-theme', dark ? 'dark' : 'light');
+    document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
+      button.setAttribute('aria-pressed', String(dark));
+    });
+    // Keep the browser chrome in step with the theme the page shows, not only with the OS.
+    document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
+      meta.setAttribute('content', dark ? '#0b1120' : '#ffffff');
+    });
+  }
+
+  applyTheme(root.classList.contains('dark'));
+
+  document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const dark = !root.classList.contains('dark');
+      applyTheme(dark);
+      try {
+        localStorage.setItem('theme', dark ? 'dark' : 'light');
+      } catch {
+        // Storage can be blocked; the choice then lasts for this page view only.
+      }
+    });
   });
+
+  // No stored choice: follow the OS when it changes.
+  prefersDark.addEventListener('change', (event) => {
+    if (!storedTheme()) applyTheme(event.matches);
+  });
+
+  // A choice made in another tab.
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'theme') applyTheme(event.newValue ? event.newValue === 'dark' : prefersDark.matches);
+  });
+
+  // Mobile menu.
+  const header = document.querySelector<HTMLElement>('[data-site-header]');
+  const menuToggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+  const menu = document.querySelector<HTMLElement>('[data-mobile-menu]');
+
+  if (header && menuToggle && menu) {
+    const setMenu = (open: boolean, returnFocus = false): void => {
+      menu.hidden = !open;
+      menuToggle.setAttribute('aria-expanded', String(open));
+      if (returnFocus) menuToggle.focus();
+    };
+
+    menuToggle.addEventListener('click', () => setMenu(menu.hidden));
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !menu.hidden) setMenu(false, true);
+    });
+
+    // A click or tap anywhere outside the header closes the menu.
+    document.addEventListener('click', (event) => {
+      if (!menu.hidden && event.target instanceof Node && !header.contains(event.target)) setMenu(false);
+    });
+
+    // Following a link closes it too (matters for same-page anchors).
+    menu.addEventListener('click', (event) => {
+      if (event.target instanceof Element && event.target.closest('a')) setMenu(false);
+    });
+
+    // The menu does not exist in the wide layout (a container query in the styles above); do not
+    // leave it open across a resize. The button is hidden exactly when that layout is on.
+    window.addEventListener('resize', () => {
+      if (!menu.hidden && menuToggle.offsetParent === null) setMenu(false);
+    });
+  }
 </script>

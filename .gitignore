@@ -51,4 +51,5 @@ CLAUDE.md
 # Local agent/skill tooling (not part of the shipped product)
 .agents/
 .claude/
+.serena/
 skills-lock.json

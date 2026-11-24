@@ -165,7 +165,7 @@ Audit and debloat your phone visually directly inside your browser at **[debloat
     ```bash
     curl -fsSL https://debloater.rovoxia.com/bridge.sh | bash
     ```
-- **Interactive Features:** Real-time package explorer, 4-tier filtering, dry-run simulation, 1-click batch freezing (`pm disable-user --user 0`), a confirmation dialog that lists each package with its app name, "Export CSV" of the currently filtered package list, live execution terminal drawer, and pre-mutation JSON snapshots with instant rollback.
+- **Interactive Features:** Real-time package explorer, 4-tier filtering, 1-click batch freezing (`pm disable-user --user 0`), a confirmation dialog before every change that lists each package with its app name, "Export CSV" of the currently filtered package list, live execution terminal drawer, and pre-mutation JSON snapshots with instant rollback. The web app has no dry-run mode; for a dry run, use the CLI's `--dry-run` flag.
 
 #### 🔑 Bridge session token
 The bridge listens on `127.0.0.1:53123`, accepts only a loopback `Host` and allowlisted web origins, and requires a per-session token on every route except `GET /health`. Requests without a matching `X-Bridge-Token` header get `401`.
