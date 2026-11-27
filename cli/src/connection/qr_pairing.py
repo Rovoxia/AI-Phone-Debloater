@@ -158,6 +158,12 @@ class QrPairingManager:
                 "Ensure your phone and PC are connected to the same Wi-Fi network."
             )
 
+        # A cancel can arrive while the mDNS query that found the phone is still
+        # running. Without this check the phone would be paired after the cancel.
+        if self._cancel_flag.is_set():
+            session.status = "cancelled"
+            raise OperationCancelledError("QR pairing cancelled by user.")
+
         # -------------------------------------------------------------------
         # Phase 2: Execute cryptographic pairing
         # -------------------------------------------------------------------
