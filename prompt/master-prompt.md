@@ -42,7 +42,7 @@ If the scan fails, run `python cli/src/debloat_engine.py --diagnostics` and act 
 | No device | Settings > About phone > tap Build number 7 times, then Developer options > USB debugging. Use a data cable, not a charge-only one. |
 | `unauthorized` | Unlock the phone and accept "Allow USB debugging". |
 | Several devices | Ask which one, then add `--serial <serial>` to every command. |
-| No cable | `--wireless <IP>:<PORT>` for a phone that is already paired. `--qr-pair` prints a QR code in the terminal, so use it only if the user can see your terminal; otherwise use USB, or the web app's "Pair over Wi-Fi (QR)", which needs the local bridge running (`--bridge`; it prints the URL to open). |
+| No cable | `--wireless <IP>:<PORT>` for a phone that is already paired. `--qr-pair` prints a QR code in the terminal, so use it only if the user can see your terminal; otherwise use USB, or the web app's "Pair over Wi-Fi with a QR code" (or its pairing-code and connect-by-address forms), which needs the local bridge running (`--bridge`; it prints the URL to open). |
 
 ### If you can only chat (ChatGPT, Claude, Gemini and similar, without a shell)
 

@@ -8,7 +8,7 @@ answer: >-
   Debloater then scans, previews and applies changes over Wi-Fi with the same commands, snapshot and
   restore as over a USB cable.
 pubDate: 2026-11-01
-updatedDate: 2026-11-23
+updatedDate: 2026-11-27
 category: Setup
 tags: [Wireless ADB, Wireless debugging, QR pairing, Android 11]
 ---
@@ -37,7 +37,8 @@ Keep that screen open while you pair.
 | QR code in the terminal | `--qr-pair` | You run the command-line tool and can point the phone at the screen |
 | Six-digit code | Menu option `w`, then `3` | The QR code is hard to scan, or you prefer typing |
 | QR code in the browser | "Pair over Wi-Fi with a QR code" in the web app | You use the web app through the local bridge |
-| No pairing | `--wireless` with the address | The phone is already paired with this computer |
+| Six-digit code in the browser | "Pair with a pairing code" under "Connect over Wi-Fi" in the web app | You use the web app through the local bridge and prefer typing |
+| No pairing | `--wireless` with the address, or "Connect to a paired phone" in the web app | The phone is already paired with this computer |
 
 A phone that is already paired with this computer only needs to connect.
 
@@ -119,7 +120,17 @@ Yes, through the local bridge. The web app's direct mode uses WebUSB, which is U
 2. In the web app choose **Pair over Wi-Fi with a QR code**, in the "Local bridge" box.
 3. On the phone tap **Pair device with QR code** and scan the code on the computer screen.
 
-The code works for two minutes and for one pairing, and closing the dialog cancels it. Once paired, the phone appears in the app like a phone on a cable. The app asks you to confirm before every change. It has no dry run.
+The code works for two minutes and for one pairing, and closing the dialog cancels it. Once paired, the phone appears in the app like a phone on a cable.
+
+The "Connect over Wi-Fi" section of the bridge panel has three more ways in:
+
+- **Pair with a pairing code**: on the phone tap **Pair device with pairing code** and type the IP address, the pairing port and the six-digit code it shows.
+- **Connect to a paired phone**: type the IP address and port from the main Wireless debugging screen, for a phone that is already paired with this computer.
+- **Phones found on this network**: the phones that ADB's own network discovery sees, with a button to connect one that is already paired.
+
+If pairing works but the phone does not announce the port to connect to, the page asks for that port, which is on the main Wireless debugging screen, and finishes the connection.
+
+The page keeps the device list up to date by itself, so a phone that connects later appears without reloading the page. If the phone or the bridge drops out, the page says so, switches off changes until the same phone is back, and keeps your selection. The app asks you to confirm before every change. It has no dry run.
 
 The bridge listens only on your own computer (127.0.0.1), and it runs device requests only when they carry the session token that the start script gives to the web app.
 

@@ -714,6 +714,22 @@ class TestQrPairingManager(unittest.TestCase):
         self.assertEqual(mdns.get_connect_services.call_count, 1)
         wireless.connect.assert_not_called()
 
+    def test_cancel_while_the_scan_finds_the_phone_does_not_pair(self):
+        """A cancel that arrives during the mDNS query that finds the phone stops before adb pair."""
+        mgr, session, wireless, mdns, _, run = self._paired_flow()
+        found = mdns.get_pairing_services.return_value
+
+        def cancel_then_found():
+            mgr.cancel()
+            return found
+
+        mdns.get_pairing_services.side_effect = cancel_then_found
+        with self.assertRaises(OperationCancelledError):
+            run()
+        wireless.pair_with_code.assert_not_called()
+        mdns.get_connect_services.assert_not_called()
+        self.assertEqual(session.status, "cancelled")
+
     def test_pairing_service_name_must_contain_session_name(self):
         """A short or foreign pairing name is not ours; an mDNS rename suffix is still accepted."""
         _, session, wireless, mdns, _, run = self._paired_flow()

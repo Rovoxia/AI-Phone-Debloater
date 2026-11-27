@@ -1,7 +1,8 @@
 ---
 // The in-browser debloater. Markup and styles are here; the two ADB clients are in
-// src/lib/webadb.ts. The script fills rows and lists by cloning the <template> elements at the
-// end of the page and writing device and rule strings with textContent only.
+// src/lib/webadb.ts, and the local bridge's connection state machine and device monitor are in
+// src/lib/bridge-session.ts. The script fills rows and lists by cloning the <template> elements at
+// the end of the page and writing device and rule strings with textContent only.
 import Base from '../layouts/Base.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import Icon from '../components/Icon.astro';
@@ -89,8 +90,10 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
         </noscript>
 
         <!-- The phone: art on the left, what the page knows about it on the right. The script sets
-             data-state (disconnected, connecting, connected, error) and fills the values; CSS shows
-             the matching glyph, word and block. The art is decorative: every fact is also text. -->
+             data-state (disconnected, waiting, connecting, connected, lost, error) and fills the
+             values; CSS shows the matching glyph, word and block. The art is decorative: every fact
+             is also text. "waiting" and "lost" belong to the local bridge: waiting for the bridge or
+             for a phone, and a connected phone or bridge that went away. -->
         <section id="device-card" class="device card mt-stack-lg" data-state="disconnected" aria-labelledby="device-title">
           <div class="device-layout">
             <div class="device-art" aria-hidden="true">
@@ -103,8 +106,10 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
               </svg>
               <div class="phone-state">
                 <span class="state-item" data-for="disconnected"><Icon name="ban" /><span>No device</span></span>
+                <span class="state-item" data-for="waiting"><Icon name="clock" /><span>Waiting</span></span>
                 <span class="state-item" data-for="connecting"><Icon name="refresh-cw" /><span>Connecting</span></span>
                 <span class="state-item" data-for="connected"><Icon name="circle-check" /><span>Connected</span></span>
+                <span class="state-item" data-for="lost"><Icon name="triangle-alert" /><span>Lost</span></span>
                 <span class="state-item" data-for="error"><Icon name="octagon-alert" /><span>Error</span></span>
               </div>
             </div>
@@ -114,8 +119,10 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
                 <h2 id="device-title" class="h3" tabindex="-1">Your phone</h2>
                 <p class="device-status">
                   <span class="state-item" data-for="disconnected"><Icon name="ban" />Not connected</span>
+                  <span class="state-item" data-for="waiting"><Icon name="clock" />Waiting</span>
                   <span class="state-item" data-for="connecting"><Icon name="refresh-cw" />Connecting</span>
                   <span class="state-item" data-for="connected"><span class="status-dot"></span>Connected</span>
+                  <span class="state-item" data-for="lost"><Icon name="triangle-alert" />Connection lost</span>
                   <span class="state-item" data-for="error"><Icon name="octagon-alert" />Could not connect</span>
                 </p>
                 <button type="button" id="btn-disconnect" class="btn btn-secondary btn-sm ml-auto" hidden>
@@ -127,9 +134,23 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
               <p class="device-prompt" data-for="disconnected">
                 No phone is connected. <a class="link" href="#connect-title">Choose one of the two connections below</a>.
               </p>
+              <p class="device-prompt" data-for="waiting">
+                No phone is connected yet. <a class="link" href="#bridge-title">The local bridge section below</a> says
+                what it is waiting for.
+              </p>
               <p class="device-prompt" data-for="error">
                 <a class="link" href="#connect-title">Try one of the two connections below again</a>.
               </p>
+
+              <!-- A connected phone, or the bridge, went away. The script fills the two lines and
+                   announces the change through the page's live region (#live). -->
+              <div id="device-alert" class="callout callout-warn mt-3" role="note" hidden>
+                <Icon name="triangle-alert" />
+                <div>
+                  <p id="device-alert-title" class="callout-title"></p>
+                  <p id="device-alert-text"></p>
+                </div>
+              </div>
 
               <dl class="device-stats grid-auto-sm">
                 {
@@ -161,6 +182,230 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
               </dl>
             </div>
           </div>
+        </section>
+
+        <!-- The local bridge, once the user has chosen it (the button below, or /app?bridge=1).
+             Nothing is requested from 127.0.0.1 before that choice, because the first request can
+             make the browser ask for permission. The script sets data-phase (waiting, blocked,
+             unreachable, adb_missing, token, ready, lost) and fills the text; CSS shows the
+             matching glyph and words. While a bridge phone is open the section is shown only when
+             there is something to act on: a lost phone or bridge, or another device. -->
+        <section id="bridge-panel" class="bridge card mt-stack" data-phase="idle" aria-labelledby="bridge-title" hidden>
+          <div class="bridge-head">
+            <h2 id="bridge-title" class="h3" tabindex="-1">Local bridge</h2>
+            <p class="bridge-status">
+              <span class="phase-item" data-for="waiting"><Icon name="refresh-cw" />Looking for the bridge</span>
+              <span class="phase-item" data-for="blocked"><Icon name="ban" />Blocked by the browser</span>
+              <span class="phase-item" data-for="unreachable"><Icon name="octagon-alert" />Not running</span>
+              <span class="phase-item" data-for="adb_missing"><Icon name="circle-alert" />adb not found</span>
+              <span class="phase-item" data-for="token"><Icon name="lock" />Token needed</span>
+              <span class="phase-item" data-for="ready"><Icon name="circle-check" />Running</span>
+              <span class="phase-item" data-for="lost"><Icon name="triangle-alert" />Not answering</span>
+            </p>
+            <button type="button" id="btn-bridge-stop" class="btn btn-secondary btn-sm ml-auto">Cancel</button>
+          </div>
+
+          <p id="bridge-text" class="bridge-text"></p>
+          <p id="bridge-detail" class="bridge-detail"></p>
+          <p id="bridge-error" class="bridge-error"></p>
+
+          <div id="bridge-actions" class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2" hidden>
+            <button type="button" id="btn-bridge-retry" class="btn btn-primary btn-sm">Try again</button>
+            <a class="link text-sm" href="#bridge-commands">Go to the one-click command</a>
+          </div>
+
+          <form id="token-form" class="bridge-form" novalidate hidden>
+            <div class="field">
+              <label class="label" for="token-input">URL the bridge printed, or its token</label>
+              <input
+                id="token-input"
+                class="input"
+                type="text"
+                autocomplete="off"
+                autocapitalize="none"
+                spellcheck="false"
+                data-error="token-error"
+              />
+              <p id="token-error" class="hint hint-error" hidden></p>
+            </div>
+            <div>
+              <button type="submit" class="btn btn-primary btn-sm">Use this token</button>
+            </div>
+          </form>
+
+          <div id="devices-box" class="mt-stack" hidden>
+            <h3 id="devices-title" class="h4">Devices adb reports</h3>
+            <ul id="device-list" class="device-list" aria-labelledby="devices-title"></ul>
+          </div>
+
+          <!-- Wi-Fi works through the bridge only. Each block is hidden when the running bridge
+               does not report the capability it needs. -->
+          <details id="wifi-panel" class="disclosure wifi mt-stack" hidden>
+            <summary>
+              <h3>Connect over Wi-Fi</h3>
+              <Icon name="chevron-down" />
+            </summary>
+            <div class="disclosure-body">
+              <p class="measure text-sm">
+                Needs Android 11 or newer, with Wireless debugging turned on in Developer options and the phone and
+                this computer on the same Wi-Fi network.
+              </p>
+              <p id="wifi-old" class="measure mt-2 text-sm" hidden>
+                This bridge is an older version and can pair with a QR code only. To pair with a pairing code, connect
+                by address or find phones on the network, run the one-click command again to update it.
+              </p>
+
+              <div class="wifi-grid">
+                <section id="wifi-qr" class="wifi-block" aria-labelledby="wifi-qr-title">
+                  <h4 id="wifi-qr-title" class="h4">Pair with a QR code</h4>
+                  <p class="wifi-help">
+                    On the phone, open Wireless debugging and choose "Pair device with QR code". This page shows the
+                    code to scan.
+                  </p>
+                  <div class="wifi-actions">
+                    <button type="button" class="btn btn-secondary btn-sm" data-pair-qr>
+                      <Icon name="wifi" />
+                      Show a QR code
+                    </button>
+                  </div>
+                </section>
+
+                <form id="form-pair" class="wifi-block" novalidate aria-labelledby="form-pair-title">
+                  <h4 id="form-pair-title" class="h4">Pair with a pairing code</h4>
+                  <p class="wifi-help">
+                    On the phone, open Developer options, Wireless debugging, then "Pair device with pairing code".
+                    The dialog shows a six-digit code and an address in the form IP:port. Type them here while that
+                    dialog stays open. Its port is the pairing port, not the port on the main Wireless debugging
+                    screen.
+                  </p>
+                  <div class="wifi-fields">
+                    <div class="field">
+                      <label class="label" for="pair-host">IP address</label>
+                      <input
+                        id="pair-host"
+                        name="host"
+                        class="input"
+                        type="text"
+                        required
+                        autocomplete="off"
+                        autocapitalize="none"
+                        spellcheck="false"
+                        maxlength="21"
+                        data-kind="ipv4"
+                        data-error="pair-host-error"
+                        data-port="pair-port"
+                      />
+                      <p id="pair-host-error" class="hint hint-error" hidden></p>
+                    </div>
+                    <div class="field">
+                      <label class="label" for="pair-port">Pairing port</label>
+                      <input
+                        id="pair-port"
+                        name="port"
+                        class="input"
+                        type="text"
+                        inputmode="numeric"
+                        pattern="[0-9]*"
+                        required
+                        autocomplete="off"
+                        maxlength="5"
+                        data-kind="port"
+                        data-error="pair-port-error"
+                      />
+                      <p id="pair-port-error" class="hint hint-error" hidden></p>
+                    </div>
+                    <div class="field">
+                      <label class="label" for="pair-code">Pairing code</label>
+                      <input
+                        id="pair-code"
+                        name="code"
+                        class="input"
+                        type="text"
+                        inputmode="numeric"
+                        pattern="[0-9 ]*"
+                        required
+                        autocomplete="off"
+                        maxlength="7"
+                        data-kind="code"
+                        data-error="pair-code-error"
+                      />
+                      <p id="pair-code-error" class="hint hint-error" hidden></p>
+                    </div>
+                  </div>
+                  <div class="wifi-actions">
+                    <button type="submit" class="btn btn-primary btn-sm">Pair</button>
+                    <p id="pair-note" class="form-note"></p>
+                  </div>
+                </form>
+
+                <form id="form-connect" class="wifi-block" novalidate aria-labelledby="form-connect-title">
+                  <h4 id="form-connect-title" class="h4">Connect to a paired phone</h4>
+                  <p class="wifi-help">
+                    For a phone that is already paired with this computer, or one that was just paired and did not
+                    connect by itself. Type the address shown under "IP address &amp; Port" on the main Wireless
+                    debugging screen. It is not the address from the pairing dialog.
+                  </p>
+                  <div class="wifi-fields">
+                    <div class="field">
+                      <label class="label" for="connect-host">IP address</label>
+                      <input
+                        id="connect-host"
+                        name="host"
+                        class="input"
+                        type="text"
+                        required
+                        autocomplete="off"
+                        autocapitalize="none"
+                        spellcheck="false"
+                        maxlength="21"
+                        data-kind="ipv4"
+                        data-error="connect-host-error"
+                        data-port="connect-port"
+                      />
+                      <p id="connect-host-error" class="hint hint-error" hidden></p>
+                    </div>
+                    <div class="field">
+                      <label class="label" for="connect-port">Port</label>
+                      <input
+                        id="connect-port"
+                        name="port"
+                        class="input"
+                        type="text"
+                        inputmode="numeric"
+                        pattern="[0-9]*"
+                        required
+                        autocomplete="off"
+                        maxlength="5"
+                        data-kind="port"
+                        data-error="connect-port-error"
+                      />
+                      <p id="connect-port-error" class="hint hint-error" hidden></p>
+                    </div>
+                  </div>
+                  <div class="wifi-actions">
+                    <button type="submit" class="btn btn-primary btn-sm">Connect</button>
+                    <p id="connect-note" class="form-note"></p>
+                  </div>
+                </form>
+
+                <section id="wifi-found" class="wifi-block" aria-labelledby="wifi-found-title">
+                  <h4 id="wifi-found-title" class="h4">Phones found on this network</h4>
+                  <p class="wifi-help">
+                    What adb finds on the network by itself. Connect works for a phone that is already paired with
+                    this computer.
+                  </p>
+                  <ul id="mdns-list" class="found-list"></ul>
+                  <div class="wifi-actions">
+                    <button type="button" id="btn-mdns" class="btn btn-secondary btn-sm">
+                      <Icon name="refresh-cw" />
+                      Look again
+                    </button>
+                    <p id="mdns-note" class="form-note"></p>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </details>
         </section>
 
         <!-- Step 1: connect -->
@@ -209,7 +454,7 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
                 Run one command in a terminal. It downloads the project to your home folder, starts the bridge and
                 opens this page with the token, already connecting.
               </p>
-              <div class="mt-3 grid gap-3">
+              <div id="bridge-commands" class="mt-3 grid gap-3">
                 {
                   BRIDGE_COMMANDS.map((item) => (
                     <figure class="code-figure">
@@ -232,6 +477,10 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
               <p class="hint mt-3">
                 If you open this page yourself while the bridge is running, it asks for the URL the bridge printed in
                 its terminal. That URL carries the token.
+              </p>
+              <p class="hint mt-2">
+                The page contacts 127.0.0.1 only after you choose the bridge. Your browser may then ask whether this
+                page may access other apps and services on this device. The bridge is that app, so choose Allow.
               </p>
               <div class="flex flex-wrap gap-3 pt-6">
                 <button type="button" id="btn-bridge" class="btn btn-secondary">Connect to the local bridge</button>
@@ -581,6 +830,45 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
     <li class="py-6 text-center">No snapshots yet. A snapshot is saved automatically before every change.</li>
   </template>
 
+  <!-- One device of the bridge's list. The model and serial come from the phone through adb: the
+       script writes them with textContent, and hides the buttons that do not apply. -->
+  <template id="tpl-bridge-device">
+    <li class="device-row">
+      <div class="device-row-main">
+        <p class="device-row-name">
+          <span data-slot="name"></span>
+          <span class="badge" data-slot="state"></span>
+        </p>
+        <p class="device-row-meta">
+          <!-- Removed by the script when the serial already is the row's name. -->
+          <span data-slot="serial-part">
+            <span class="sr-only">Serial</span>
+            <span class="pkg" data-slot="serial"></span>
+            <span aria-hidden="true">·</span>
+          </span>
+          <span data-slot="transport"></span>
+        </p>
+        <p class="device-row-help" data-slot="help"></p>
+        <p class="device-row-detail pkg" data-slot="detail"></p>
+      </div>
+      <div class="device-row-actions">
+        <button type="button" class="btn btn-primary btn-sm" data-act="use">Use this phone</button>
+        <button type="button" class="btn btn-secondary btn-sm" data-act="retry">Retry</button>
+      </div>
+    </li>
+  </template>
+
+  <!-- One phone adb found on the network. -->
+  <template id="tpl-found">
+    <li class="found-row">
+      <div class="found-main">
+        <p class="found-name" data-slot="name"></p>
+        <p class="pkg" data-slot="address"></p>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" data-slot="action"></button>
+    </li>
+  </template>
+
   <script>
     import {
       WebAdbClient,
@@ -591,10 +879,29 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
       deleteLocalSnapshot,
       downloadFile,
       exportSnapshotFile,
+      toBridgeError,
+      type BridgeDevice,
       type DebloatSnapshot,
       type DeviceInfo,
       type ExecutionResult,
+      type MdnsResult,
+      type QrPairingStatus,
     } from '../lib/webadb';
+    import {
+      BridgeSession,
+      TRANSPORT_LABEL,
+      describeDevice,
+      deviceName,
+      isSamePhone,
+      parseIpv4,
+      parsePairingCode,
+      parsePort,
+      pickDevice,
+      relateEntries,
+      shortSerial,
+      splitHostPort,
+      type BridgeSnapshot,
+    } from '../lib/bridge-session';
     import rulesData from '../data/rules-dataset.json';
 
     type Action = 'disable' | 'uninstall' | 'enable';
@@ -672,8 +979,56 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
     let tierFilter: 'all' | '0' | '1' | '2' | '3' | '4' = 'all';
     let page = 0;
     let busy = false;
-    // A connection attempt is running (one at a time, whichever transport started it).
+    // A phone is being opened (one at a time, whichever transport started it): the WebUSB picker
+    // and handshake, or the package lists of a bridge device.
     let connecting = false;
+
+    // ---- Local bridge ------------------------------------------------------------------------
+    // The session (src/lib/bridge-session.ts) finds the bridge and then keeps adb's device list
+    // current until it is stopped. Everything below reacts to its snapshots in onBridgeChange().
+    // How long to keep asking for the bridge. The launcher opens /app?bridge=1 before the bridge
+    // listens, and on a first run it may still be downloading Python or platform-tools.
+    const LAUNCHER_WAIT_MS = 90_000;
+    const BUTTON_WAIT_MS = 20_000;
+    // The phone opened last in this tab. It is preferred when several devices are ready.
+    const SERIAL_KEY = 'ai_phone_debloater_bridge_serial';
+    const session = new BridgeSession(bridge, () => onBridgeChange());
+    // The phone to open as soon as it is ready: the one just paired or connected over Wi-Fi.
+    // It expires, so a serial that never shows up does not hold back the normal choice for ever.
+    let wanted = { serial: '', until: 0 };
+    let wantedTimer = 0;
+    const WANTED_MS = 30_000;
+    // Serials that failed to open. They are not opened again without the user asking.
+    const openFailed = new Set<string>();
+    // The entry of adb's list that `device` was opened from (bridge transport).
+    let bridgeEntry: BridgeDevice | null = null;
+    // The model adb listed for the open phone when it was opened. A different model under the same
+    // serial later is another device, not this phone coming back.
+    let openedModel = '';
+    // Counts the phones this page has closed. A run notes it when it starts; when it differs at
+    // the end, the list on screen is not the one the run was started from.
+    let workspaceId = 0;
+    // The open phone is missing from adb's list, or listed in a state other than "device".
+    let deviceLost = false;
+    // Freeze, Uninstall and Restore are switched off, as last applied by applyLock().
+    let locked = false;
+    // Serials for which a POST /reconnect is in flight.
+    const resetting = new Set<string>();
+    // Why the last thing the user asked of the bridge failed. Shown in the bridge section.
+    let bridgeError = '';
+    // A token from the form was sent and the bridge has not answered yet.
+    let tokenTried = false;
+    // Start QR pairing as soon as the bridge is ready (the pair button was used before it was).
+    let qrWanted = false;
+    // The Wi-Fi block is waiting for the connect port of a phone that was just paired.
+    let wifiPinned = false;
+    // What renderBridge() drew and announced last, so an unchanged state is neither redrawn nor repeated.
+    let listKey = '';
+    let announced = '';
+    let linkLost = false;
+    let waitTimer = 0;
+    // Tooltip of every control that changes the phone while `locked` is set.
+    const LOCKED_TITLE = 'Switched off until the phone and the local bridge are reachable again.';
     // False when the transport could not say which packages are installed for user 0: then the
     // enabled and uninstalled counts are unknown, not zero.
     let installKnown = false;
@@ -690,6 +1045,8 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
       root.querySelector(`[data-slot="${name}"]`) as T;
     const confirmDialog = $<HTMLDialogElement>('modal-confirm');
     const snapsDialog = $<HTMLDialogElement>('modal-snaps');
+    const pairDialog = $<HTMLDialogElement>('modal-pair');
+    const pairCanvas = $<HTMLCanvasElement>('pair-qr');
 
     // Every message goes to the activity log. Unless `quiet`, it also becomes the status line in the
     // dock and the text of the live region (#live), and the note in the snapshots dialog when that
@@ -724,13 +1081,30 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
 
     // The device panel's state. CSS shows the glyph, word and block that belong to it.
     function paintState() {
-      $('device-card').dataset.state = device
-        ? 'connected'
-        : connecting
-          ? 'connecting'
-          : $('connect-error').textContent
-            ? 'error'
-            : 'disconnected';
+      let state = 'disconnected';
+      const trouble = bridgeTrouble();
+      // "checking" is the page waiting for adb's list, which is shown as connecting, not as a loss.
+      if (device) state = trouble === 'checking' ? 'connecting' : trouble ? 'lost' : 'connected';
+      else if (connecting) state = 'connecting';
+      else if ($('connect-error').textContent) state = 'error';
+      else if (session.active) state = 'waiting';
+      $('device-card').dataset.state = state;
+    }
+
+    // Why the page must not change the open phone right now; '' when it may. Only the bridge
+    // transport can be in trouble: WebUSB drops the whole connection instead (webadb.onDisconnect).
+    // 'checking': the bridge answers, or is being asked again, but has not sent a device list
+    // since. Whenever the session returns to 'ready' (a new token, a retry, adb found again) it
+    // starts without a list, and until one has confirmed the phone the page does not know that
+    // the phone it shows is still there. So the lock holds through that window.
+    function bridgeTrouble(): '' | 'token' | 'bridge' | 'checking' | 'device' {
+      if (!device || transport !== 'bridge') return '';
+      const snap = session.snapshot;
+      if (snap.phase === 'token') return 'token';
+      if (snap.phase === 'ready' && snap.link === 'lost') return 'bridge';
+      if (snap.phase === 'waiting' || (snap.phase === 'ready' && !snap.listed)) return 'checking';
+      if (snap.phase !== 'ready') return 'bridge';
+      return deviceLost ? 'device' : '';
     }
 
     // One value of the device panel. null or '' means unknown: an en dash, never a zero or a guess.
@@ -740,10 +1114,8 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
 
     function connectionLabel(info: DeviceInfo): string {
       if (info.connectionType === 'webusb') return 'USB (WebUSB)';
-      // Over Wi-Fi, adb names the phone by address and port or by its mDNS service name.
-      const overWifi =
-        /^(\d{1,3}(\.\d{1,3}){3}|\[[0-9a-fA-F:.]+\]):\d+$/.test(info.serial) || info.serial.includes('_adb-tls-connect._tcp');
-      return overWifi ? 'Wi-Fi via bridge' : 'Local bridge';
+      // The bridge says how adb reaches the phone: by cable, over Wi-Fi, or an emulator.
+      return bridgeEntry ? `${TRANSPORT_LABEL[bridgeEntry.transport]} via bridge` : 'Local bridge';
     }
 
     // Time of the newest snapshot this browser holds for the phone. null: there are snapshots but
@@ -856,8 +1228,8 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
       const actionable = [...selected].filter((pkg) => !CRITICAL_PACKAGES.has(pkg)).length;
       const button = $<HTMLButtonElement>('btn-execute');
       button.textContent = `${VERB[($('batch-action') as HTMLSelectElement).value as Action]} ${actionable} selected`;
-      button.disabled = actionable === 0 || busy;
-      button.title = actionable === 0 ? 'Select at least one package in the table first.' : '';
+      button.disabled = actionable === 0 || busy || locked;
+      button.title = locked ? LOCKED_TITLE : actionable === 0 ? 'Select at least one package in the table first.' : '';
     }
 
     function paintTierFilter() {
@@ -939,8 +1311,9 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
 
         for (const action of ACTIONS) {
           const btn = frag.querySelector(`[data-action="${action}"]`) as HTMLButtonElement;
-          btn.disabled = row.locked && action !== 'enable';
-          btn.title = btn.disabled ? 'Locked critical package' : commandFor(action, row.pkg);
+          const critical = row.locked && action !== 'enable';
+          btn.disabled = critical || locked;
+          btn.title = critical ? 'Locked critical package' : locked ? LOCKED_TITLE : commandFor(action, row.pkg);
           btn.setAttribute('aria-label', `${VERB[action]} ${row.pkg}`);
           btn.addEventListener('click', () => requestRun([row.pkg], action));
         }
@@ -960,9 +1333,12 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
 
     function showWorkspace() {
       setError('');
-      // The connect step is about to be hidden. If the keyboard focus is in it, or nowhere, it
-      // moves to the heading of the device panel.
-      const moveFocus = $('connect-panel').contains(document.activeElement) || document.activeElement === document.body;
+      // The connect step is about to be hidden, and the bridge section usually with it. If the
+      // keyboard focus is in one of them, or nowhere, it moves to the heading of the device panel.
+      const moveFocus =
+        $('connect-panel').contains(document.activeElement) ||
+        $('bridge-panel').contains(document.activeElement) ||
+        document.activeElement === document.body;
       $('app').dataset.view = 'workspace';
       $('connect-panel').hidden = true;
       $('workspace').hidden = false;
@@ -978,10 +1354,16 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
     function resetWorkspace() {
       transport = null;
       device = null;
+      bridgeEntry = null;
+      openedModel = '';
+      workspaceId += 1;
+      deviceLost = false;
+      locked = false;
       rows = [];
       selected.clear();
       confirmDialog.close('cancel');
       installKnown = false;
+      $('device-alert').hidden = true;
       const hadFocus = [$('btn-disconnect'), $('workspace'), $('batch-bar')].some((el) => el.contains(document.activeElement));
       $('app').dataset.view = 'connect';
       $('connect-panel').hidden = false;
@@ -1051,87 +1433,854 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
       }
     }
 
-    // `waitMs`: how long to keep asking for /health. The launcher opens /app?bridge=1
-    // before the bridge is listening, so that path waits instead of failing at once.
-    // `preferSerial`: the phone to open when several are attached (the one just paired over Wi-Fi).
-    async function connectBridge(waitMs = 0, preferSerial = '') {
+    // ---- Local bridge: the session, the device list and the phone that is open -------------------
+
+    function rememberedSerial(): string {
+      try {
+        return sessionStorage.getItem(SERIAL_KEY) ?? '';
+      } catch {
+        return '';
+      }
+    }
+
+    // '' forgets it.
+    function rememberSerial(serial: string) {
+      try {
+        if (serial) sessionStorage.setItem(SERIAL_KEY, serial);
+        else sessionStorage.removeItem(SERIAL_KEY);
+      } catch {
+        // Storage is blocked: nothing is remembered.
+      }
+    }
+
+    // Hides or shows a part of the page. When the part that goes away holds the keyboard focus,
+    // the focus moves to `fallback` instead of being dropped on <body>.
+    function setHidden(el: HTMLElement, hidden: boolean, fallback: HTMLElement) {
+      if (el.hidden === hidden) return;
+      const hadFocus = hidden && el.contains(document.activeElement);
+      el.hidden = hidden;
+      if (hadFocus) fallback.focus();
+    }
+
+    function attemptBusy() {
+      const message = 'A connection attempt is still in progress. If the phone shows an "Allow USB debugging" prompt, accept it; otherwise reload this page to start over.';
+      setError(message);
+      log('ERROR', message);
+    }
+
+    // The user chose the bridge: the connect button, a pair button, or /app?bridge=1. Starts the
+    // session, or looks again when it already runs. Before this nothing is sent to 127.0.0.1.
+    function startBridge(waitMs: number, moveFocus: boolean) {
+      if (connecting && !session.active) {
+        attemptBusy();
+        return;
+      }
+      const phase = session.snapshot.phase;
+      if (phase === 'idle') {
+        setError('');
+        bridgeError = '';
+        session.start(waitMs);
+      } else if (phase === 'unreachable' || phase === 'blocked') {
+        session.retry();
+      } else {
+        session.refresh();
+      }
+      if (moveFocus) $('bridge-title').focus();
+    }
+
+    // Sets or clears ('') the phone to open as soon as it is ready. It runs out after WANTED_MS,
+    // and the timer makes the normal choice apply again then, also when adb's list has not
+    // changed in the meantime and no snapshot arrives to trigger it.
+    function setWanted(serial: string) {
+      clearTimeout(wantedTimer);
+      wantedTimer = 0;
+      wanted = { serial, until: serial ? Date.now() + WANTED_MS : 0 };
+      if (serial) wantedTimer = window.setTimeout(onBridgeChange, WANTED_MS + 50);
+    }
+
+    // Ends the bridge path: the monitor stops and the session's requests are aborted. A phone open
+    // through the bridge is closed by the caller first (resetWorkspace). A request that changes
+    // the phone is never tied to the session: ending it here would not stop adb, only hide the result.
+    function stopBridge() {
+      setWanted('');
+      openFailed.clear();
+      resetting.clear();
+      bridgeError = '';
+      tokenTried = false;
+      qrWanted = false;
+      wifiPinned = false;
+      if (pairDialog.open) pairDialog.close();
+      session.stop();
       setError('');
-      log('INFO', 'Checking local bridge at http://127.0.0.1:53123/health');
-      let health = await bridge.checkHealth();
-      const deadline = Date.now() + waitMs;
-      while (!health.ok && Date.now() < deadline) {
-        $('bridge-badge').textContent = `Waiting for bridge… ${Math.ceil((deadline - Date.now()) / 1000)}s`;
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        health = await bridge.checkHealth();
+      renderBridge();
+    }
+
+    // Every change of the session's snapshot ends here: decide which phone to open, then draw.
+    function onBridgeChange() {
+      const snap = session.snapshot;
+      // Not before the first device list: until then a bridge that just started is still bringing
+      // the adb server up, and every route but /health waits for that.
+      if (snap.phase === 'ready' && snap.listed && qrWanted) {
+        qrWanted = false;
+        void startQr();
+      } else if (snap.phase === 'idle' || snap.phase === 'unreachable' || snap.phase === 'blocked') {
+        qrWanted = false;
       }
-      $('bridge-badge').textContent = '127.0.0.1:53123';
-      if (!health.ok) {
-        const message = 'Local bridge is not running. Paste the one-click command for your OS, then try again.';
-        setError(message);
-        log('ERROR', message);
-        return;
-      }
-      if (health.adbAvailable === false) {
-        log('ERROR', 'Bridge is up but adb was not found on this machine.');
-      }
-      let devices: Array<{ serial: string; model: string; state: string }>;
-      try {
-        devices = await bridge.getDevices();
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        setError(message);
-        log('ERROR', message);
-        return;
-      }
-      const online = devices.filter((d) => d.state === 'device');
-      if (online.length === 0) {
-        const message = devices.length
-          ? 'A device is listed but not authorized. Accept the USB debugging prompt, then reconnect.'
-          : 'No device is attached. Enable USB debugging and replug the cable.';
-        setError(message);
-        log('ERROR', message);
-        return;
-      }
-      let picked = online.find((d) => d.serial === preferSerial) ?? online[0];
-      if (online.length > 1 && picked.serial !== preferSerial) {
-        const serials = online.map((d) => d.serial).join(', ');
-        const answer = window.prompt(`Several devices are connected (${serials}). Type the serial of the one to debloat:`, '');
-        const match = online.find((d) => d.serial === answer?.trim());
-        if (!match) {
-          const message = `Several devices are connected (${serials}) and none was chosen. Connect again and enter one of those serials, or unplug the others.`;
-          setError(message);
-          log('ERROR', message);
-          return;
+      if (snap.phase === 'ready' && snap.listed) {
+        tokenTried = false;
+        const ready = snap.devices.filter((entry) => entry.state === 'device');
+        // A phone that failed to open may be tried again once it has left the ready state.
+        for (const serial of [...openFailed]) {
+          if (!ready.some((entry) => entry.serial === serial)) openFailed.delete(serial);
         }
-        picked = match;
+        const open = device && transport === 'bridge' ? device : null;
+        const mine = open ? snap.devices.find((entry) => entry.serial === open.serial) : undefined;
+        if (open && mine?.state === 'device' && mine.model && openedModel && mine.model !== openedModel) {
+          // A serial alone does not identify a phone: emulators reuse theirs, and some phones
+          // share a placeholder. The package list on screen belongs to the device that was
+          // opened, so it is closed, and the device now under this serial is treated as new.
+          log('ERROR', `Another device now answers under the serial ${shortSerial(open.serial)}: ${deviceName(mine)}, where ${openedModel.replaceAll('_', ' ')} was open. Its package list was closed.`);
+          rememberSerial('');
+          resetWorkspace();
+        } else if (open) {
+          if (mine) bridgeEntry = mine;
+          setDeviceLost(mine?.state !== 'device');
+        }
+        if (!device && !connecting) {
+          if (wanted.serial && Date.now() > wanted.until) setWanted('');
+          const target = pickDevice(snap.devices, wanted.serial, rememberedSerial(), openFailed);
+          if (target) void openDevice(target);
+        }
       }
-      const props = await bridge.getDeviceProps(picked.serial);
-      device = {
-        serial: picked.serial,
-        manufacturer: props.manufacturer || 'Android',
-        model: props.model || picked.model || 'Device',
-        androidVersion: props.androidVersion || 'Unknown',
-        sdkVersion: props.sdkVersion || '',
-        connectionType: 'bridge',
-      };
-      transport = 'bridge';
-      log('INFO', `Bridge connected to ${device.model} (${device.serial}).`);
+      renderBridge();
+    }
+
+    // The open phone left adb's list or its "device" state, or came back. Coming back resumes the
+    // page and nothing else: no operation is started, repeated or continued here.
+    function setDeviceLost(lost: boolean) {
+      if (!device || lost === deviceLost) return;
+      deviceLost = lost;
+      const name = `${device.model} (${shortSerial(device.serial)})`;
+      if (lost) {
+        log('ERROR', `${name} is no longer connected. Freeze, Uninstall and Restore are switched off until it is back. Your selection is kept.`);
+      } else {
+        log('INFO', `${name} is connected again. No operation was started while it was away.`);
+      }
+    }
+
+    // Switches the controls that change the phone off or on to match bridgeTrouble(). The row
+    // checkboxes and the selection are left alone.
+    function applyLock() {
+      const now = bridgeTrouble() !== '';
+      if (now === locked) return;
+      locked = now;
+      if (locked && confirmDialog.open) {
+        // Closing with "cancel" is the dialog's own way of not running: see its close listener.
+        confirmDialog.close('cancel');
+        log('ERROR', 'The change was not started: the phone or the local bridge is not reachable.');
+      }
+      updateCounts();
+      renderTable();
+      if (snapsDialog.open) renderSnapshots();
+    }
+
+    const ALERT_TEXT: Record<Exclude<ReturnType<typeof bridgeTrouble>, ''>, [string, string]> = {
+      checking: [
+        'Checking that the phone is still connected',
+        'Freeze, Uninstall and Restore are switched off until the device list of adb has confirmed this phone. Your selection is kept and nothing is run automatically.',
+      ],
+      device: [
+        'The phone is not connected',
+        'adb no longer reports this phone as ready. Freeze, Uninstall and Restore are switched off until it is back. The page continues by itself when the same phone is ready again. Your selection is kept and nothing is run automatically.',
+      ],
+      bridge: [
+        'The local bridge is not answering',
+        'Freeze, Uninstall and Restore are switched off until it answers again. Check that the terminal window of the bridge is still open. Your selection is kept and nothing is run automatically.',
+      ],
+      token: [
+        'The bridge asks for its session token',
+        'It was probably started again. Paste the URL it printed into the local bridge section below. Your selection is kept and nothing is run automatically.',
+      ],
+    };
+
+    // The warning in the device panel while a phone is open and unreachable.
+    function renderDeviceAlert(trouble: ReturnType<typeof bridgeTrouble>) {
+      $('device-alert').hidden = trouble === '';
+      if (trouble === '') return;
+      $('device-alert-title').textContent = ALERT_TEXT[trouble][0];
+      $('device-alert-text').textContent = ALERT_TEXT[trouble][1];
+    }
+
+    // A device of the list in a sentence: the model with the short serial, or the short serial
+    // alone while adb has no model for it.
+    function deviceLabel(entry: BridgeDevice): string {
+      return entry.model ? `${deviceName(entry)} (${shortSerial(entry.serial)})` : deviceName(entry);
+    }
+
+    // Opens one device of the bridge's list: its properties, then its package lists. This is the
+    // only way a bridge phone becomes `device`. It reads; it never changes the phone.
+    async function openDevice(entry: BridgeDevice) {
+      if (connecting || device) return;
+      connecting = true;
+      setWanted('');
+      bridgeError = '';
+      // Aborted when the session stops. No token prompt from here: a 401 becomes the token form.
+      const options = { signal: session.signal, interactive: false };
+      const name = deviceName(entry);
+      log('INFO', `Opening ${deviceLabel(entry)} through the local bridge.`);
+      renderBridge();
       try {
+        const props = await bridge.getDeviceProps(entry.serial, options);
         const [packages, disabled, installed] = await Promise.all([
-          bridge.listPackages(device.serial),
-          bridge.listDisabledPackages(device.serial),
-          bridge.listInstalledPackages(device.serial),
+          bridge.listPackages(entry.serial, options),
+          bridge.listDisabledPackages(entry.serial, options),
+          bridge.listInstalledPackages(entry.serial, options),
         ]);
+        if (options.signal.aborted) return;
+        device = {
+          serial: entry.serial,
+          manufacturer: props.manufacturer || 'Android',
+          model: props.model || (entry.model ? name : 'Device'),
+          androidVersion: props.androidVersion || 'Unknown',
+          sdkVersion: props.sdkVersion || '',
+          connectionType: 'bridge',
+        };
+        transport = 'bridge';
+        bridgeEntry = entry;
+        openedModel = entry.model;
+        deviceLost = false;
         rows = buildRows(packages, disabled, installed);
         installKnown = installed.length > 0;
-        log('INFO', `Loaded ${rows.length} packages, ${disabled.length} reported disabled.`);
+        rememberSerial(entry.serial);
+        log('INFO', `Bridge connected to ${device.model} (${device.serial}).`, true);
+        log('INFO', `Loaded ${rows.length} packages of ${device.model}, ${disabled.length} reported disabled.`);
         showWorkspace();
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        setError(message);
-        log('ERROR', message);
+        const error = toBridgeError(err);
+        if (options.signal.aborted || error.code === 'aborted') return;
+        openFailed.add(entry.serial);
+        bridgeError = `Could not open ${deviceLabel(entry)}. ${error.message}`;
+        log('ERROR', bridgeError);
+      } finally {
+        connecting = false;
+        onBridgeChange();
+      }
+    }
+
+    // "Use this phone" and "Switch to this phone" in the device list.
+    function chooseDevice(entry: BridgeDevice) {
+      if (connecting) return;
+      if (device) {
+        if (busy) {
+          log('ERROR', 'An operation is still running on the current phone. Switch when it has finished.');
+          return;
+        }
+        const kept = selected.size;
+        if (kept > 0 && !window.confirm(`Switch to ${deviceLabel(entry)}? The ${kept} selected ${kept === 1 ? 'package' : 'packages'} of the current phone will be deselected. Neither phone is changed.`)) return;
+        log('INFO', `Leaving ${device.model} (${device.serial}).`, true);
         resetWorkspace();
       }
+      openFailed.delete(entry.serial);
+      void openDevice(entry);
+    }
+
+    // "Retry" on an offline or unauthorized device: `adb reconnect offline` through the bridge.
+    async function resetDevice(entry: BridgeDevice) {
+      if (resetting.has(entry.serial)) return;
+      resetting.add(entry.serial);
+      bridgeError = '';
+      log('INFO', `Asking adb to reset the connection to ${deviceLabel(entry)}.`);
+      renderBridge();
+      try {
+        await bridge.reconnectOffline({ signal: session.signal, interactive: false });
+        session.refresh();
+      } catch (err) {
+        const error = toBridgeError(err);
+        if (error.code !== 'aborted') {
+          bridgeError = error.message;
+          log('ERROR', error.message);
+        }
+      } finally {
+        resetting.delete(entry.serial);
+        renderBridge();
+      }
+    }
+
+    // A phone was paired or connected over Wi-Fi: open it as soon as adb lists it as ready.
+    function selectWhenReady(serial: string) {
+      wifiPinned = false;
+      if (device) {
+        if (device.serial !== serial) {
+          log('INFO', `${shortSerial(serial)} is connected. It is in the device list of the local bridge section: choose "Switch to this phone" to work on it.`);
+        }
+      } else {
+        // The user just reached this phone: an earlier failed attempt to open it no longer counts.
+        openFailed.delete(serial);
+        setWanted(serial);
+      }
+      session.refresh();
+      onBridgeChange();
+    }
+
+    // Pairing worked but the phone's connect port did not reach this computer: the Connect form
+    // finishes the job, with the address filled in when the bridge knows it.
+    function askConnectPort(host: string | null) {
+      wifiPinned = true;
+      renderBridge();
+      const wifi = $<HTMLDetailsElement>('wifi-panel');
+      wifi.open = true;
+      if (host) $<HTMLInputElement>('connect-host').value = host;
+      formNote('connect-note', 'INFO', 'The phone is paired. One step is left: type the port shown under "IP address & Port" on the Wireless debugging screen, then choose Connect.');
+      if (!wifi.hidden && !$('form-connect').hidden) $(host ? 'connect-port' : 'connect-host').focus();
+    }
+
+    // The line next to a Wi-Fi form's button, and the same text in the log and the live region.
+    function formNote(id: string, level: LogLevel, message: string, quiet = false) {
+      $(id).textContent = message;
+      $(id).dataset.level = level;
+      if (message && !quiet) log(level, message);
+    }
+
+    const FIELD_CHECK: Record<string, (value: string) => string> = {
+      ipv4: (value) => (parseIpv4(value) ? '' : 'Error: type an IPv4 address such as 192.168.1.20.'),
+      port: (value) => (parsePort(value) ? '' : 'Error: type a port number from 1 to 65535.'),
+      code: (value) => (parsePairingCode(value) ? '' : 'Error: type the six digits of the pairing code.'),
+    };
+
+    // Shows or clears the error of one field. The message is named in aria-describedby only while
+    // it is shown, so a screen reader reads it with the field and never reads a hidden one.
+    function fieldError(input: HTMLInputElement, message: string) {
+      const error = $(input.dataset.error ?? '');
+      error.textContent = message;
+      error.hidden = !message;
+      if (message) {
+        input.setAttribute('aria-invalid', 'true');
+        input.setAttribute('aria-describedby', error.id);
+      } else {
+        input.removeAttribute('aria-invalid');
+        input.removeAttribute('aria-describedby');
+      }
+    }
+
+    // The same checks the bridge makes (contract: POST /pair/code and POST /connect).
+    function checkField(input: HTMLInputElement): boolean {
+      const message = FIELD_CHECK[input.dataset.kind ?? '']?.(input.value) ?? '';
+      fieldError(input, message);
+      return !message;
+    }
+
+    // "192.168.1.20:37123" in an address field: the address stays, the port goes to its own field.
+    function splitAddress(input: HTMLInputElement) {
+      const both = input.dataset.port ? splitHostPort(input.value) : null;
+      if (!both) return;
+      const port = $<HTMLInputElement>(input.dataset.port ?? '');
+      input.value = both.host;
+      port.value = both.port;
+      if (port.hasAttribute('aria-invalid')) checkField(port);
+    }
+
+    // Every field of a Wi-Fi form. The first wrong one takes the keyboard focus.
+    function checkForm(form: HTMLFormElement): boolean {
+      form.querySelectorAll<HTMLInputElement>('input[data-port]').forEach(splitAddress);
+      const wrong = [...form.querySelectorAll<HTMLInputElement>('input[data-kind]')].filter((input) => !checkField(input));
+      wrong[0]?.focus();
+      return wrong.length === 0;
+    }
+
+    // A button whose request is in flight is switched off with aria-disabled, so it keeps the
+    // keyboard focus, and every handler returns early while isWorking(). `label` is shown for as
+    // long as the request runs (pairing can take close to a minute); a form is marked busy with it.
+    function setWorking(button: HTMLElement, working: boolean, label = '') {
+      if (working) {
+        button.setAttribute('aria-disabled', 'true');
+        if (label) {
+          button.dataset.label = button.textContent ?? '';
+          button.textContent = label;
+        }
+      } else {
+        button.removeAttribute('aria-disabled');
+        if (button.dataset.label !== undefined) {
+          button.textContent = button.dataset.label;
+          delete button.dataset.label;
+        }
+      }
+      const form = button.closest('form');
+      if (form && working) form.setAttribute('aria-busy', 'true');
+      else form?.removeAttribute('aria-busy');
+    }
+    const isWorking = (button: HTMLElement) => button.getAttribute('aria-disabled') === 'true';
+
+    // `adb connect` through the bridge, from the Connect form or from a phone found on the network.
+    async function connectTo(host: string, port: number, noteId: string, button: HTMLElement) {
+      if (isWorking(button)) return;
+      setWorking(button, true, 'Connecting…');
+      formNote(noteId, 'INFO', `Connecting to ${host}:${port}.`);
+      try {
+        const result = await bridge.connect(host, port, { signal: session.signal, interactive: false });
+        formNote(noteId, 'INFO', result.already ? `adb was already connected to ${shortSerial(result.serial)}.` : `Connected to ${shortSerial(result.serial)}.`);
+        selectWhenReady(result.serial);
+      } catch (err) {
+        const error = toBridgeError(err);
+        if (error.code !== 'aborted') formNote(noteId, 'ERROR', error.message);
+      } finally {
+        setWorking(button, false);
+      }
+    }
+
+    // GET /mdns: what adb finds on the network. Asked when the Wi-Fi block is opened and on request.
+    async function findPhones() {
+      const button = $('btn-mdns');
+      if (!session.has('mdns') || isWorking(button)) return;
+      setWorking(button, true);
+      formNote('mdns-note', 'INFO', 'Looking for phones on the network.', true);
+      try {
+        renderFound(await bridge.getMdnsServices({ signal: session.signal, interactive: false }));
+      } catch (err) {
+        const error = toBridgeError(err);
+        if (error.code === 'aborted') return;
+        // Discovery is a convenience. When it fails, that is said here, next to its button, and
+        // nowhere else: whether the bridge itself still answers is the device monitor's business.
+        $('mdns-list').replaceChildren();
+        const message =
+          error.code === 'request_timeout'
+            ? 'Automatic discovery did not answer. Typing the address into the forms still works.'
+            : `Automatic discovery failed. ${error.message} Typing the address into the forms still works.`;
+        formNote('mdns-note', 'INFO', message, true);
+        log('INFO', message, true);
+      } finally {
+        setWorking(button, false);
+      }
+    }
+
+    function renderFound(result: MdnsResult) {
+      const list = $('mdns-list');
+      list.replaceChildren();
+      if (!result.available) {
+        formNote('mdns-note', 'INFO', 'Automatic discovery is not available on this computer: adb reports no running mDNS service. Typing the address into the forms still works.');
+        return;
+      }
+      const shown = result.services.filter((service) => service.kind === 'connect' || service.kind === 'pairing');
+      for (const service of shown) {
+        const frag = clone('tpl-found');
+        const address = `${service.host}:${service.port}`;
+        // The service name comes from the network: text and attribute values only, never markup.
+        slot(frag, 'name').textContent = service.kind === 'pairing' ? `${service.name} · showing a pairing code` : service.name;
+        slot(frag, 'address').textContent = address;
+        const action = slot<HTMLButtonElement>(frag, 'action');
+        if (service.kind === 'connect') {
+          action.textContent = 'Connect';
+          action.setAttribute('aria-label', `Connect to ${service.name} at ${address}`);
+          action.addEventListener('click', () => void connectTo(service.host, service.port, 'mdns-note', action));
+        } else {
+          action.textContent = 'Use for pairing';
+          // The accessible name starts with the words on the button (WCAG 2.5.3, Label in Name).
+          action.setAttribute('aria-label', `Use for pairing: ${address}`);
+          action.addEventListener('click', () => {
+            for (const [id, value] of [['pair-host', service.host], ['pair-port', String(service.port)]]) {
+              const input = $<HTMLInputElement>(id);
+              input.value = value;
+              fieldError(input, '');
+            }
+            $('pair-code').focus();
+          });
+        }
+        list.append(frag);
+      }
+      formNote(
+        'mdns-note',
+        'INFO',
+        shown.length
+          ? `${shown.length} found.`
+          : 'No phone is announcing itself right now. Turn on Wireless debugging on the phone and choose Look again, or type the address into the forms.',
+        true
+      );
+    }
+
+    // ---- Local bridge: drawing ---------------------------------------------------------------
+
+    const ASK_HINT =
+      'If the browser asks whether this page may access other apps and services on this device, choose Allow. The bridge is that app: it runs on this computer only, and the page cannot reach it without the permission.';
+
+    // The line the device panel shows for a bridge phase that is an error.
+    const PHASE_ERROR: Partial<Record<BridgeSnapshot['phase'], string>> = {
+      blocked: 'The browser is blocking the local bridge.',
+      unreachable: 'The local bridge is not running.',
+      adb_missing: 'The bridge cannot run adb.',
+      token: 'The bridge needs its session token.',
+    };
+
+    // What the bridge section says for a snapshot. `say` goes to the log and the live region once
+    // per `key`, so a state is announced when it is entered and not on every poll.
+    interface BridgeView {
+      text: string;
+      detail: string;
+      say: string;
+      level: LogLevel;
+      key: string;
+    }
+
+    function bridgeView(snap: BridgeSnapshot, mine: string): BridgeView {
+      const quiet = (key: string, text: string, detail = ''): BridgeView => ({ text, detail, say: '', level: 'INFO', key });
+      const wifiOffer = ' To work without a cable, open "Connect over Wi-Fi" below.';
+      switch (snap.phase) {
+        case 'idle':
+          return quiet('idle', '');
+        case 'waiting': {
+          // Unless the permission is granted the browser may be holding the request while it asks
+          // the user, and that time is not counted: no countdown then.
+          const mayAsk = snap.permission !== 'granted';
+          const left = Math.max(1, Math.ceil((snap.deadline - Date.now()) / 1000));
+          const text = 'Looking for the local bridge at 127.0.0.1:53123.';
+          const setup = 'If you just ran the one-click command, it may still be setting up; this page keeps trying';
+          return {
+            text,
+            detail: mayAsk ? `${ASK_HINT} ${setup}.` : `${setup} for ${left} more ${left === 1 ? 'second' : 'seconds'}.`,
+            say: mayAsk ? `${text} ${ASK_HINT}` : text,
+            level: 'INFO',
+            key: `waiting:${mayAsk}`,
+          };
+        }
+        case 'blocked':
+          return {
+            text: 'This browser is blocking this page from reaching apps on this computer.',
+            detail: 'The local bridge cannot be reached until that is allowed. Open the settings of this site from the address bar, allow access to other apps and services on this device, then choose Try again. On a managed computer your organisation may control this setting.',
+            say: 'The browser is blocking this page from reaching the local bridge. Allow access to other apps and services on this device in the site settings, then choose Try again.',
+            level: 'ERROR',
+            key: 'blocked',
+          };
+        case 'unreachable':
+          return {
+            text: 'The local bridge is not running, or it did not answer.',
+            detail:
+              'Run the one-click command for your system in a terminal and leave that window open, then choose Try again.' +
+              (snap.permission === 'granted' ? '' : ' If the browser asked whether this page may access other apps and services on this device, the answer has to be Allow.'),
+            say: 'The local bridge is not running, or it did not answer. Run the one-click command, then choose Try again.',
+            level: 'ERROR',
+            key: 'unreachable',
+          };
+        case 'adb_missing':
+          return {
+            text: 'The bridge is running, but it cannot run adb on this computer.',
+            detail: 'Install Android platform-tools so that adb is on the PATH, then start the bridge again. The one-click command downloads platform-tools when it can. This page checks again by itself.',
+            say: 'The bridge is running, but it cannot run adb on this computer. Install Android platform-tools, then start the bridge again.',
+            level: 'ERROR',
+            key: 'adb_missing',
+          };
+        case 'token': {
+          const text = tokenTried ? 'The bridge did not accept that token.' : 'The bridge is running and asks for its session token.';
+          return {
+            text,
+            detail: 'Paste the URL the bridge printed in its terminal window: that URL carries the token. A bridge that was started again has a new one.',
+            say: `${text} Paste the URL the bridge printed in its terminal window into the local bridge section.`,
+            level: 'ERROR',
+            key: `token:${tokenTried}`,
+          };
+        }
+        case 'ready':
+          break;
+      }
+
+      if (snap.link === 'lost') {
+        // The bridge answered with an error of its own, or did not answer at all.
+        const answered = (snap.error?.status ?? 0) > 0;
+        const text = answered ? 'The bridge cannot read the device list from adb.' : 'The local bridge has stopped answering.';
+        return {
+          text,
+          detail: `${answered ? `The bridge reports: ${snap.error?.message}` : 'Check that its terminal window is still open.'} This page keeps trying and continues by itself.`,
+          say: `${text} ${mine ? 'Changes are switched off until it answers again.' : 'This page keeps trying.'}`,
+          level: 'ERROR',
+          key: `lost:${answered}`,
+        };
+      }
+      if (!snap.listed) {
+        return quiet('listing', 'The local bridge is running. Asking adb which phones are attached.', snap.error ? `No list yet. ${snap.error.message}` : '');
+      }
+
+      const ready = snap.devices.filter((entry) => entry.state === 'device');
+      if (mine) {
+        if (deviceLost) {
+          // setDeviceLost() already announced it.
+          return quiet('device-lost', 'The phone this page was working on is not ready.', 'The page continues with it by itself when adb reports it as ready again.');
+        }
+        if (snap.devices.every((entry) => entry.serial === mine)) {
+          // Nothing else is listed: the section is open only because a phone that was paired
+          // over Wi-Fi still waits for its connect port (wifiPinned).
+          return quiet(
+            'port-pending',
+            'A phone that was paired over Wi-Fi still needs its connect port.',
+            'Type the port shown under "IP address & Port" on its Wireless debugging screen into "Connect to a paired phone" below. The phone that is open stays open. Closing "Connect over Wi-Fi" puts this section away.'
+          );
+        }
+        // Only an entry that is proven to be the open phone (its mDNS name carries the USB serial,
+        // or the other way round) is left out of "another device". The same model proves nothing.
+        const current = snap.devices.find((entry) => entry.serial === mine);
+        const others = ready.filter((entry) => entry.serial !== mine && !(current && isSamePhone(current, entry)));
+        const again = ready.length - (current?.state === 'device' ? 1 : 0) - others.length;
+        const switching = 'Switching closes the package list that is open and opens the other entry. Nothing that is running is moved or repeated.';
+        return {
+          text: others.length ? 'Another device is ready.' : again > 0 ? 'adb lists this phone a second time.' : 'Another device is attached.',
+          detail: again > 0 && !others.length ? `It is reached over USB and over Wi-Fi at the same time. ${switching}` : switching,
+          say: others.length ? `${deviceName(others[0])} (${shortSerial(others[0].serial)}) is ready. You can switch to it in the local bridge section.` : '',
+          level: 'INFO',
+          key: `others:${others.map((entry) => entry.serial).join('|')}`,
+        };
+      }
+      if (connecting) return quiet('opening', 'Opening the phone and reading its package lists.');
+      if (snap.devices.length === 0) {
+        const text = 'The local bridge is running. No phone found yet.';
+        return {
+          text,
+          detail: `Plug the phone in with USB debugging turned on, and unlock it. This list updates by itself.${wifiOffer}`,
+          say: `${text} Plug the phone in with USB debugging turned on, or connect over Wi-Fi.`,
+          level: 'INFO',
+          key: 'none',
+        };
+      }
+      if (snap.devices.length === 1 && ready.length === 0) {
+        const only = snap.devices[0];
+        const advice = describeDevice(only, session.has('reconnect'));
+        const text = `${deviceName(only)} is attached but not ready.`;
+        const reason = only.detail ? ` adb reports: ${only.detail}` : '';
+        return { text, detail: '', say: `${text} ${advice.help}${reason}`, level: 'INFO', key: `pending:${only.serial}:${only.state}` };
+      }
+      const listed = `${snap.devices.length} ${snap.devices.length === 1 ? 'device is' : 'devices are'} listed, ${ready.length} ready.`;
+      const pending = ready.length < snap.devices.length ? 'A device that is not ready says what it needs.' : '';
+      // adb does not merge the entries of a phone it reaches in more than one way. Only the proven
+      // case is called the same phone; a shared model is two phones of one model just as well.
+      const kinds = new Set([...relateEntries(snap.devices).values()].map((relation) => relation.kind));
+      const twice = kinds.has('maybe')
+        ? 'Entries with the same model may be the same phone, or two phones of the same model: check the serial or IP address shown.'
+        : kinds.has('same')
+          ? 'Two of the entries are the same phone, reached over USB and over Wi-Fi.'
+          : '';
+      return {
+        text: ready.length ? 'Choose the phone to work on.' : 'None of the listed devices is ready yet.',
+        detail: `${pending} ${twice}`.trim(),
+        say: `${listed} ${ready.length ? 'Choose the phone to work on.' : ''} ${twice}`.replace(/\s+/g, ' ').trim(),
+        level: 'INFO',
+        key: `choose:${snap.devices.map((entry) => `${entry.serial}=${entry.state}`).join('|')}`,
+      };
+    }
+
+    // adb's device list with one row per device, in any state. Redrawn only when it changed, and
+    // the keyboard focus stays on the same button of the same device when that button is still there.
+    function renderDeviceList(snap: BridgeSnapshot, mine: string) {
+      const show = snap.phase === 'ready' && snap.listed && snap.devices.length > 0;
+      const canReset = session.has('reconnect');
+      const key = show ? JSON.stringify([snap.devices, mine, connecting, [...resetting], canReset]) : '';
+      $('devices-box').hidden = !show;
+      if (key === listKey) return;
+      listKey = key;
+      const list = $('device-list');
+      const active = document.activeElement;
+      const focused =
+        active instanceof HTMLElement && list.contains(active)
+          ? { serial: active.closest('li')?.dataset.serial, act: active.dataset.act }
+          : null;
+      list.replaceChildren();
+      const relations = relateEntries(snap.devices);
+      for (const entry of show ? snap.devices : []) {
+        const frag = clone('tpl-bridge-device');
+        (frag.firstElementChild as HTMLElement).dataset.serial = entry.serial;
+        const advice = describeDevice(entry, canReset);
+        const name = deviceName(entry);
+        const serial = shortSerial(entry.serial);
+        const transportName = TRANSPORT_LABEL[entry.transport];
+        const current = entry.serial === mine;
+        // Model and serial come from the phone: text and attribute values only, never markup.
+        slot(frag, 'name').textContent = name;
+        const badge = slot(frag, 'state');
+        badge.textContent = current && entry.state === 'device' ? 'Ready · in use' : advice.label;
+        if (advice.badge) badge.classList.add(advice.badge);
+        // The short form for the eye; the whole serial is in the tooltip and goes into every
+        // request. Without a model the serial is the name, so it is not written a second time.
+        const serialSlot = entry.model ? slot(frag, 'serial') : slot(frag, 'name');
+        serialSlot.textContent = serial;
+        if (serial !== entry.serial) serialSlot.title = entry.serial;
+        if (!entry.model) slot(frag, 'serial-part').remove();
+        slot(frag, 'transport').textContent = transportName;
+        // A ready entry has no help of its own. What is said about two entries follows the
+        // evidence: "the same phone" only when the mDNS name carries the other entry's USB serial.
+        const relation = relations.get(entry.serial);
+        let note = '';
+        if (relation?.kind === 'same' && relation.other) {
+          note = `The same phone as the ${TRANSPORT_LABEL[relation.other.transport]} entry ${shortSerial(relation.other.serial)}: adb reaches it both ways.`;
+        } else if (relation?.kind === 'maybe') {
+          note = 'Another entry has the same model. They may be the same phone, or two phones of the same model: check the serial or IP address shown.';
+        }
+        slot(frag, 'help').textContent = advice.help || note;
+        slot(frag, 'detail').textContent = entry.detail ? `adb reports: ${entry.detail}` : '';
+
+        // The transport is in the name of the button: two entries of one phone differ only by it.
+        const about = `${name} over ${transportName}, serial ${serial}`;
+        const use = frag.querySelector('[data-act="use"]') as HTMLButtonElement;
+        use.hidden = entry.state !== 'device' || current;
+        use.textContent = mine ? 'Switch to this phone' : 'Use this phone';
+        use.disabled = connecting;
+        use.setAttribute('aria-label', `${use.textContent}: ${about}`);
+        use.addEventListener('click', () => chooseDevice(entry));
+
+        const retry = frag.querySelector('[data-act="retry"]') as HTMLButtonElement;
+        retry.hidden = !(advice.canReset && canReset);
+        setWorking(retry, resetting.has(entry.serial));
+        retry.setAttribute('aria-label', `Retry the connection to ${about}`);
+        retry.addEventListener('click', () => void resetDevice(entry));
+        list.append(frag);
+      }
+      if (focused) {
+        const again = [...list.querySelectorAll<HTMLButtonElement>('button')].find(
+          (btn) =>
+            !btn.hidden && !btn.disabled && btn.dataset.act === focused.act && btn.closest('li')?.dataset.serial === focused.serial
+        );
+        (again ?? $('bridge-title')).focus();
+      }
+    }
+
+    // The Wi-Fi block: for a bridge that answers, while no phone is open or the open one is lost.
+    // Each part needs a capability the bridge reports; an older bridge has QR pairing only.
+    function renderWifi(snap: BridgeSnapshot, mine: string) {
+      // `listed`: see onBridgeChange() on the adb server coming up.
+      const usable = snap.phase === 'ready' && snap.listed && snap.link === 'ok' && (!mine || deviceLost || wifiPinned);
+      setHidden($('wifi-panel'), !usable, $('bridge-title'));
+      if (!usable) return;
+      const current = (snap.health?.api ?? 1) >= 2;
+      $('wifi-old').hidden = current;
+      $('wifi-qr').hidden = current && !session.has('pair.qr');
+      $('form-pair').hidden = !session.has('pair.code');
+      $('form-connect').hidden = !session.has('connect');
+      $('wifi-found').hidden = !session.has('mdns');
+    }
+
+    // The bridge section, the warning in the device panel and the lock, all from the session's
+    // snapshot and the open phone. Safe to call at any time and as often as needed.
+    function renderBridge() {
+      const snap = session.snapshot;
+      const panel = $('bridge-panel');
+      const mine = device && transport === 'bridge' ? device.serial : '';
+      applyLock();
+      const trouble = bridgeTrouble();
+      renderDeviceAlert(trouble);
+
+      const lostNow = snap.phase === 'ready' && snap.link === 'lost';
+      // Without an open phone the next state says so itself.
+      if (linkLost && !lostNow && snap.phase === 'ready' && mine) log('INFO', 'The local bridge answers again.');
+      linkLost = lostNow;
+
+      if (session.active && !mine) setError(PHASE_ERROR[snap.phase] ?? '');
+      else paintState();
+
+      const others = mine ? snap.devices.filter((entry) => entry.serial !== mine) : [];
+      const show = session.active && (!mine || trouble !== '' || others.length > 0 || wifiPinned);
+      // The countdown of the waiting phase is redrawn once a second.
+      if (show && snap.phase === 'waiting') {
+        if (!waitTimer) waitTimer = window.setInterval(renderBridge, 1000);
+      } else if (waitTimer) {
+        clearInterval(waitTimer);
+        waitTimer = 0;
+      }
+      if (!show) {
+        setHidden(panel, true, device ? $('device-title') : $('connect-title'));
+        announced = '';
+        return;
+      }
+
+      panel.hidden = false;
+      const phase = lostNow ? 'lost' : snap.phase;
+      panel.dataset.phase = phase;
+      const view = bridgeView(snap, mine);
+      $('bridge-text').textContent = view.text;
+      $('bridge-detail').textContent = view.detail;
+      $('bridge-error').textContent = bridgeError;
+      const title = $('bridge-title');
+      setHidden($('bridge-actions'), phase !== 'unreachable' && phase !== 'blocked', title);
+      setHidden($('token-form'), phase !== 'token', title);
+      // With a phone open, Disconnect in the device panel is the way out.
+      const stop = $('btn-bridge-stop');
+      setHidden(stop, mine !== '', title);
+      stop.textContent = phase === 'waiting' ? 'Cancel' : 'Stop using the bridge';
+      renderDeviceList(snap, mine);
+      renderWifi(snap, mine);
+      if (view.say && view.key !== announced) log(view.level, view.say);
+      announced = view.key;
+    }
+
+    // ---- Wi-Fi QR pairing through the bridge ------------------------------------------------------
+    // `pairId` is the bridge's pairing session the dialog shows, '' when none.
+    let pairId = '';
+    let pairTimer = 0;
+    let pairStarting = false;
+
+    // The pairing is over on the bridge's side, so closing the dialog must not send a cancel.
+    function endPairing(error: string) {
+      pairId = '';
+      pairDialog.close();
+      if (!error) return;
+      bridgeError = error;
+      log('ERROR', error);
+      renderBridge();
+    }
+
+    async function pollPairing(id: string, deadline: number) {
+      let status: QrPairingStatus;
+      try {
+        status = await bridge.getQrPairingStatus({ interactive: false });
+      } catch (err) {
+        if (id !== pairId) return;
+        const error = toBridgeError(err);
+        const gone = error.code === 'bridge_unreachable' || error.code === 'request_timeout';
+        endPairing(gone ? 'Lost contact with the local bridge while pairing. Check that it is still running, then try again.' : error.message);
+        return;
+      }
+      if (id !== pairId) return; // the dialog was closed while this request was in flight
+      if (status.id === id && status.state === 'waiting') {
+        const left = Math.ceil((deadline - Date.now()) / 1000);
+        $('pair-status').textContent = left > 0 ? `Waiting for the phone to scan the code… ${left}s` : 'Pairing with the phone…';
+        pairTimer = window.setTimeout(() => void pollPairing(id, deadline), 1500);
+      } else if (status.id === id && status.state === 'paired' && status.connected && status.serial) {
+        endPairing('');
+        log('INFO', `Paired over Wi-Fi with ${shortSerial(status.serial)}.`);
+        selectWhenReady(status.serial);
+      } else if (status.id === id && status.state === 'paired') {
+        // Paired, but the phone's connect port was not announced on this network.
+        endPairing('');
+        askConnectPort(status.host);
+      } else {
+        endPairing(status.id === id ? status.error || `Pairing ${status.state}.` : 'Pairing was cancelled or replaced by another session.');
+      }
+    }
+
+    async function startQr() {
+      if (pairStarting || pairDialog.open) return;
+      pairStarting = true;
+      bridgeError = '';
+      try {
+        log('INFO', 'Asking the local bridge for a Wi-Fi pairing QR code.');
+        const qr = await bridge.startQrPairing({ signal: session.signal, interactive: false });
+        drawQr(pairCanvas, qr.matrix);
+        pairId = qr.id;
+        $('pair-status').textContent = '';
+        pairDialog.showModal();
+        void pollPairing(qr.id, Date.now() + qr.timeout * 1000);
+      } catch (err) {
+        const error = toBridgeError(err);
+        if (error.code !== 'aborted') {
+          bridgeError = error.message;
+          log('ERROR', error.message);
+        }
+      } finally {
+        pairStarting = false;
+        renderBridge();
+      }
+    }
+
+    // A pair button. With the bridge not ready yet, this starts it and the code follows.
+    function requestQr() {
+      if (session.snapshot.phase === 'ready' && session.snapshot.listed) {
+        void startQr();
+        return;
+      }
+      startBridge(BUTTON_WAIT_MS, true);
+      qrWanted = session.active;
     }
 
     // Dark modules on white with a 4-module quiet zone, whatever the page theme: cameras need the contrast.
@@ -1212,9 +2361,85 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
       return enabled.map((r) => reinstalled.find((x) => x.package === r.package && x.status !== 'success') ?? r);
     }
 
-    // Changes the phone. Its only caller is the confirm dialog's `close` listener in wire().
+    // Reads the package lists of the open bridge phone again and redraws the table: for when a
+    // change may have happened without the page seeing its result. False when they could not be
+    // read, or the page moved on meanwhile.
+    async function rereadPackages(): Promise<boolean> {
+      if (!device || transport !== 'bridge') return false;
+      const id = workspaceId;
+      const serial = device.serial;
+      const options = { signal: session.signal, interactive: false };
+      try {
+        const [packages, disabled, installed] = await Promise.all([
+          bridge.listPackages(serial, options),
+          bridge.listDisabledPackages(serial, options),
+          bridge.listInstalledPackages(serial, options),
+        ]);
+        if (workspaceId !== id) return false;
+        rows = buildRows(packages, disabled, installed);
+        installKnown = installed.length > 0;
+        for (const pkg of [...selected]) {
+          if (!rows.some((row) => row.pkg === pkg)) selected.delete(pkg);
+        }
+        renderTable();
+        updateCounts();
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    // What a run notes before its first await, to recognise afterwards whether the list on screen
+    // is still the one it was started from.
+    interface RunOrigin {
+      id: number;
+      serial: string;
+      model: string;
+      viaBridge: boolean;
+    }
+    function runOrigin(): RunOrigin {
+      return { id: workspaceId, serial: device?.serial ?? '', model: device?.model ?? '', viaBridge: transport === 'bridge' };
+    }
+
+    // A run ended after the page had closed the phone it ran on. Its results are in the activity
+    // log and in its snapshot; they are not written into the list on screen, which by now may
+    // belong to another phone. When the same serial is open again its lists were read while the
+    // run was still going, so they are read once more.
+    async function reportRunElsewhere(origin: RunOrigin, verb: string, results: ExecutionResult[]) {
+      const ok = results.filter((result) => result.status === 'success').length;
+      log('ERROR', `${verb} on ${origin.model} (${shortSerial(origin.serial)}) finished after this page had closed that phone: ${ok} of ${results.length} succeeded. The list on screen was not changed by it. Open the activity log for details.`);
+      if (device && transport === 'bridge' && device.serial === origin.serial) await rereadPackages();
+    }
+
+    // A run that threw. An answer that never came (a timeout, a broken connection) does not mean
+    // that nothing happened: adb may have carried out some or all of it. That is reported as an
+    // unknown result, and the lists are read again so the table shows what adb reports.
+    async function reportRunError(err: unknown, origin: RunOrigin, verb: string) {
+      const error = toBridgeError(err);
+      if (!origin.viaBridge || (error.code !== 'request_timeout' && error.code !== 'bridge_unreachable')) {
+        log('ERROR', error.message);
+        return;
+      }
+      const here = workspaceId === origin.id;
+      log('ERROR', `The result of this ${verb.toLowerCase()} is unknown. ${error.message} The phone may have been changed.${here ? ' Reading its package lists again.' : ''}`);
+      if (!here) return;
+      if (await rereadPackages()) {
+        log('INFO', 'The package list now shows what adb reports. Check it before you repeat the change.');
+      } else {
+        log('ERROR', 'The result is unknown and the package lists could not be read again. Disconnect and connect again to see what was changed.');
+      }
+    }
+
+    // Changes the phone. Its only caller is the confirm dialog's `close` listener in wire(), so a
+    // run starts from a confirmation the user just gave and from nowhere else: never from the
+    // device monitor, and never again by itself after a phone or the bridge came back.
     async function runPackages(packages: string[], action: Action) {
       if (busy || !device) return;
+      // Asked afresh, not read from `locked`: this is the last line before the phone is changed.
+      if (bridgeTrouble()) {
+        log('ERROR', 'Nothing was changed: the phone or the local bridge is not reachable.');
+        return;
+      }
       const unique = [...new Set(packages)].filter((pkg) => /^[a-zA-Z0-9._]+$/.test(pkg));
       if (unique.length === 0) return;
 
@@ -1243,6 +2468,7 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
 
       busy = true;
       updateCounts();
+      const origin = runOrigin();
       try {
         for (const pkg of actionable) log('EXEC', commandFor(action, pkg), true);
         const results = await executeOnDevice(action, actionable);
@@ -1251,17 +2477,22 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
           else if (result.status === 'failed') log('ERROR', `${result.package}: ${result.output || 'failed'}`, true);
           else log('EXEC', `${result.package}: ${result.output || 'ok'}`, true);
         }
-        applyLocalStatus(results, action);
+        // The snapshot belongs to the phone the run was made on, whatever is on screen now.
         // saveLocalSnapshot replaces the stored entry that has this snapshot's id.
         snapshot.results = results;
         if (!saveLocalSnapshot(snapshot)) log('ERROR', `Could not record the results in snapshot ${snapshot.id}.`);
+        if (workspaceId !== origin.id) {
+          await reportRunElsewhere(origin, VERB[action], results);
+          return;
+        }
+        applyLocalStatus(results, action);
         for (const pkg of actionable) {
           if (results.some((r) => r.package === pkg && r.status === 'success')) selected.delete(pkg);
         }
         renderTable();
         logSummary(VERB[action], results);
       } catch (err) {
-        log('ERROR', err instanceof Error ? err.message : String(err));
+        await reportRunError(err, origin, VERB[action]);
       } finally {
         busy = false;
         updateCounts();
@@ -1271,7 +2502,7 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
     // Single entry point for the batch button and the per-row buttons. It only opens the confirm
     // dialog: the run itself starts from the dialog's `close` listener in wire().
     function requestRun(packages: string[], action: Action) {
-      if (busy || !device || packages.length === 0) return;
+      if (busy || bridgeTrouble() || !device || packages.length === 0) return;
       const label = action === 'disable' ? 'freeze' : action === 'uninstall' ? 'uninstall (data kept)' : 'restore';
       const what = packages.length === 1 ? '1 package' : `${packages.length} packages`;
       $('confirm-title').textContent = `${VERB[action]} ${what}?`;
@@ -1335,8 +2566,8 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
         slot(frag, 'meta').textContent = `${snap.timestamp} · ${snap.mode} ${snap.action} · ${snap.packages.length} packages · ${snap.serial}`;
 
         const restore = slot<HTMLButtonElement>(frag, 'restore');
-        restore.disabled = !device;
-        restore.title = device ? '' : 'Connect a phone first.';
+        restore.disabled = !device || locked;
+        restore.title = !device ? 'Connect a phone first.' : locked ? LOCKED_TITLE : '';
         restore.setAttribute('aria-label', `Restore the snapshot from ${snap.timestamp}`);
         restore.addEventListener('click', () => restoreSnapshot(snap));
 
@@ -1363,7 +2594,7 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
     }
 
     async function restoreSnapshot(snap: DebloatSnapshot) {
-      if (!device || busy) return;
+      if (!device || busy || bridgeTrouble()) return;
       if (
         snap.serial && snap.serial !== device.serial &&
         !window.confirm(`This snapshot was taken on ${snap.model} (serial ${snap.serial}), not on the connected ${device.model} (serial ${device.serial}). Restore it on this device anyway?`)
@@ -1378,17 +2609,22 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
       // As in runPackages: updateCounts() reads `busy` and disables the batch button for the run.
       updateCounts();
       log('EXEC', `Restoring ${packages.length} package(s) from snapshot ${snap.id}.`);
+      const origin = runOrigin();
       try {
         const results = await executeOnDevice('enable', packages);
         for (const result of results) {
           const level: LogLevel = result.status === 'skipped_protected' ? 'BLOCKED' : result.status === 'failed' ? 'ERROR' : 'EXEC';
           log(level, `${result.package}: ${result.output || result.status}`, true);
         }
+        if (workspaceId !== origin.id) {
+          await reportRunElsewhere(origin, 'Restore from snapshot', results);
+          return;
+        }
         applyLocalStatus(results, 'enable');
         renderTable();
         logSummary('Restore from snapshot', results);
       } catch (err) {
-        log('ERROR', err instanceof Error ? err.message : String(err));
+        await reportRunError(err, origin, 'Restore from snapshot');
       } finally {
         busy = false;
         updateCounts();
@@ -1401,90 +2637,125 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
       $('webusb-badge').classList.add(usb ? 'badge-ok' : 'badge-warn');
       ($('btn-webusb') as HTMLButtonElement).disabled = !usb;
 
-      // One connection attempt at a time, whichever transport started it.
-      const connectOnce = async (connect: () => Promise<void>) => {
+      // One phone is opened at a time, whichever transport does it.
+      $('btn-webusb').addEventListener('click', async () => {
         if (connecting) {
-          const message = 'A connection attempt is still in progress. If the phone shows an "Allow USB debugging" prompt, accept it; otherwise reload this page to start over.';
-          setError(message);
-          log('ERROR', message);
+          attemptBusy();
           return;
         }
+        // One transport at a time: choosing USB ends a bridge session that has no phone open.
+        if (session.active) stopBridge();
         connecting = true;
         paintState();
         try {
-          await connect();
+          await connectWebUsb();
         } finally {
           connecting = false;
           paintState();
         }
-      };
-      $('btn-webusb').addEventListener('click', () => void connectOnce(connectWebUsb));
-      $('btn-bridge').addEventListener('click', () => void connectOnce(connectBridge));
+      });
 
-      // Wi-Fi QR pairing through the bridge. `pairId` is the bridge session the dialog shows, '' when none.
-      const pairDialog = $<HTMLDialogElement>('modal-pair');
-      const pairCanvas = $<HTMLCanvasElement>('pair-qr');
-      const pairButton = $<HTMLButtonElement>('btn-pair');
-      let pairId = '';
-      let pairTimer = 0;
-      // Every way out of the dialog ends here: Cancel, Esc, or a session that finished.
+      // The local bridge. Nothing is sent to 127.0.0.1 before one of these is used.
+      $('btn-bridge').addEventListener('click', () => startBridge(BUTTON_WAIT_MS, true));
+      $('btn-pair').addEventListener('click', requestQr);
+      document.querySelectorAll('[data-pair-qr]').forEach((btn) => btn.addEventListener('click', requestQr));
+      // The buttons are hidden by the retry, so renderBridge() moves the focus to the section's heading.
+      $('btn-bridge-retry').addEventListener('click', () => session.retry());
+      $('btn-bridge-stop').addEventListener('click', () => {
+        log('INFO', session.snapshot.phase === 'waiting' ? 'Stopped looking for the local bridge.' : 'Stopped using the local bridge.');
+        rememberSerial('');
+        stopBridge();
+      });
+
+      // The token form replaces the prompt for everything the page does by itself: only the first
+      // request after a start may ask through window.prompt (bridge.onTokenRequired).
+      $('token-form').addEventListener('submit', (event) => {
+        event.preventDefault();
+        const input = $<HTMLInputElement>('token-input');
+        if (!useBridgeToken(input.value)) {
+          fieldError(input, 'Error: that is not a bridge URL or token. Copy the whole URL the bridge printed.');
+          input.focus();
+          return;
+        }
+        fieldError(input, '');
+        input.value = '';
+        tokenTried = true;
+        log('INFO', 'Asking the bridge again with the new token.');
+        session.tokenProvided();
+      });
+
+      // Wi-Fi forms. A field is checked when it is left after an edit, and again on every key once
+      // it is marked wrong, so the mark goes as soon as the value is right. The phone shows its
+      // address as IP:port: pasted into an address field, or left there, it is split over both
+      // fields. Not while typing, or the rest of the port would land in the address.
+      document.querySelectorAll<HTMLInputElement>('#wifi-panel input[data-kind]').forEach((input) => {
+        input.addEventListener('change', () => {
+          splitAddress(input);
+          checkField(input);
+        });
+        input.addEventListener('input', (event) => {
+          if ((event as InputEvent).inputType === 'insertFromPaste') splitAddress(input);
+          if (input.hasAttribute('aria-invalid')) checkField(input);
+        });
+      });
+
+      $('form-pair').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget as HTMLFormElement;
+        const button = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+        if (isWorking(button) || !checkForm(form)) return;
+        const host = parseIpv4($<HTMLInputElement>('pair-host').value) ?? '';
+        const port = parsePort($<HTMLInputElement>('pair-port').value) ?? 0;
+        // The code is a secret while the phone's dialog is open: it goes to the bridge and nowhere else.
+        const code = parsePairingCode($<HTMLInputElement>('pair-code').value) ?? '';
+        setWorking(button, true, 'Pairing…');
+        formNote('pair-note', 'INFO', `Pairing with ${host}:${port}. Keep the pairing dialog open on the phone.`);
+        try {
+          const result = await bridge.pairWithCode(host, port, code, { signal: session.signal, interactive: false });
+          $<HTMLInputElement>('pair-code').value = '';
+          if (result.connected && result.serial) {
+            formNote('pair-note', 'INFO', `Paired, and connected as ${shortSerial(result.serial)}.`);
+            selectWhenReady(result.serial);
+          } else {
+            formNote('pair-note', 'INFO', 'Paired.', true);
+            askConnectPort(result.host ?? host);
+          }
+        } catch (err) {
+          const error = toBridgeError(err);
+          if (error.code !== 'aborted') formNote('pair-note', 'ERROR', error.message);
+        } finally {
+          setWorking(button, false);
+        }
+      });
+
+      $('form-connect').addEventListener('submit', (event) => {
+        event.preventDefault();
+        const form = event.currentTarget as HTMLFormElement;
+        if (!checkForm(form)) return;
+        const host = parseIpv4($<HTMLInputElement>('connect-host').value) ?? '';
+        const port = parsePort($<HTMLInputElement>('connect-port').value) ?? 0;
+        void connectTo(host, port, 'connect-note', form.querySelector('button[type="submit"]') as HTMLButtonElement);
+      });
+
+      $('wifi-panel').addEventListener('toggle', () => {
+        if ($<HTMLDetailsElement>('wifi-panel').open) {
+          void findPhones();
+        } else if (wifiPinned) {
+          // The block was kept on screen for a connect port. Closing it says that is over.
+          wifiPinned = false;
+          renderBridge();
+        }
+      });
+      $('btn-mdns').addEventListener('click', () => void findPhones());
+
+      // Every way out of the QR dialog ends here: Cancel, Esc, or a pairing that finished.
       pairDialog.addEventListener('close', () => {
         clearTimeout(pairTimer);
         pairCanvas.width = pairCanvas.height = 0;
         if (!pairId) return;
         pairId = '';
         log('INFO', 'Wi-Fi pairing cancelled.');
-        bridge.cancelQrPairing().catch(() => {});
-      });
-      // The session is over on the bridge's side, so closing must not send a cancel.
-      const endPairing = (error: string) => {
-        pairId = '';
-        pairDialog.close();
-        if (!error) return;
-        setError(error);
-        log('ERROR', error);
-      };
-      const pollPairing = async (id: string, deadline: number) => {
-        let status;
-        try {
-          status = await bridge.getQrPairingStatus();
-        } catch (err) {
-          if (id !== pairId) return;
-          endPairing(err instanceof TypeError ? 'Lost contact with the local bridge while pairing. Check that it is still running, then try again.' : err instanceof Error ? err.message : String(err));
-          return;
-        }
-        if (id !== pairId) return; // the dialog was closed while this request was in flight
-        const serial = status.serial;
-        if (status.id === id && status.state === 'waiting') {
-          const left = Math.ceil((deadline - Date.now()) / 1000);
-          $('pair-status').textContent = left > 0 ? `Waiting for the phone to scan the code… ${left}s` : 'Pairing with the phone…';
-          pairTimer = window.setTimeout(() => void pollPairing(id, deadline), 1500);
-        } else if (status.id === id && status.state === 'paired' && serial) {
-          endPairing('');
-          log('INFO', `Paired over Wi-Fi with ${serial}.`);
-          void connectOnce(() => connectBridge(0, serial));
-        } else {
-          endPairing(status.id === id ? status.error || `Pairing ${status.state}.` : 'Pairing was cancelled or replaced by another session.');
-        }
-      };
-      pairButton.addEventListener('click', async () => {
-        setError('');
-        pairButton.disabled = true; // one start at a time
-        try {
-          log('INFO', 'Asking the local bridge for a Wi-Fi pairing QR code.');
-          const session = await bridge.startQrPairing();
-          drawQr(pairCanvas, session.matrix);
-          pairId = session.id;
-          $('pair-status').textContent = '';
-          pairDialog.showModal();
-          void pollPairing(session.id, Date.now() + session.timeout * 1000);
-        } catch (err) {
-          const message = err instanceof TypeError ? 'Local bridge is not running. Paste the one-click command for your OS, then try again.' : err instanceof Error ? err.message : String(err);
-          setError(message);
-          log('ERROR', message);
-        } finally {
-          pairButton.disabled = false;
-        }
+        bridge.cancelQrPairing({ interactive: false }).catch(() => {});
       });
 
       webadb.onDisconnect = () => {
@@ -1493,10 +2764,22 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
         resetWorkspace();
         setError(message);
       };
+      // Disconnect closes the phone and, for the bridge, stops the monitor and aborts the
+      // session's requests. The phone is closed first, so the stop is not shown as a lost bridge.
       $('btn-disconnect').addEventListener('click', async () => {
+        if (busy) {
+          // Leaving now would not stop the run, and its result would arrive with another phone,
+          // or none, on screen.
+          log('ERROR', 'An operation is still running on this phone. Disconnect when it has finished. Reloading the page leaves at once, without stopping the operation.');
+          return;
+        }
         if (transport === 'webusb') await webadb.disconnect();
         log('INFO', 'Disconnected.');
         resetWorkspace();
+        if (session.active) {
+          rememberSerial('');
+          stopBridge();
+        }
       });
 
       document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((btn) => {
@@ -1641,8 +2924,10 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
       log('INFO', `Rule catalog ready: ${rulesData.stats.totalRules} rules, ${CRITICAL_PACKAGES.size} Tier 4 packages locked.`);
 
       loadBridgeToken();
+      // The launcher opens /app?bridge=1: that is the user choosing the bridge, so the page looks
+      // for it at once. On any other URL nothing is sent to 127.0.0.1 until a button asks for it.
       const params = new URLSearchParams(window.location.search);
-      if (params.get('bridge') === '1') void connectOnce(() => connectBridge(20000));
+      if (params.get('bridge') === '1') startBridge(LAUNCHER_WAIT_MS, false);
     }
 
     wire();
@@ -1685,13 +2970,15 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
      rebuilt. They are not controls, so they show no ring (as <main> does in global.css). */
   #connect-title:focus-visible,
   #device-title:focus-visible,
+  #bridge-title:focus-visible,
   #pkg-table:focus-visible {
     outline: none;
   }
 
   /* ---- Device panel -------------------------------------------------------
-     data-state on .device is disconnected, connecting, connected or error. Each state has its own
-     glyph and word (in the art and in the status line), so colour is never the only cue. */
+     data-state on .device is disconnected, waiting, connecting, connected, lost or error. Each
+     state has its own glyph and word (in the art and in the status line), so colour is never the
+     only cue. */
   .device {
     container: device / inline-size;
   }
@@ -1769,14 +3056,17 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
   }
 
   .device[data-state='disconnected'] .state-item[data-for='disconnected'],
+  .device[data-state='waiting'] .state-item[data-for='waiting'],
   .device[data-state='connecting'] .state-item[data-for='connecting'],
   .device[data-state='connected'] .state-item[data-for='connected'],
+  .device[data-state='lost'] .state-item[data-for='lost'],
   .device[data-state='error'] .state-item[data-for='error'] {
     display: inline-flex;
     align-items: center;
   }
 
   .device[data-state='disconnected'] .device-prompt[data-for='disconnected'],
+  .device[data-state='waiting'] .device-prompt[data-for='waiting'],
   .device[data-state='error'] .device-prompt[data-for='error'] {
     display: block;
   }
@@ -1831,19 +3121,22 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
     line-height: var(--text-sm--line-height);
   }
 
-  /* Disconnected and error: no stats, so the art is small and the card short. */
+  /* Disconnected, waiting and error: no stats, so the art is small and the card short. */
   .device[data-state='disconnected'] .device-layout,
+  .device[data-state='waiting'] .device-layout,
   .device[data-state='error'] .device-layout {
     align-items: center;
     gap: var(--spacing-stack);
   }
 
   .device[data-state='disconnected'] .device-art,
+  .device[data-state='waiting'] .device-art,
   .device[data-state='error'] .device-art {
     width: 5.5rem;
   }
 
   .device[data-state='disconnected'] .device-stats,
+  .device[data-state='waiting'] .device-stats,
   .device[data-state='error'] .device-stats {
     display: none;
   }
@@ -1867,6 +3160,21 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
   .device[data-state='connected'] .phone-state,
   .device[data-state='connected'] .device-status {
     color: var(--color-ok);
+  }
+
+  /* Lost: the phone's values stay on screen, in the warning colours and with the triangle glyph. */
+  .device[data-state='lost'] {
+    border-color: var(--color-warn-line);
+  }
+
+  .device[data-state='lost'] .device-art,
+  .device[data-state='lost'] .phone-state,
+  .device[data-state='lost'] .device-status {
+    color: var(--color-warn);
+  }
+
+  .device[data-state='lost'] .phone-screen {
+    fill: var(--color-warn-soft);
   }
 
   .device[data-state='error'] {
@@ -2006,6 +3314,7 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
   @container device (width < 26rem) {
     .device-layout,
     .device[data-state='disconnected'] .device-layout,
+    .device[data-state='waiting'] .device-layout,
     .device[data-state='error'] .device-layout {
       flex-direction: column;
       align-items: center;
@@ -2028,6 +3337,262 @@ const BRANDS = [...new Set(rulesData.rules.map((rule) => rule.brand).filter(Bool
     .stat-tile {
       padding: 0.5rem 0.625rem;
     }
+  }
+
+  /* ---- Local bridge section ---------------------------------------------
+     data-phase on .bridge is waiting, blocked, unreachable, adb_missing, token, ready or lost.
+     Each phase has its own glyph and words in the status line, so colour is never the only cue. */
+  .bridge-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+  }
+
+  .bridge-status {
+    color: var(--color-muted);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .phase-item {
+    display: none;
+    align-items: center;
+    gap: 0.4375rem;
+  }
+
+  .bridge[data-phase='waiting'] .phase-item[data-for='waiting'],
+  .bridge[data-phase='blocked'] .phase-item[data-for='blocked'],
+  .bridge[data-phase='unreachable'] .phase-item[data-for='unreachable'],
+  .bridge[data-phase='adb_missing'] .phase-item[data-for='adb_missing'],
+  .bridge[data-phase='token'] .phase-item[data-for='token'],
+  .bridge[data-phase='ready'] .phase-item[data-for='ready'],
+  .bridge[data-phase='lost'] .phase-item[data-for='lost'] {
+    display: inline-flex;
+  }
+
+  .bridge[data-phase='ready'] .bridge-status {
+    color: var(--color-ok);
+  }
+
+  .bridge[data-phase='adb_missing'] .bridge-status,
+  .bridge[data-phase='token'] .bridge-status,
+  .bridge[data-phase='lost'] .bridge-status {
+    color: var(--color-warn);
+  }
+
+  .bridge[data-phase='blocked'] .bridge-status,
+  .bridge[data-phase='unreachable'] .bridge-status {
+    color: var(--color-danger);
+  }
+
+  /* The same breathing as the device panel's "Connecting", and likewise off for reduced motion. */
+  @media (prefers-reduced-motion: no-preference) {
+    .bridge[data-phase='waiting'] .phase-item .icon {
+      animation: device-pulse 1.8s ease-in-out infinite;
+    }
+  }
+
+  .bridge-text,
+  .bridge-detail,
+  .bridge-error {
+    max-width: var(--container-measure);
+    overflow-wrap: anywhere;
+  }
+
+  .bridge-text {
+    margin-top: 0.75rem;
+    color: var(--color-ink);
+    font-weight: 500;
+  }
+
+  .bridge-detail,
+  .bridge-error {
+    margin-top: 0.375rem;
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+  }
+
+  .bridge-detail {
+    color: var(--color-muted);
+  }
+
+  .bridge-error {
+    color: var(--color-danger);
+    font-weight: 500;
+  }
+
+  .bridge-text:empty,
+  .bridge-detail:empty,
+  .bridge-error:empty {
+    display: none;
+  }
+
+  .bridge-form {
+    display: grid;
+    gap: 0.75rem;
+    max-width: 36rem;
+    margin-top: 0.75rem;
+  }
+
+  /* One row per device adb reports, ready or not. The state is a badge with words in it. */
+  .device-list {
+    display: grid;
+    gap: 0.625rem;
+    margin-top: 0.625rem;
+  }
+
+  .device-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    background-color: var(--color-subtle);
+  }
+
+  .device-row-main {
+    flex: 1 1 16rem;
+    min-width: 0;
+  }
+
+  .device-row-name {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem 0.625rem;
+    color: var(--color-ink);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .device-row-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.5rem;
+    margin-top: 0.125rem;
+    color: var(--color-faint);
+    font-size: var(--text-xs);
+    line-height: var(--text-xs--line-height);
+    overflow-wrap: anywhere;
+  }
+
+  .device-row-help,
+  .device-row-detail {
+    max-width: var(--container-measure);
+    margin-top: 0.375rem;
+    color: var(--color-muted);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    overflow-wrap: anywhere;
+  }
+
+  .device-row-help:empty,
+  .device-row-detail:empty {
+    display: none;
+  }
+
+  .device-row-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* Wi-Fi: the blocks sit side by side where there is room for two. */
+  .wifi .disclosure-body {
+    max-width: none;
+  }
+
+  .wifi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+    gap: var(--spacing-stack);
+    margin-top: var(--spacing-stack);
+  }
+
+  .wifi-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+    padding: 1rem;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    background-color: var(--color-subtle);
+  }
+
+  .wifi-help {
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+  }
+
+  .wifi-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr));
+    gap: 0.75rem;
+    align-items: start;
+  }
+
+  /* The button rests on the bottom of its block, with the result of the last attempt beside it. */
+  .wifi-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    margin-top: auto;
+  }
+
+  .form-note {
+    flex: 1 1 12rem;
+    min-width: 0;
+    color: var(--color-ink);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    overflow-wrap: anywhere;
+  }
+
+  .form-note:empty {
+    display: none;
+  }
+
+  /* The sentence itself says what went wrong, so colour is not the only cue. */
+  .form-note[data-level='ERROR'] {
+    color: var(--color-danger);
+  }
+
+  .found-list {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .found-list:empty {
+    display: none;
+  }
+
+  .found-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    background-color: var(--color-surface);
+  }
+
+  .found-main {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .found-name {
+    color: var(--color-ink);
+    font-size: var(--text-sm);
+    font-weight: 600;
   }
 
   /* ---- Package table ----------------------------------------------------
