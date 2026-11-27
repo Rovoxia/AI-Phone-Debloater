@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Web app, Wi-Fi through the local bridge: besides QR pairing, pair with the six-digit pairing code (IP address, pairing port, code), connect to an already paired phone by IP address and connect port, and list the phones that adb's mDNS discovery finds. When QR or code pairing succeeds but the phone announces no connect port, the page asks for the connect port and finishes the connection
+- Web app: when several devices are listed, the page shows a list to choose from instead of a browser prompt box; a single ready phone is opened automatically
+- Web app: the bridge's session token can be pasted into a form on the page when the bridge asks for it
+- Web app: the page explains that the browser may ask for permission before it can reach the bridge on this computer, and shows guidance when that access is blocked
+- Bridge: `POST /reconnect` (runs `adb reconnect offline`), `GET /mdns`, `POST /pair/code` (runs `adb pair`, then connects) and `POST /connect` (runs `adb connect`), behind the same `Host`, `Origin` and `X-Bridge-Token` checks as the other routes. `host` must be an IPv4 address, `port` an integer from 1 to 65535 and the code exactly six digits; the pairing code is not logged
+- Bridge: `GET /devices` reports every adb state with `revision` and `boot_id`, and can hold the request until the list changes (`since`, `boot` and `wait` query parameters)
+- Bridge: `GET /health` reports `api` and `capabilities`, and error responses carry a machine-readable `code` next to the `error` text
+
+### Changed
+
+- Bridge: starts the adb server in the background when it launches
+
+### Fixed
+
+- Web app, local bridge: a phone that was not already attached and authorized when the page listed devices was never picked up. After you choose the bridge (the connect button or `/app?bridge=1`), the page now waits for the bridge to start (up to about 90 seconds when opened by the launcher) and keeps the device list up to date without a reload. A phone still showing "Allow USB debugging?" is listed with instructions and connects once you tap Allow. Offline phones, phones without USB permissions (Linux udev rules) and phones in recovery, sideload or bootloader mode each get their own guidance; offline and unauthorized phones have a Retry button. Nothing is sent to 127.0.0.1 before you choose the bridge
+- Web app, local bridge: when the phone or the bridge is lost during a session, the page says so, switches off Freeze, Uninstall and Restore, keeps the package selection and resumes when the same phone is back. It never starts or repeats an operation by itself
+- QR pairing: a cancel that arrived while the phone was being discovered could still go on to pair the phone; pairing now stops there
+
 ## [1.3.0] - 2026-11-23
 
 ### Added

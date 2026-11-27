@@ -180,7 +180,9 @@ The bridge listens on `127.0.0.1:53123`, accepts only a loopback `Host` and allo
 
 #### 📶 Pair over Wi-Fi from the web app
 
-With the local bridge running, open the URL it prints and choose **Pair over Wi-Fi (QR)**. On the phone (Android 11 or newer, on the same Wi-Fi network as the computer) go to Settings > Developer options > Wireless debugging > Pair device with QR code and scan the code on screen. The bridge pairs and connects through the adb on your computer, and the phone then opens in the app like a USB device. The code is valid for two minutes and for one pairing only; closing the dialog cancels it. The code never leaves your machine: the browser gets it from the bridge on 127.0.0.1, using the session token.
+With the local bridge running, open the URL it prints (or choose **Connect to the local bridge** on `/app`). The page contacts 127.0.0.1 only after you choose the bridge; your browser may then ask whether the page may reach other apps on this device, and the answer has to be Allow. The page keeps the device list up to date by itself, so a phone plugged in or authorized later appears without a reload, and several devices are offered as a list to choose from.
+
+Wi-Fi needs Android 11 or newer, Wireless debugging turned on, and the phone on the same Wi-Fi network as the computer. Choose **Pair over Wi-Fi with a QR code**, then on the phone go to Settings > Developer options > Wireless debugging > Pair device with QR code and scan the code on screen. The code is valid for two minutes and for one pairing only; closing the dialog cancels it. The code never leaves your machine: the browser gets it from the bridge on 127.0.0.1, using the session token. Under **Connect over Wi-Fi** the page can also pair with the six-digit pairing code, connect to an already paired phone by IP address and port, and list the phones adb finds on the network. The bridge pairs and connects through the adb on your computer, and the phone then opens in the app like a USB device.
 
 ---
 
